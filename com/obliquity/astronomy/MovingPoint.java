@@ -14,4 +14,6 @@ public interface MovingPoint {
     public double getEarliestDate();
 
     public double getLatestDate();
+
+    public double getEpoch();
 }

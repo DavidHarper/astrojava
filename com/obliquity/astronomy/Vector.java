@@ -81,6 +81,10 @@ public class Vector implements java.lang.Cloneable {
 	return toArray();
     }
 
+    public double getX() { return x; }
+    public double getY() { return y; }
+    public double getZ() { return z; }
+
     public void subtract(Vector that) {
 	this.x -= that.x;
 	this.y -= that.y;

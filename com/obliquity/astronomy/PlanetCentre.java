@@ -50,4 +50,8 @@ public class PlanetCentre implements MovingPoint {
     public double getLatestDate() {
 	return ephemeris.getLatestDate();
     }
+
+    public double getEpoch() {
+	return ephemeris.getEpoch();
+    }
 }
