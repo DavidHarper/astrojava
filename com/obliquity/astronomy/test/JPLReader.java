@@ -11,82 +11,33 @@ public class JPLReader {
 					   "Librations"};
 
     public static void main(String[] args) {
-	if (args.length < 3) {
-	    System.err.println("Usage: JPLReader filename start-date end-date");
+	if (args.length < 1) {
+	    System.err.println("Usage: JPLReader filename [filename ...]");
 	    System.exit(1);
 	}
 
-	String filename = args[0];
+	for (int i = 0; i < args.length; i++) {
+	    String filename = args[i];
 
-	double jdstart = Double.parseDouble(args[1]);
-	double jdfinis = Double.parseDouble(args[2]);
+	    JPLEphemeris ephemeris = null;
 
-	int nTests = 10;
+	    try {
+		System.err.println("Loading file " + filename + " ...");
+		ephemeris = new JPLEphemeris(filename);
+	    }
+	    catch (JPLEphemerisException jee) {
+		jee.printStackTrace();
+		System.err.println("JPLEphemerisException ... " + jee);
+		System.exit(1);
+	    }
+	    catch (IOException ioe) {
+		ioe.printStackTrace();
+		System.err.println("IOException ... " + ioe);
+		System.exit(1);
+	    }
 
-	if (args.length > 3)
-	    nTests = Integer.parseInt(args[3]);
-
-	JPLEphemeris ephemeris = null;
-
-	try {
-	    ephemeris = new JPLEphemeris(filename, jdstart, jdfinis);
+	    testEphemeris(ephemeris);
 	}
-	catch (JPLEphemerisException jee) {
-	    jee.printStackTrace();
-            System.err.println("JPLEphemerisException ... " + jee);
-	    System.exit(1);
-        }
-        catch (IOException ioe) {
-            ioe.printStackTrace();
-            System.err.println("IOException ... " + ioe);
- 	    System.exit(1);
-	}
-
-	testEphemeris(ephemeris);
-
-	System.out.println();
-	System.out.println("### SERIALISING EPHEMERIS ###");
-
-	try {
-	    FileOutputStream ostream = new FileOutputStream("ephemeris.ser");
-	    ObjectOutputStream oos = new ObjectOutputStream(ostream);	
-	    oos.writeObject(ephemeris);
-	    oos.close();
-	}
-        catch (IOException ioe) {
-            ioe.printStackTrace();
-            System.err.println("IOException when serialising ephemeris ... " + ioe);
- 	    System.exit(1);
-	}
-
-	System.out.println();
-	System.out.println("### DESERIALISING EPHEMERIS ###");
-
-	JPLEphemeris ephemeris2 = null;
-
-	try {
-	    FileInputStream istream = new FileInputStream("ephemeris.ser");
-	    ObjectInputStream ois = new ObjectInputStream(istream);
-	    ephemeris2 = (JPLEphemeris)ois.readObject();
-	    ois.close();
-	}
-        catch (IOException ioe) {
-            ioe.printStackTrace();
-            System.err.println("IOException when de-serialising ephemeris ... " + ioe);
- 	    System.exit(1);
-	}
-        catch (ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
-            System.err.println("ClassNotFoundException when de-serialising ephemeris ... " + cnfe);
- 	    System.exit(1);
-	}
-
-	System.out.println();
-	System.out.println("### TESTING NEW EPHEMERIS ###");
-
-	testEphemeris(ephemeris2);
-
-	compareEphemerides(ephemeris, ephemeris2, nTests);
 
 	System.exit(0);
     }
@@ -116,90 +67,5 @@ public class JPLReader {
 
 	System.out.println("AU    = " + ephemeris.getAU());
 	System.out.println("EMRAT = " + ephemeris.getEMRAT());
-    }
-
-    public static void compareEphemerides(JPLEphemeris eph1, JPLEphemeris eph2, int nTests) {
-	if (eph1 == null) {
-	    System.err.println("First ephemeris object is null");
-	    return;
-	}
-
-	if (eph2 == null) {
-	    System.err.println("Second ephemeris object is null");
-	    return;
-	}
-
-	if (eph1 == eph2)  {
-	    System.err.println("Ephemeris objects are IDENTICAL");
-	    return;
-	}
-
-	Random random = new Random();
-
-	Vector pos1 = new Vector();
-	Vector vel1 = new Vector();
-	Vector pos2 = new Vector();
-	Vector vel2 = new Vector();
-
-	double tEarliest = Math.max(eph1.getEarliestDate(), eph2.getEarliestDate());
-	double tLatest   = Math.min(eph1.getLatestDate(), eph2.getLatestDate());
-
-	if (tEarliest >= tLatest) {
-	    System.err.println("Date ranges of ephemerides do not overlap");
-	    return;
-	}
-
-	double tSpan = tLatest - tEarliest;
-
-	File outfile = new File("testeval.in");
-	FileOutputStream fos;
-	PrintWriter pw = null;
-;
-	try {
-	    fos = new FileOutputStream(outfile);
-	    pw = new PrintWriter(fos);
-	}
-	catch (FileNotFoundException fnfe) {
-	    fnfe.printStackTrace();
-	    System.err.println("FileNotFoundException ... " + fnfe);
-	    System.exit(1);
-	}
-
-
-	for (int j = 0; j < nTests; j++) {
-	    int nBody = random.nextInt(JPLEphemeris.SUN);
-	    double t = tEarliest + tSpan * random.nextDouble();
-
-	    try {
-		eph1.calculatePositionAndVelocity(t, nBody, pos1, vel1);
-	    }
-	    catch (JPLEphemerisException jee) {
-		jee.printStackTrace();
-		System.err.println("JPLEphemerisException from first ephemeris object ... " + jee);
-		System.exit(1);
-	    }
-
-	    try {
-		eph2.calculatePositionAndVelocity(t, nBody, pos2, vel2);
-	    }
-	    catch (JPLEphemerisException jee) {
-		jee.printStackTrace();
-		System.err.println("JPLEphemerisException from second ephemeris object ... " + jee);
-		System.exit(1);
-	    }
-
-	    pw.println(nBody + " " + t + " " + pos1 + " " + vel1);
-
-	    pos2.subtract(pos1);
-	    double dp = pos2.magnitude();
-
-	    vel2.subtract(vel1);
-	    double dv = vel2.magnitude();
-
-	    System.out.println("Test #" + j + " : " + planetNames[nBody] + " DP = " + dp +
-			       ", DV = " + dv);
-        }
-
-	pw.close();
     }
 }

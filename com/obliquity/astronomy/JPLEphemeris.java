@@ -65,12 +65,14 @@ public class JPLEphemeris implements Serializable {
      *
      * @param filename The name of the binary JPL ephemeris file from which the data
      *                 will be loaded.
+     *
      * @param jdstart The earliest time (expressed as a Julian Date in Barycentric Dynamical Time)
      *                at which the ephemeris must be able to return positions and
-     *                velocities.
+     *                velocities. If zero, use the lower date limit implicit in the ephemeris file.
+     *
      * @param jfinis The latest time (expressed as a Julian Date in Barycentric Dynamical Time)
      *                at which the ephemeris must be able to return positions and
-     *                velocities.
+     *                velocities. If zero, use the upper date limit implicit in the ephemeris file.
      */
 
     public JPLEphemeris(String filename, double jdstart, double jdfinis) throws
@@ -145,6 +147,12 @@ public class JPLEphemeris implements Serializable {
 	    throw new JPLEphemerisException("Ephemeris number " + numde + " not recognised");
 	}
 
+	if (jdstart == 0.0)
+	    jdstart = limits[0];
+
+	if (jdfinis == 0.0)
+	    jdfinis = limits[1] - limits[2];
+
 	if (jdstart < limits[0] || jdstart > limits[1])
 	    throw new JPLEphemerisException("Start date is outside valid range");
 
@@ -181,6 +189,17 @@ public class JPLEphemeris implements Serializable {
 	for (int i = 0; i < offsets.length; i++)
 	    if (offsets[i][1] > nCheby)
 		nCheby = offsets[i][1];
+    }
+
+    /**
+     * Constructs a new JPLEphemeris object from a binary JPL ephemeris file.
+     *
+     * @param filename The name of the binary JPL ephemeris file from which the data
+     *                 will be loaded.
+     */
+
+    public JPLEphemeris(String filename) throws IOException, JPLEphemerisException {
+	this(filename, 0.0, 0.0);
     }
 
     /**
