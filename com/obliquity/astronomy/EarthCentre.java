@@ -13,7 +13,7 @@ public class EarthCentre implements MovingPoint {
     public EarthCentre(JPLEphemeris ephemeris) {
 	this.ephemeris = ephemeris;
 	double emrat = ephemeris.getEMRAT();
-	mu = emrat/(1.0 + emrat);
+	mu = 1.0/(1.0 + emrat);
 	AU = 1.0/ephemeris.getAU();
     }
 
@@ -35,9 +35,9 @@ public class EarthCentre implements MovingPoint {
 	moonposition.multiplyBy(mu);
 	moonvelocity.multiplyBy(mu);
 
-	position.add(moonposition);
+	position.subtract(moonposition);
 	position.multiplyBy(AU);
-	velocity.add(moonvelocity);
+	velocity.subtract(moonvelocity);
 	velocity.multiplyBy(AU);
     }
 
@@ -55,7 +55,7 @@ public class EarthCentre implements MovingPoint {
 					       null);
 
 	moonposition.multiplyBy(mu);
-	p.add(moonposition);
+	p.subtract(moonposition);
 	p.multiplyBy(AU);
     }
 
