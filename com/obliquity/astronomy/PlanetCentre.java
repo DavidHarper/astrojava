@@ -3,12 +3,14 @@ package com.obliquity.astronomy;
 public class PlanetCentre implements MovingPoint {
     private JPLEphemeris ephemeris = null;
     private int kBody = -1;
+    private double AU;
 
     private StateVector statevector = new StateVector(new Vector(), new Vector());
 
     public PlanetCentre(JPLEphemeris ephemeris, int kBody) {
 	this.ephemeris = ephemeris;
 	this.kBody = kBody;
+	AU = 1.0/ephemeris.getAU();
     }
 
     public StateVector getStateVector(double time) throws JPLEphemerisException {
@@ -21,6 +23,9 @@ public class PlanetCentre implements MovingPoint {
 	Vector velocity = sv.getVelocity();
 
 	ephemeris.calculatePositionAndVelocity(time, kBody, position, velocity);
+
+	position.multiplyBy(AU);
+	velocity.multiplyBy(AU);
     }
 
     public Vector getPosition(double time) throws JPLEphemerisException {
@@ -31,6 +36,7 @@ public class PlanetCentre implements MovingPoint {
 
     public void getPosition(double time, Vector p) throws JPLEphemerisException {
 	ephemeris.calculatePositionAndVelocity(time, kBody, p, null);
+	p.multiplyBy(AU);
     }
 
     public boolean isValidDate(double time) {

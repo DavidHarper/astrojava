@@ -8,10 +8,13 @@ public class EarthCentre implements MovingPoint {
 
     private double mu = 0.0;
 
+    private double AU;
+
     public EarthCentre(JPLEphemeris ephemeris) {
 	this.ephemeris = ephemeris;
 	double emrat = ephemeris.getEMRAT();
 	mu = emrat/(1.0 + emrat);
+	AU = 1.0/ephemeris.getAU();
     }
 
     public StateVector getStateVector(double time) throws JPLEphemerisException {
@@ -33,7 +36,9 @@ public class EarthCentre implements MovingPoint {
 	moonvelocity.multiplyBy(mu);
 
 	position.add(moonposition);
+	position.multiplyBy(AU);
 	velocity.add(moonvelocity);
+	velocity.multiplyBy(AU);
     }
 
     public Vector getPosition(double time) throws JPLEphemerisException {
@@ -51,6 +56,7 @@ public class EarthCentre implements MovingPoint {
 
 	moonposition.multiplyBy(mu);
 	p.add(moonposition);
+	p.multiplyBy(AU);
     }
 
     public boolean isValidDate(double time) {

@@ -60,7 +60,7 @@ public class TestApparentPlace {
 	Vector Q = new Vector();
 	Vector E = new Vector();
 
-	double c = 173.1446 * ephemeris.getAU();
+	double c = 173.1446;
 	double factor = 2.0 * 9.87e-9;
 
 
