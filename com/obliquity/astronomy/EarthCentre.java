@@ -1,20 +1,20 @@
 package com.obliquity.astronomy;
 
 public class EarthCentre implements MovingPoint {
-    private JPLEphemeris ephemeris = null;
+    protected JPLEphemeris ephemeris = null;
 
-    private StateVector statevector = new StateVector(new Vector(), new Vector());
-    private StateVector moonstatevector = new StateVector(new Vector(), new Vector());
+    protected StateVector statevector = new StateVector(new Vector(), new Vector());
+    protected StateVector moonstatevector = new StateVector(new Vector(), new Vector());
 
-    private double mu = 0.0;
+    protected double mu = 0.0;
 
-    private double AU;
+    protected double reciprocalAU;
 
     public EarthCentre(JPLEphemeris ephemeris) {
 	this.ephemeris = ephemeris;
 	double emrat = ephemeris.getEMRAT();
 	mu = 1.0/(1.0 + emrat);
-	AU = 1.0/ephemeris.getAU();
+	reciprocalAU = 1.0/ephemeris.getAU();
     }
 
     public StateVector getStateVector(double time) throws JPLEphemerisException {
@@ -36,9 +36,9 @@ public class EarthCentre implements MovingPoint {
 	moonvelocity.multiplyBy(mu);
 
 	position.subtract(moonposition);
-	position.multiplyBy(AU);
+	position.multiplyBy(reciprocalAU);
 	velocity.subtract(moonvelocity);
-	velocity.multiplyBy(AU);
+	velocity.multiplyBy(reciprocalAU);
     }
 
     public Vector getPosition(double time) throws JPLEphemerisException {
@@ -56,7 +56,7 @@ public class EarthCentre implements MovingPoint {
 
 	moonposition.multiplyBy(mu);
 	p.subtract(moonposition);
-	p.multiplyBy(AU);
+	p.multiplyBy(reciprocalAU);
     }
 
     public boolean isValidDate(double time) {

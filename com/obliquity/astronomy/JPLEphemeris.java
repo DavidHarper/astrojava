@@ -57,6 +57,8 @@ public class JPLEphemeris implements Serializable {
     public static final int LIBRATIONS = 12;
     public static final int LAST_COMPONENT = 12;
 
+    private static final double EPOCH = 2451545.0;
+
     /**
      * Constructs a new JPLEphemeris object for a specified time span from a binary
      * JPL ephemeris file.
@@ -242,6 +244,13 @@ public class JPLEphemeris implements Serializable {
 	else
 	    return true;
     }
+
+    /**
+     * Return the epoch of the reference system of this ephemeris.
+     *
+     * @return The epoch of the reference system of this ephemeris.
+     */
+    public double getEpoch() { return EPOCH; }
 
     /**
      * Indicates whether the ephemeris contains Chebyshev coefficients for the
