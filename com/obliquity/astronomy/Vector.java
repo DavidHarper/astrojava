@@ -99,10 +99,22 @@ public class Vector implements java.lang.Cloneable {
 			  this.x * that.y - this.y * that.x);
     }
 
-    public void multiply(double factor) {
+    public void multiplyBy(double factor) {
 	this.x *= factor;
 	this.y *= factor;
 	this.z *= factor;
+    }
+
+    public void multiplyBy(Matrix matrix) {
+	double[][] m = matrix.getComponents();
+
+	double xNew = m[0][0] * x + m[0][1] * y + m[0][2] * z;
+	double yNew = m[1][0] * x + m[1][1] * y + m[1][2] * z;
+	double zNew = m[2][0] * x + m[2][1] * y + m[2][2] * z;
+
+	x = xNew;
+	y = yNew;
+	z = zNew;
     }
 
     public java.lang.String toString() {

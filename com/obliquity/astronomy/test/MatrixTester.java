@@ -2,6 +2,7 @@ import java.io.*;
 import java.text.DecimalFormat;
 
 import com.obliquity.astronomy.Matrix;
+import com.obliquity.astronomy.Vector;
 
 public class MatrixTester {
     public static void main(String args[]) {
@@ -72,5 +73,21 @@ public class MatrixTester {
 			   a.prettyPrint(format));
 
 	System.out.println("det(ax . ay . az) => " + a.determinant());
+
+	System.out.println();
+
+	System.out.println("Testing matrix-vector multiplication");
+
+	Vector v = new Vector(1.0, 2.0, 3.0);
+
+	System.out.println("v=" + v.prettyPrint(format));
+
+	System.out.println("mag(v) => " + v.magnitude());
+
+	v.multiplyBy(a);
+
+	System.out.println("Rotated v=" + v.prettyPrint(format));
+
+	System.out.println("mag(v) => " + v.magnitude());
     }
 }
