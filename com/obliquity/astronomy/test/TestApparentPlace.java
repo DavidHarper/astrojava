@@ -54,10 +54,12 @@ public class TestApparentPlace {
 
 	boolean silent = Boolean.getBoolean("silent");
 
-	Vector position = new Vector();
+	ApparentPlace ap = new ApparentPlace();
+
+	EarthRotationModel erm = new IAUEarthRotationModel();
 
 	try {
-	    calculateApparentPlace(earth, planet, sun, t, position, silent);
+	    calculateApparentPlace(earth, planet, sun, erm, t, ap, silent);
 	}
 	catch (JPLEphemerisException jplee) {
 	    jplee.printStackTrace();
@@ -65,7 +67,8 @@ public class TestApparentPlace {
     }
 
     private static void calculateApparentPlace(MovingPoint observer, MovingPoint target,
-					       MovingPoint sun, double t, Vector position,
+					       MovingPoint sun, EarthRotationModel erm,
+					       double t, ApparentPlace ap,
 					       boolean silent) throws JPLEphemerisException {
 	DecimalFormat format = new DecimalFormat("0.000000000");
 	format.setPositivePrefix(" ");
@@ -87,8 +90,6 @@ public class TestApparentPlace {
 	    System.err.println("t = " + t);
 	}
 
-	double tau = 0.0;
-	    
 	svObserver = observer.getStateVector(t);
 	EB = svObserver.getPosition();
 
@@ -110,7 +111,10 @@ public class TestApparentPlace {
 
 	double dtau;
 	double ctau;
-	    
+	double gd = 0.0;
+
+	double tau = 0.0;
+
 	do {
 	    if (!silent) {
 		System.err.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
@@ -140,6 +144,9 @@ public class TestApparentPlace {
 	    
 	    double PP = P.magnitude();
 	    double QQ = Q.magnitude();
+
+	    if (tau == 0.0)
+		gd = PP;
 
 	    ctau = PP + factor * Math.log((EE + PP + QQ)/(EE - PP + QQ));
 
@@ -218,8 +225,34 @@ public class TestApparentPlace {
 	    
 	if (!silent) {
 	    System.err.println("New P = " + P.prettyPrint(format));
+	    System.err.println();
+	    System.err.println("++++++++++++++ Precession and nutation ++++++++++++++");
 	}
 
-	position.copy(P);
+	Matrix precess = erm.precessionMatrix(target.getEpoch(), t);
+	Matrix nutate = erm.nutationMatrix(t);
+
+	if (!silent) {
+	    System.err.println("Precession matrix:\n" + precess.prettyPrint(format));
+	    System.err.println("Nutation matrix:\n" + nutate.prettyPrint(format));
+	}
+
+	P.multiplyBy(precess);
+	P.multiplyBy(nutate);
+
+	double x = P.getX();
+	double y = P.getY();
+	double z = P.getZ();
+
+	double ra = Math.atan2(y, x);
+	double dec = Math.atan2(x, Math.sqrt(x * x + y * y));
+
+	if (!silent) {
+	    System.err.println("Apparent P = " + P.prettyPrint(format));
+	}
+
+	ap.setRightAscensionAndDeclination(ra, dec);
+	ap.setGeometricDistance(gd);
+	ap.setLightPathDistance(ctau);
     }
 }
