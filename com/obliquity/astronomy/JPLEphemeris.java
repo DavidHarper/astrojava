@@ -36,6 +36,8 @@ public class JPLEphemeris implements Serializable {
     private int nCheby = 0;
     transient double []ChebyP = null;
     transient double []ChebyV = null;
+    private double []pos = new double[3];
+    private double []vel = new double[3];
 
     public static final int FIRST_COMPONENT = 0;
     public static final int MERCURY = 0;
@@ -326,8 +328,11 @@ public class JPLEphemeris implements Serializable {
      *            be at least three for planetary positions and at least two for
      *            nutations and librations.
      */
-    public void calculatePositionAndVelocity(double jd, int nBody, double []pos, double []vel) 
+    public void calculatePositionAndVelocity(double jd, int nBody, Vector position, Vector velocity) 
       throws JPLEphemerisException {
+	if (position == null)
+	    throw new JPLEphemerisException("Position vector is null");
+
 	if (!hasComponent(nBody))
 	    throw new JPLEphemerisException("Ephemeris does not have component " + nBody);
 
@@ -335,10 +340,6 @@ public class JPLEphemeris implements Serializable {
 	    throw new JPLEphemerisException("Date " + jd + " is out of range");
 
 	int nCoords = (nBody <= SUN) ? 3 : 2;
-
-	if (pos.length < nCoords)
-	    throw new JPLEphemerisException("Position array too short (length " + pos.length +
-					    ") for " + nCoords + " values");
 
 	int irec = (int)((jd - limits[0])/limits[2]);
 
@@ -367,15 +368,20 @@ public class JPLEphemeris implements Serializable {
 	    for (int j = 1; j<icoeff; j++)
 		pos[i] += ChebyP[j] * data[irec][ioff+j];
 
-	    if (vel != null) {
+	    if (velocity != null) {
 		vel[i] = 0.0;
 		for (int j = 1; j<icoeff; j++)
 		    vel[i] += ChebyV[j] * data[irec][ioff+j];
 	    }
 	}
 
-	if (vel != null)
+	position.setComponents(pos);
+
+	if (velocity != null) {
 	    for (int i = 0; i<nCoords; i++)
 		vel[i] *= vfac;
+
+	    velocity.setComponents(vel);
+	}
     }
 }

@@ -1,7 +1,6 @@
 import java.io.*;
 import java.lang.*;
-import java.text.*;
-import java.util.*;
+import java.util.Random;
 
 import com.obliquity.astronomy.*;
 
@@ -25,19 +24,19 @@ public class JPLEphemerisSpeedTester {
 	}
         catch (IOException ioe) {
             ioe.printStackTrace();
-            System.err.println("IOException when de serialising ephemeris ... " + ioe);
+            System.err.println("IOException when de-serialising ephemeris ... " + ioe);
  	    System.exit(1);
 	}
         catch (ClassNotFoundException cnfe) {
             cnfe.printStackTrace();
-            System.err.println("ClassNotFoundException when de serialising ephemeris ... " + cnfe);
+            System.err.println("ClassNotFoundException when de-serialising ephemeris ... " + cnfe);
  	    System.exit(1);
 	}
 
 	Random random = new Random();
 	
-	double []pos = new double[3];
-	double []vel = new double[3];
+	Vector pos = new Vector();
+	Vector vel = new Vector();
 
 	double tEarliest = ephemeris.getEarliestDate();
 	double tLatest   = ephemeris.getLatestDate();

@@ -1,7 +1,7 @@
 import java.io.*;
 import java.lang.*;
 import java.text.*;
-import java.util.*;
+import java.util.Random;
 
 import com.obliquity.astronomy.*;
 
@@ -72,12 +72,12 @@ public class JPLReader {
 	}
         catch (IOException ioe) {
             ioe.printStackTrace();
-            System.err.println("IOException when de serialising ephemeris ... " + ioe);
+            System.err.println("IOException when de-serialising ephemeris ... " + ioe);
  	    System.exit(1);
 	}
         catch (ClassNotFoundException cnfe) {
             cnfe.printStackTrace();
-            System.err.println("ClassNotFoundException when de serialising ephemeris ... " + cnfe);
+            System.err.println("ClassNotFoundException when de-serialising ephemeris ... " + cnfe);
  	    System.exit(1);
 	}
 
@@ -135,11 +135,11 @@ public class JPLReader {
 	}
 
 	Random random = new Random();
-	
-	double []pos1 = new double[3];
-	double []vel1 = new double[3];
-	double []pos2 = new double[3];
-	double []vel2 = new double[3];
+
+	Vector pos1 = new Vector();
+	Vector vel1 = new Vector();
+	Vector pos2 = new Vector();
+	Vector vel2 = new Vector();
 
 	double tEarliest = Math.max(eph1.getEarliestDate(), eph2.getEarliestDate());
 	double tLatest   = Math.min(eph1.getLatestDate(), eph2.getLatestDate());
@@ -188,19 +188,14 @@ public class JPLReader {
 		System.exit(1);
 	    }
 
-	    pw.println(nBody + " " + t + " " + pos1[0] + " " + pos1[1] + " " + pos1[2] + " " +
-		       vel1[0] + " " + vel1[1] + " " + vel1[2]);
+	    pw.println(nBody + " " + t + " " + pos1 + " " + vel1);
 
-	    double dp = 0.0;
-	    double dv = 0.0;
-	    for (int k = 0; k < 3; k++) {
-		double dx = pos2[k] - pos1[k];
-		double dvx = vel2[k] - vel1[k];
-		dp += dx * dx;
-		dv += dvx * dvx;
-	    }
-	    dp = Math.sqrt(dp);
-	    dv = Math.sqrt(dv);
+	    pos2.subtract(pos1);
+	    double dp = pos2.magnitude();
+
+	    vel2.subtract(vel1);
+	    double dv = vel2.magnitude();
+
 	    System.out.println("Test #" + j + " : " + planetNames[nBody] + " DP = " + dp +
 			       ", DV = " + dv);
         }
