@@ -3,32 +3,28 @@ import com.obliquity.astronomy.*;
 import java.io.*;
 import java.text.*;
 import java.lang.*;
-import java.util.Random;
 
 public class TestApparentPlace {
     private final static double EPSILON = 1.0e-9;
 
     public static void main(String args[]) {
-	if (args.length < 5) {
-	    System.err.println("Usage: TestApparentPlace filename kBody start-date end-date nTests");
+	if (args.length < 3) {
+	    System.err.println("Usage: TestApparentPlace filename kBody date");
 	    System.exit(1);
 	}
 
-	DecimalFormat format = new DecimalFormat("0.000000");
+	DecimalFormat format = new DecimalFormat("0.000000000");
 	format.setPositivePrefix(" ");
 
 	String filename = args[0];
 
 	int kBody = Integer.parseInt(args[1]);
-	double jdstart = Double.parseDouble(args[2]);
-	double jdfinis = Double.parseDouble(args[3]);
-	int nTests = Integer.parseInt(args[4]);
+	double t = Double.parseDouble(args[2]);
 
-	String outputfilename = args[3];
+	double jdstart = t - 10.0;
+	double jdfinis = t + 10.0;
 
 	JPLEphemeris ephemeris = null;
-
-	Random random = new Random();
 
 	try {
 	    ephemeris = new JPLEphemeris(filename, jdstart, jdfinis);
@@ -55,7 +51,8 @@ public class TestApparentPlace {
 
 	boolean silent = Boolean.getBoolean("silent");
 
-	Vector EB = new Vector();
+	StateVector svEarth = null;
+	Vector EB = null;
 	Vector SB = new Vector();
 	Vector QB = new Vector();
 
@@ -66,79 +63,140 @@ public class TestApparentPlace {
 	double c = 173.1446 * ephemeris.getAU();
 	double factor = 2.0 * 9.87e-9;
 
-	for (int j = 0; j < nTests; j++) {
-	    double t = tEarliest + tSpan * random.nextDouble();
+
+	if (!silent) {
+	    System.err.println("============== NEXT DATE ==============");
+	    System.err.println("t = " + t);
+	}
+
+	try {
+	    double tau = 0.0;
+	    
+	    svEarth = earth.getStateVector(t);
+	    EB = svEarth.getPosition();
+		
+	    sun.getPosition(t, SB);
 
 	    if (!silent) {
-		System.err.println("============== NEXT DATE ==============");
-		System.err.println("t = " + t);
+		System.err.println("EB = " + EB.prettyPrint(format));
+		System.err.println("SB = " + SB.prettyPrint(format));
 	    }
 
-	    try {
-		double tau = 0.0;
+	    E.copy(EB);
+	    E.subtract(SB);
 
-		earth.getPosition(t, EB);
-		sun.getPosition(t, SB);
+	    if (!silent)
+		System.err.println("E = " + E.prettyPrint(format));
+
+	    double EE = E.magnitude();
+
+	    double dtau;
+	    double ctau;
+
+	    do {
+		if (!silent) {
+		    System.err.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
+		    System.err.println("tau = " + tau + ", t - tau = " + (t - tau));
+		}
+		
+		planet.getPosition(t - tau, QB);
+		sun.getPosition(t - tau, SB);
 
 		if (!silent) {
-		    System.err.println("EB = " + EB.prettyPrint(format));
+		    System.err.println("QB = " + QB.prettyPrint(format));
 		    System.err.println("SB = " + SB.prettyPrint(format));
 		}
 
-		E.copy(EB);
-		E.subtract(SB);
+		P.copy(QB);
+		P.subtract(EB);
+
+		Q.copy(QB);
+		Q.subtract(SB);
+
+		if (!silent) {
+		    System.err.println("Q = " + Q.prettyPrint(format));
+		    System.err.println("P = " + P.prettyPrint(format));
+		}
+
+		double PP = P.magnitude();
+		double QQ = Q.magnitude();
+
+		ctau = PP + factor * Math.log((EE + PP + QQ)/(EE - PP + QQ));
+
+		double newtau = ctau/c;
 
 		if (!silent)
-		    System.err.println("E = " + E.prettyPrint(format));
+		    System.err.println("new tau = " + newtau);
 
-		double EE = E.magnitude();
+		dtau = newtau - tau;
 
-		double dtau;
+		tau = newtau;
+	    } while (Math.abs(dtau) > EPSILON);
 
-		do {
-		    if (!silent) {
-			System.err.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
-			System.err.println("tau = " + tau + ", t - tau = " + (t - tau));
-		    }
-
-		    planet.getPosition(t - tau, QB);
-		    sun.getPosition(t - tau, SB);
-
-		    if (!silent) {
-			System.err.println("QB = " + QB.prettyPrint(format));
-			System.err.println("SB = " + SB.prettyPrint(format));
-		    }
-
-		    P.copy(QB);
-		    P.subtract(EB);
-
-		    Q.copy(QB);
-		    Q.subtract(SB);
-
-		    if (!silent) {
-			System.err.println("Q = " + Q.prettyPrint(format));
-			System.err.println("P = " + P.prettyPrint(format));
-		    }
-
-		    double PP = P.magnitude();
-		    double QQ = Q.magnitude();
-
-		    double ctau = PP + factor * Math.log((EE + PP + QQ)/(EE - PP + QQ));
-
-		    double newtau = ctau/c;
-
-		    if (!silent)
-			System.err.println("new tau = " + newtau);
-
-		    dtau = newtau - tau;
-
-		    tau = newtau;
-		} while (Math.abs(dtau) > EPSILON);
-
+	    if (!silent) {
+		System.err.println("Light path = " + ctau);
+		System.err.println();
+		System.err.println("++++++++++++++ Light deflection ++++++++++++++");
 	    }
-	    catch (JPLEphemerisException jee) {
-		jee.printStackTrace();
+	    
+	    P.normalise();
+	    Q.normalise();
+	    E.normalise();
+	    
+	    if (!silent) {
+		System.err.println("Normalised vectors:");
+		System.err.println("P = " + P.prettyPrint(format));
+		System.err.println("Q = " + Q.prettyPrint(format));
+		System.err.println("E = " + E.prettyPrint(format));
 	    }
+	    
+	    Vector pa = new Vector(E);
+	    pa.multiplyBy(P.scalarProduct(Q));
+	    
+	    Vector pb = new Vector(Q);
+	    pb.multiplyBy(E.scalarProduct(Q));
+	    
+	    pa.subtract(pb);
+	    
+	    double pfactor = (factor/EE)/(1.0 + Q.scalarProduct(E));
+	    
+	    pa.multiplyBy(pfactor);
+	    
+	    if (!silent)
+		System.err.println("dP = " + pa.prettyPrint(format));
+	    
+	    P.add(pa);
+	    
+	    if (!silent) {
+		System.err.println("New P = " + P.prettyPrint(format));
+		System.err.println();
+		System.err.println("++++++++++++++ Stellar aberration ++++++++++++++");
+	    }
+	    
+	    Vector V = svEarth.getVelocity();
+	    V.multiplyBy(1.0/c);
+	    
+	    double VV = V.magnitude();
+	    
+	    double beta = Math.sqrt(1.0 - VV * VV);
+	    
+	    double denominator = 1.0 + P.scalarProduct(V);
+	    
+	    double factora = beta/denominator;
+	    
+	    double factorb = (1.0 + P.scalarProduct(V)/(1.0 + beta))/denominator;
+	    
+	    P.multiplyBy(factora);
+	    V.multiplyBy(factorb);
+	    
+	    P.add(V);
+	    
+	    if (!silent) {
+		System.err.println("New P = " + P.prettyPrint(format));
+	    }
+	}
+	catch (JPLEphemerisException jee) {
+	    jee.printStackTrace();
 	}
     }
 }
