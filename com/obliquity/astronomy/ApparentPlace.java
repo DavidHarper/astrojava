@@ -40,5 +40,5 @@ public class ApparentPlace {
 
     public void setGeometricDistance(double gd) { this.gd = gd; }
 
-    public double getGeometricPathDistance() { return gd; }
+    public double getGeometricDistance() { return gd; }
 }
