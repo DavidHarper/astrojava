@@ -8,23 +8,22 @@ public class TestApparentPlace {
     private final static double EPSILON = 1.0e-9;
 
     public static void main(String args[]) {
-	if (args.length < 3) {
-	    System.err.println("Usage: TestApparentPlace filename kBody date");
+	if (args.length < 5) {
+	    System.err.println("Usage: TestApparentPlace filename kBody startdate enddate step");
 	    System.exit(1);
 	}
 
 	String filename = args[0];
 
 	int kBody = Integer.parseInt(args[1]);
-	double t = Double.parseDouble(args[2]);
-
-	double jdstart = t - 10.0;
-	double jdfinis = t + 10.0;
+	double jdstart = Double.parseDouble(args[2]);
+	double jdfinish = Double.parseDouble(args[3]);
+	double jdstep = Double.parseDouble(args[4]);
 
 	JPLEphemeris ephemeris = null;
 
 	try {
-	    ephemeris = new JPLEphemeris(filename, jdstart, jdfinis);
+	    ephemeris = new JPLEphemeris(filename, jdstart - 1.0, jdfinish + 1.0);
 	}
 	catch (JPLEphemerisException jee) {
 	    jee.printStackTrace();
@@ -58,18 +57,62 @@ public class TestApparentPlace {
 
 	EarthRotationModel erm = new IAUEarthRotationModel();
 
+	PrintStream ps = silent ? null : System.err;
+
 	try {
-	    calculateApparentPlace(earth, planet, sun, erm, t, ap, silent);
+	    for (double t = jdstart; t <= jdfinish; t += jdstep) {
+		calculateApparentPlace(earth, planet, sun, erm, t, ap, ps);
+		displayApparentPlace(t, ap, System.out);
+	    }
 	}
 	catch (JPLEphemerisException jplee) {
 	    jplee.printStackTrace();
 	}
     }
 
+    private static final DecimalFormat dfmt = new DecimalFormat("00.00");
+    private static final DecimalFormat ifmt = new DecimalFormat("00");
+    private static final DecimalFormat dfmt2 = new DecimalFormat("0.000000000");
+
+    private static void displayApparentPlace(double t, ApparentPlace ap, PrintStream ps) {
+	double ra = ap.getRightAscension() * 12.0/Math.PI;
+	double dec = ap.getDeclination() * 180.0/Math.PI;
+	char decsign = (dec < 0.0) ? 'S' : 'N';
+	if (ra < 0.0)
+	    ra += 24.0;
+	if (dec < 0.0)
+	    dec = -dec;
+
+	int rah  = (int)ra;
+	ra -= (double)rah;
+	ra *= 60.0;
+	int ram = (int)ra;
+	ra -= (double)ram;
+	ra *= 60.0;
+	
+	int decd = (int)dec;
+	dec -= (double)decd;
+	dec *= 60.0;
+	int decm = (int)dec;
+	dec -= (double)decm;
+	dec *= 60.0;
+	
+	ps.print(dfmt.format(t));
+	ps.print("  ");
+	ps.print(ifmt.format(rah) + " " + ifmt.format(ram) + " " + dfmt.format(ra));
+	ps.print("  ");
+	ps.print(decsign + " " + ifmt.format(decd) + " " + ifmt.format(decm) + " " + dfmt.format(dec));
+	ps.print("  ");
+	ps.print(dfmt2.format(ap.getGeometricDistance()));
+	ps.print("  ");
+	ps.print(dfmt2.format(ap.getLightPathDistance()));
+	ps.println();
+    }
+
     private static void calculateApparentPlace(MovingPoint observer, MovingPoint target,
 					       MovingPoint sun, EarthRotationModel erm,
 					       double t, ApparentPlace ap,
-					       boolean silent) throws JPLEphemerisException {
+					       PrintStream ps) throws JPLEphemerisException {
 	DecimalFormat format = new DecimalFormat("0.000000000");
 	format.setPositivePrefix(" ");
 
@@ -85,9 +128,9 @@ public class TestApparentPlace {
 	double c = 173.1446;
 	double factor = 2.0 * 9.87e-9;
 
-	if (!silent) {
-	    System.err.println("============== APPARENT PLACE ==============");
-	    System.err.println("t = " + t);
+	if (ps != null) {
+	    ps.println("============== APPARENT PLACE ==============");
+	    ps.println("t = " + t);
 	}
 
 	svObserver = observer.getStateVector(t);
@@ -96,16 +139,16 @@ public class TestApparentPlace {
 	if (sun != null)
 	    sun.getPosition(t, SB);
 
-	if (!silent) {
-	    System.err.println("EB = " + EB.prettyPrint(format));
-	    System.err.println("SB = " + SB.prettyPrint(format));
+	if (ps != null) {
+	    ps.println("EB = " + EB.prettyPrint(format));
+	    ps.println("SB = " + SB.prettyPrint(format));
 	}
 
 	E.copy(EB);
 	E.subtract(SB);
 
-	if (!silent)
-	    System.err.println("E = " + E.prettyPrint(format));
+	if (ps != null)
+	    ps.println("E = " + E.prettyPrint(format));
 
 	double EE = E.magnitude();
 
@@ -116,9 +159,9 @@ public class TestApparentPlace {
 	double tau = 0.0;
 
 	do {
-	    if (!silent) {
-		System.err.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
-		System.err.println("tau = " + tau + ", t - tau = " + (t - tau));
+	    if (ps != null) {
+		ps.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
+		ps.println("tau = " + tau + ", t - tau = " + (t - tau));
 	    }
 	    
 	    target.getPosition(t - tau, QB);
@@ -126,9 +169,9 @@ public class TestApparentPlace {
 	    if (sun != null)
 		sun.getPosition(t - tau, SB);
 
-	    if (!silent) {
-		System.err.println("QB = " + QB.prettyPrint(format));
-		System.err.println("SB = " + SB.prettyPrint(format));
+	    if (ps != null) {
+		ps.println("QB = " + QB.prettyPrint(format));
+		ps.println("SB = " + SB.prettyPrint(format));
 	    }
 
 	    P.copy(QB);
@@ -137,9 +180,9 @@ public class TestApparentPlace {
 	    Q.copy(QB);
 	    Q.subtract(SB);
 
-	    if (!silent) {
-		System.err.println("Q = " + Q.prettyPrint(format));
-		System.err.println("P = " + P.prettyPrint(format));
+	    if (ps != null) {
+		ps.println("Q = " + Q.prettyPrint(format));
+		ps.println("P = " + P.prettyPrint(format));
 	    }
 	    
 	    double PP = P.magnitude();
@@ -152,30 +195,30 @@ public class TestApparentPlace {
 
 	    double newtau = ctau/c;
 
-	    if (!silent)
-		System.err.println("new tau = " + newtau);
+	    if (ps != null)
+		ps.println("new tau = " + newtau);
 
 	    dtau = newtau - tau;
 	    
 	    tau = newtau;
 	} while (Math.abs(dtau) > EPSILON);
 
-	if (!silent) {
-	    System.err.println("Light path = " + ctau);
-	    System.err.println();
+	if (ps != null) {
+	    ps.println("Light path = " + ctau);
+	    ps.println();
 	    if (sun != null)
-		System.err.println("++++++++++++++ Light deflection ++++++++++++++");
+		ps.println("++++++++++++++ Light deflection ++++++++++++++");
 	}
 	
 	P.normalise();
 	Q.normalise();
 	E.normalise();
 	    
-	if (!silent) {
-	    System.err.println("Normalised vectors:");
-	    System.err.println("P = " + P.prettyPrint(format));
-	    System.err.println("Q = " + Q.prettyPrint(format));
-	    System.err.println("E = " + E.prettyPrint(format));
+	if (ps != null) {
+	    ps.println("Normalised vectors:");
+	    ps.println("P = " + P.prettyPrint(format));
+	    ps.println("Q = " + Q.prettyPrint(format));
+	    ps.println("E = " + E.prettyPrint(format));
 	}
 
 	if (sun != null) {
@@ -191,18 +234,18 @@ public class TestApparentPlace {
 	    
 	    pa.multiplyBy(pfactor);
 	    
-	    if (!silent)
-		System.err.println("dP = " + pa.prettyPrint(format));
+	    if (ps != null)
+		ps.println("dP = " + pa.prettyPrint(format));
 	    
 	    P.add(pa);
 	}
 	    
-	if (!silent) {
+	if (ps != null) {
 	    if (sun != null) {
-		System.err.println("New P = " + P.prettyPrint(format));
-		System.err.println();
+		ps.println("New P = " + P.prettyPrint(format));
+		ps.println();
 	    }
-	    System.err.println("++++++++++++++ Stellar aberration ++++++++++++++");
+	    ps.println("++++++++++++++ Stellar aberration ++++++++++++++");
 	}
 	    
 	Vector V = svObserver.getVelocity();
@@ -223,18 +266,18 @@ public class TestApparentPlace {
 	    
 	P.add(V);
 	    
-	if (!silent) {
-	    System.err.println("New P = " + P.prettyPrint(format));
-	    System.err.println();
-	    System.err.println("++++++++++++++ Precession and nutation ++++++++++++++");
+	if (ps != null) {
+	    ps.println("New P = " + P.prettyPrint(format));
+	    ps.println();
+	    ps.println("++++++++++++++ Precession and nutation ++++++++++++++");
 	}
 
 	Matrix precess = erm.precessionMatrix(target.getEpoch(), t);
 	Matrix nutate = erm.nutationMatrix(t);
 
-	if (!silent) {
-	    System.err.println("Precession matrix:\n" + precess.prettyPrint(format));
-	    System.err.println("Nutation matrix:\n" + nutate.prettyPrint(format));
+	if (ps != null) {
+	    ps.println("Precession matrix:\n" + precess.prettyPrint(format));
+	    ps.println("Nutation matrix:\n" + nutate.prettyPrint(format));
 	}
 
 	P.multiplyBy(precess);
@@ -245,10 +288,10 @@ public class TestApparentPlace {
 	double z = P.getZ();
 
 	double ra = Math.atan2(y, x);
-	double dec = Math.atan2(x, Math.sqrt(x * x + y * y));
+	double dec = Math.atan2(z, Math.sqrt(x * x + y * y));
 
-	if (!silent) {
-	    System.err.println("Apparent P = " + P.prettyPrint(format));
+	if (ps != null) {
+	    ps.println("Apparent P = " + P.prettyPrint(format));
 	}
 
 	ap.setRightAscensionAndDeclination(ra, dec);
