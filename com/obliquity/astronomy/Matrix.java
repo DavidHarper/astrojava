@@ -77,6 +77,22 @@ public class Matrix {
 	m[j][i] = -value;
     }
 
+    public void setComponents(double[][] values) {
+	for (int i = 0; i < 3; i++)
+	    for (int j = 0; j < 3; j++)
+		m[i][j] = values[i][j];
+    }
+
+    public double[][] getComponents() {
+	double[][] values = new double[3][3];
+
+	for (int i = 0; i < 3; i++)
+	    for (int j = 0; j < 3; j++)
+		values[i][j] = m[i][j];
+
+	return values;
+    }
+
     public double determinant() {
 	return
 	    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) +
@@ -84,6 +100,31 @@ public class Matrix {
     	    m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
     }
 
+    public void leftMultiplyBy(Matrix that) {
+	double[][] values = new double[3][3];
+
+	for (int i = 0; i < 3; i++)
+	    for (int j = 0; j < 3; j++)
+		values[i][j] =
+		    that.m[i][0] * this.m[0][j] +
+		    that.m[i][1] * this.m[1][j] +
+		    that.m[i][2] * this.m[2][j];
+
+	setComponents(values);
+    }
+
+    public void rightMultiplyBy(Matrix that) {
+	double[][] values = new double[3][3];
+
+	for (int i = 0; i < 3; i++)
+	    for (int j = 0; j < 3; j++)
+		values[i][j] =
+		    this.m[i][0] * that.m[0][j] +
+		    this.m[i][1] * that.m[1][j] +
+		    this.m[i][2] * that.m[2][j];
+
+	setComponents(values);
+    }
 
     public java.lang.String toString() {
 	return "[" +
