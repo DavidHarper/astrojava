@@ -70,9 +70,10 @@ public class TestApparentPlace {
 	}
     }
 
-    private static final DecimalFormat dfmt = new DecimalFormat("00.00");
+    private static final DecimalFormat dfmta = new DecimalFormat("00.000");
+    private static final DecimalFormat dfmtb = new DecimalFormat("00.00");
     private static final DecimalFormat ifmt = new DecimalFormat("00");
-    private static final DecimalFormat dfmt2 = new DecimalFormat("0.000000000");
+    private static final DecimalFormat dfmtc = new DecimalFormat("0.0000000");
 
     private static void displayApparentPlace(double t, ApparentPlace ap, PrintStream ps) {
 	double ra = ap.getRightAscension() * 12.0/Math.PI;
@@ -97,15 +98,15 @@ public class TestApparentPlace {
 	dec -= (double)decm;
 	dec *= 60.0;
 	
-	ps.print(dfmt.format(t));
+	ps.print(dfmtb.format(t));
 	ps.print("  ");
-	ps.print(ifmt.format(rah) + " " + ifmt.format(ram) + " " + dfmt.format(ra));
+	ps.print(ifmt.format(rah) + " " + ifmt.format(ram) + " " + dfmta.format(ra));
 	ps.print("  ");
-	ps.print(decsign + " " + ifmt.format(decd) + " " + ifmt.format(decm) + " " + dfmt.format(dec));
+	ps.print(decsign + " " + ifmt.format(decd) + " " + ifmt.format(decm) + " " + dfmtb.format(dec));
 	ps.print("  ");
-	ps.print(dfmt2.format(ap.getGeometricDistance()));
+	ps.print(dfmtc.format(ap.getGeometricDistance()));
 	ps.print("  ");
-	ps.print(dfmt2.format(ap.getLightPathDistance()));
+	ps.print(dfmtc.format(ap.getLightPathDistance()));
 	ps.println();
     }
 
