@@ -154,7 +154,7 @@ public class TestApparentPlace {
 	    pa.multiplyBy(P.scalarProduct(Q));
 	    
 	    Vector pb = new Vector(Q);
-	    pb.multiplyBy(E.scalarProduct(Q));
+	    pb.multiplyBy(E.scalarProduct(P));
 	    
 	    pa.subtract(pb);
 	    
