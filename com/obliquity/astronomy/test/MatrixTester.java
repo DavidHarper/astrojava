@@ -89,5 +89,15 @@ public class MatrixTester {
 	System.out.println("Rotated v=" + v.prettyPrint(format));
 
 	System.out.println("mag(v) => " + v.magnitude());
+
+	System.out.println();
+
+	System.out.println("Testing matrix transpose");
+
+	System.out.println("Before:\n" + a.prettyPrint(format) + "\n");
+
+	a.transpose();
+
+	System.out.println("After:\n" + a.prettyPrint(format) + "\n");
     }
 }
