@@ -13,9 +13,6 @@ public class TestApparentPlace {
 	    System.exit(1);
 	}
 
-	DecimalFormat format = new DecimalFormat("0.000000000");
-	format.setPositivePrefix(" ");
-
 	String filename = args[0];
 
 	int kBody = Integer.parseInt(args[1]);
@@ -40,10 +37,16 @@ public class TestApparentPlace {
  	    System.exit(1);
 	}
 
+	boolean nosun = Boolean.getBoolean("nosun");
+
 	PlanetCentre planet = new PlanetCentre(ephemeris, kBody);
 	EarthCentre earth = new EarthCentre(ephemeris);
-	PlanetCentre sun = (kBody == JPLEphemeris.SUN) ? 
-	    planet : new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+
+	PlanetCentre sun = null;
+
+	if (!nosun) 
+	    sun = (kBody == JPLEphemeris.SUN) ? 
+		planet : new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
 	double tEarliest = ephemeris.getEarliestDate() + 1.0;
 	double tLatest   = ephemeris.getLatestDate() - 1.0;
@@ -51,7 +54,23 @@ public class TestApparentPlace {
 
 	boolean silent = Boolean.getBoolean("silent");
 
-	StateVector svEarth = null;
+	Vector position = new Vector();
+
+	try {
+	    calculateApparentPlace(earth, planet, sun, t, position, silent);
+	}
+	catch (JPLEphemerisException jplee) {
+	    jplee.printStackTrace();
+	}
+    }
+
+    private static void calculateApparentPlace(MovingPoint observer, MovingPoint target,
+					       MovingPoint sun, double t, Vector position,
+					       boolean silent) throws JPLEphemerisException {
+	DecimalFormat format = new DecimalFormat("0.000000000");
+	format.setPositivePrefix(" ");
+
+	StateVector svObserver = null;
 	Vector EB = null;
 	Vector SB = new Vector();
 	Vector QB = new Vector();
@@ -63,93 +82,96 @@ public class TestApparentPlace {
 	double c = 173.1446;
 	double factor = 2.0 * 9.87e-9;
 
-
 	if (!silent) {
-	    System.err.println("============== NEXT DATE ==============");
+	    System.err.println("============== APPARENT PLACE ==============");
 	    System.err.println("t = " + t);
 	}
 
-	try {
-	    double tau = 0.0;
+	double tau = 0.0;
 	    
-	    svEarth = earth.getStateVector(t);
-	    EB = svEarth.getPosition();
-		
+	svObserver = observer.getStateVector(t);
+	EB = svObserver.getPosition();
+
+	if (sun != null)
 	    sun.getPosition(t, SB);
 
+	if (!silent) {
+	    System.err.println("EB = " + EB.prettyPrint(format));
+	    System.err.println("SB = " + SB.prettyPrint(format));
+	}
+
+	E.copy(EB);
+	E.subtract(SB);
+
+	if (!silent)
+	    System.err.println("E = " + E.prettyPrint(format));
+
+	double EE = E.magnitude();
+
+	double dtau;
+	double ctau;
+	    
+	do {
 	    if (!silent) {
-		System.err.println("EB = " + EB.prettyPrint(format));
+		System.err.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
+		System.err.println("tau = " + tau + ", t - tau = " + (t - tau));
+	    }
+	    
+	    target.getPosition(t - tau, QB);
+
+	    if (sun != null)
+		sun.getPosition(t - tau, SB);
+
+	    if (!silent) {
+		System.err.println("QB = " + QB.prettyPrint(format));
 		System.err.println("SB = " + SB.prettyPrint(format));
 	    }
 
-	    E.copy(EB);
-	    E.subtract(SB);
+	    P.copy(QB);
+	    P.subtract(EB);
+
+	    Q.copy(QB);
+	    Q.subtract(SB);
+
+	    if (!silent) {
+		System.err.println("Q = " + Q.prettyPrint(format));
+		System.err.println("P = " + P.prettyPrint(format));
+	    }
+	    
+	    double PP = P.magnitude();
+	    double QQ = Q.magnitude();
+
+	    ctau = PP + factor * Math.log((EE + PP + QQ)/(EE - PP + QQ));
+
+	    double newtau = ctau/c;
 
 	    if (!silent)
-		System.err.println("E = " + E.prettyPrint(format));
+		System.err.println("new tau = " + newtau);
 
-	    double EE = E.magnitude();
+	    dtau = newtau - tau;
+	    
+	    tau = newtau;
+	} while (Math.abs(dtau) > EPSILON);
 
-	    double dtau;
-	    double ctau;
-
-	    do {
-		if (!silent) {
-		    System.err.println("-------------- LIGHT TIME ITERATION BEGINS --------------");
-		    System.err.println("tau = " + tau + ", t - tau = " + (t - tau));
-		}
-		
-		planet.getPosition(t - tau, QB);
-		sun.getPosition(t - tau, SB);
-
-		if (!silent) {
-		    System.err.println("QB = " + QB.prettyPrint(format));
-		    System.err.println("SB = " + SB.prettyPrint(format));
-		}
-
-		P.copy(QB);
-		P.subtract(EB);
-
-		Q.copy(QB);
-		Q.subtract(SB);
-
-		if (!silent) {
-		    System.err.println("Q = " + Q.prettyPrint(format));
-		    System.err.println("P = " + P.prettyPrint(format));
-		}
-
-		double PP = P.magnitude();
-		double QQ = Q.magnitude();
-
-		ctau = PP + factor * Math.log((EE + PP + QQ)/(EE - PP + QQ));
-
-		double newtau = ctau/c;
-
-		if (!silent)
-		    System.err.println("new tau = " + newtau);
-
-		dtau = newtau - tau;
-
-		tau = newtau;
-	    } while (Math.abs(dtau) > EPSILON);
-
-	    if (!silent) {
-		System.err.println("Light path = " + ctau);
-		System.err.println();
+	if (!silent) {
+	    System.err.println("Light path = " + ctau);
+	    System.err.println();
+	    if (sun != null)
 		System.err.println("++++++++++++++ Light deflection ++++++++++++++");
-	    }
+	}
+	
+	P.normalise();
+	Q.normalise();
+	E.normalise();
 	    
-	    P.normalise();
-	    Q.normalise();
-	    E.normalise();
-	    
-	    if (!silent) {
-		System.err.println("Normalised vectors:");
-		System.err.println("P = " + P.prettyPrint(format));
-		System.err.println("Q = " + Q.prettyPrint(format));
-		System.err.println("E = " + E.prettyPrint(format));
-	    }
-	    
+	if (!silent) {
+	    System.err.println("Normalised vectors:");
+	    System.err.println("P = " + P.prettyPrint(format));
+	    System.err.println("Q = " + Q.prettyPrint(format));
+	    System.err.println("E = " + E.prettyPrint(format));
+	}
+
+	if (sun != null) {
 	    Vector pa = new Vector(E);
 	    pa.multiplyBy(P.scalarProduct(Q));
 	    
@@ -166,37 +188,38 @@ public class TestApparentPlace {
 		System.err.println("dP = " + pa.prettyPrint(format));
 	    
 	    P.add(pa);
+	}
 	    
-	    if (!silent) {
+	if (!silent) {
+	    if (sun != null) {
 		System.err.println("New P = " + P.prettyPrint(format));
 		System.err.println();
-		System.err.println("++++++++++++++ Stellar aberration ++++++++++++++");
 	    }
-	    
-	    Vector V = svEarth.getVelocity();
-	    V.multiplyBy(1.0/c);
-	    
-	    double VV = V.magnitude();
-	    
-	    double beta = Math.sqrt(1.0 - VV * VV);
-	    
-	    double denominator = 1.0 + P.scalarProduct(V);
-	    
-	    double factora = beta/denominator;
-	    
-	    double factorb = (1.0 + P.scalarProduct(V)/(1.0 + beta))/denominator;
-	    
-	    P.multiplyBy(factora);
-	    V.multiplyBy(factorb);
-	    
-	    P.add(V);
-	    
-	    if (!silent) {
-		System.err.println("New P = " + P.prettyPrint(format));
-	    }
+	    System.err.println("++++++++++++++ Stellar aberration ++++++++++++++");
 	}
-	catch (JPLEphemerisException jee) {
-	    jee.printStackTrace();
+	    
+	Vector V = svObserver.getVelocity();
+	V.multiplyBy(1.0/c);
+	    
+	double VV = V.magnitude();
+	    
+	double beta = Math.sqrt(1.0 - VV * VV);
+	
+	double denominator = 1.0 + P.scalarProduct(V);
+	    
+	double factora = beta/denominator;
+	    
+	double factorb = (1.0 + P.scalarProduct(V)/(1.0 + beta))/denominator;
+	    
+	P.multiplyBy(factora);
+	V.multiplyBy(factorb);
+	    
+	P.add(V);
+	    
+	if (!silent) {
+	    System.err.println("New P = " + P.prettyPrint(format));
 	}
+
+	position.copy(P);
     }
 }
