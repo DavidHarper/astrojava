@@ -245,7 +245,8 @@ public class JPLEphemeris implements Serializable {
 	    }
 	}
 
-	for (int i = 0; i<nCoords; i++)
-	    vel[i] *= vfac;
+	if (vel != null)
+	    for (int i = 0; i<nCoords; i++)
+		vel[i] *= vfac;
     }
 }
