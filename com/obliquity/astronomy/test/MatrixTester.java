@@ -65,7 +65,7 @@ public class MatrixTester {
 
 	a = new Matrix(az);
 
-	a.rleftMultiplyBy(ay);
+	a.leftMultiplyBy(ay);
 	a.leftMultiplyBy(ax);
 
 	System.out.println("ax x ay x az =>\n" +
