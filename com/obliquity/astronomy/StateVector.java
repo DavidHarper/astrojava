@@ -9,6 +9,11 @@ public class StateVector {
 	this.velocity = velocity;
     }
 
+    public StateVector(StateVector that) {
+	this.position = new Vector(that.getPosition());
+	this.velocity = new Vector(that.getVelocity());
+    }
+
     public void setPosition(Vector position) {
 	this.position = position;
     }
@@ -47,5 +52,10 @@ public class StateVector {
 	    return null;
 	else
 	    return velocity.getComponents();
+    }
+
+    public void subtract(StateVector that) {
+	position.subtract(that.getPosition());
+	velocity.subtract(that.getVelocity());
     }
 }

@@ -1,14 +1,17 @@
 package com.obliquity.astronomy;
 
-public class PlanetCentre implements MovingPoint {
+public class EarthCentre implements MovingPoint {
     private JPLEphemeris ephemeris = null;
-    private int kBody = -1;
 
     private StateVector statevector = new StateVector(new Vector(), new Vector());
+    private StateVector moonstatevector = new StateVector(new Vector(), new Vector());
 
-    public PlanetCentre(JPLEphemeris ephemeris, int kBody) {
+    private double mu = 0.0;
+
+    public EarthCentre(JPLEphemeris ephemeris) {
 	this.ephemeris = ephemeris;
-	this.kBody = kBody;
+	double emrat = ephemeris.getEMRAT();
+	mu = emrat/(1.0 + emrat);
     }
 
     public StateVector getStateVector(double time) throws JPLEphemerisException {
@@ -19,8 +22,18 @@ public class PlanetCentre implements MovingPoint {
     public void getStateVector(double time, StateVector sv) throws JPLEphemerisException {
 	Vector position = sv.getPosition();
 	Vector velocity = sv.getVelocity();
+	Vector moonposition = moonstatevector.getPosition();
+	Vector moonvelocity = moonstatevector.getVelocity();
 
-	ephemeris.calculatePositionAndVelocity(time, kBody, position, velocity);
+	ephemeris.calculatePositionAndVelocity(time, JPLEphemeris.EMB, position, velocity);
+	ephemeris.calculatePositionAndVelocity(time, JPLEphemeris.MOON, moonposition,
+					       moonvelocity);
+
+	moonposition.multiplyBy(mu);
+	moonvelocity.multiplyBy(mu);
+
+	position.add(moonposition);
+	velocity.add(moonvelocity);
     }
 
     public Vector getPosition(double time) throws JPLEphemerisException {
@@ -30,7 +43,14 @@ public class PlanetCentre implements MovingPoint {
     }
 
     public void getPosition(double time, Vector p) throws JPLEphemerisException {
-	ephemeris.calculatePositionAndVelocity(time, kBody, p, null);
+	Vector moonposition = moonstatevector.getPosition();
+
+	ephemeris.calculatePositionAndVelocity(time, JPLEphemeris.EMB, p, null);
+	ephemeris.calculatePositionAndVelocity(time, JPLEphemeris.MOON, moonposition,
+					       null);
+
+	moonposition.multiplyBy(mu);
+	p.add(moonposition);
     }
 
     public boolean isValidDate(double time) {
