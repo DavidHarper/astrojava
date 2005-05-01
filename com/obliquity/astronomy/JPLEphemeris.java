@@ -3,6 +3,7 @@ package com.obliquity.astronomy;
 import java.io.*;
 import java.lang.*;
 import java.text.*;
+import java.util.*;
 
 /**
  * This class encapsulates a JPL planetary ephemeris such as DE200
@@ -38,6 +39,7 @@ public class JPLEphemeris implements Serializable {
     transient double []ChebyV = null;
     private double []pos = new double[3];
     private double []vel = new double[3];
+    private Map mapConstants = new HashMap();
 
     public static final int FIRST_COMPONENT = 0;
     public static final int MERCURY = 0;
@@ -87,10 +89,17 @@ public class JPLEphemeris implements Serializable {
 
 	int position = 0;
 
-	int offset = 6 * (14 * 3 + 400);
+	int offset = 6 * 14 * 3;
 
 	dis.skipBytes(offset);
+
 	position += offset;
+
+	byte cnam[] = new byte[2400];
+
+	dis.readFully(cnam);
+
+	position += 2400;
 
 	limits = new double[3];
 
@@ -99,11 +108,11 @@ public class JPLEphemeris implements Serializable {
 	    position += 8;
 	}
 
-	offset = 4;
-	dis.skipBytes(offset);
-	position += offset;
+	int ncon = dis.readInt();
 
-	AU= dis.readDouble();
+	position += 4;
+
+	AU = dis.readDouble();
 	EMRAT = dis.readDouble();
 
 	position += 16;
@@ -165,7 +174,20 @@ public class JPLEphemeris implements Serializable {
 
 	offset = reclen - position;
 	dis.skipBytes(offset);
-	dis.skipBytes(reclen);
+
+	position = 0;
+
+	for (int iconst = 0; iconst < ncon; iconst++) {
+	    double cval = dis.readDouble();
+	    position += 8;
+
+	    String cname = new String(cnam, iconst * 6, 6, "UTF-8").trim();
+
+	    mapConstants.put(cname, new Double(cval));
+	}
+
+	offset = reclen - position;
+	dis.skipBytes(offset);
 
 	numrecs = (int)Math.round((limits[1] - limits[0])/limits[2]);
 
@@ -217,6 +239,21 @@ public class JPLEphemeris implements Serializable {
      * @return The Earth/Moon mass ratio.
      */
     public double getEMRAT() { return EMRAT; }
+
+    /**
+     * Return the value of the named constant as a Double object.
+     *
+     * @param cname the name of the constant.
+     * @return the value of the constant as a Double object.
+     */
+    public Double getConstant(String cname) { return (Double)mapConstants.get(cname); }
+
+    /**
+     * Return the entry set of the constants map.
+     *
+     * @return the entry set of the constants map.
+     */
+    public Set getConstantsEntrySet() { return mapConstants.entrySet(); }
 
     /**
      * Return the DE ephemeris number of the JPL ephemeris which was used to

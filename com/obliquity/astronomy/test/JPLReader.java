@@ -1,7 +1,7 @@
 import java.io.*;
 import java.lang.*;
 import java.text.*;
-import java.util.Random;
+import java.util.*;
 
 import com.obliquity.astronomy.*;
 
@@ -67,5 +67,15 @@ public class JPLReader {
 
 	System.out.println("AU    = " + ephemeris.getAU());
 	System.out.println("EMRAT = " + ephemeris.getEMRAT());
+
+	System.out.println();
+	System.out.println("CONSTANTS");
+
+	Set consts = ephemeris.getConstantsEntrySet();
+
+	for (Iterator iter = consts.iterator(); iter.hasNext();) {
+	    Map.Entry entry = (Map.Entry)iter.next();
+	    System.out.println(entry.getKey() + " = " + entry.getValue());
+	}
     }
 }
