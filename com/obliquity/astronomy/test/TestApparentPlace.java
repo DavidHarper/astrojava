@@ -6,47 +6,63 @@ import java.text.*;
 
 public class TestApparentPlace {
     public static void main(String args[]) {
-    	if (args.length < 5) {
-    		System.err.println("Usage: TestApparentPlace filename kBody startdate enddate step");
-    		System.exit(1);
+	String filename = null;
+	String bodyname = null;
+	String startdate = null;
+	String enddate = null;
+	String stepsize = null;
+
+	for (int i = 0; i < args.length; i++) {
+	    if (args[i].equalsIgnoreCase("-ephemeris"))
+		filename = args[++i];
+
+	    if (args[i].equalsIgnoreCase("-body"))
+		bodyname = args[++i];
+
+	    if (args[i].equalsIgnoreCase("-startdate"))
+		startdate = args[++i];
+
+	    if (args[i].equalsIgnoreCase("-enddate"))
+		enddate = args[++i];
+
+	    if (args[i].equalsIgnoreCase("-step"))
+		stepsize = args[++i];
+	}
+
+    	if (filename == null || bodyname == null || startdate == null || enddate == null) {
+	    showUsage();
+	    System.exit(1);
     	}
 
-    	String filename = args[0];
-
-    	int kBody = parseBody(args[1]);
+    	int kBody = parseBody(bodyname);
     	
     	if (kBody < 0) {
-    		System.err.println("Unknown body name: \"" + args[1] + "\"");
-    		System.exit(1);
+	    System.err.println("Unknown body name: \"" + bodyname + "\"");
+	    System.exit(1);
     	}
-
-    	boolean randomdates = Boolean.getBoolean("random");
    	
-    	double jdstart = Double.parseDouble(args[2]);
-    	double jdfinish = Double.parseDouble(args[3]);
+    	double jdstart = Double.parseDouble(startdate);
+    	double jdfinish = Double.parseDouble(enddate);
     	
     	double jdstep = 0.0;
     	int kSteps = 0;
     	
-    	if (randomdates)
-    		kSteps = Integer.parseInt(args[4]);
-    	else
-    		jdstep = Double.parseDouble(args[4]);
+	jdstep = (stepsize == null) ? 1.0 : Double.parseDouble(stepsize);
     	
     	boolean timingTest = Boolean.getBoolean("timingtest");
 
     	JPLEphemeris ephemeris = null;
 
     	try {
-    		ephemeris = new JPLEphemeris(filename, jdstart - 1.0, jdfinish + 1.0);
+	    ephemeris = new JPLEphemeris(filename, jdstart - 1.0, jdfinish + 1.0);
     	}
     	catch (JPLEphemerisException jee) {
-    		jee.printStackTrace();
-    		System.err.println("JPLEphemerisException ... " + jee);
-    		System.exit(1);
+	    jee.printStackTrace();
+	    System.err.println("JPLEphemerisException ... " + jee);
+	    System.exit(1);
     	}
         catch (IOException ioe) {
-        	ioe.printStackTrace();
+	    ioe.printStackTrace();
             System.err.println("IOException ... " + ioe);
             System.exit(1);
         }
@@ -54,26 +70,24 @@ public class TestApparentPlace {
         MovingPoint planet = null;
         
         if (kBody == JPLEphemeris.MOON)
-        	planet = new MoonCentre(ephemeris);
+	    planet = new MoonCentre(ephemeris);
         else
-        	planet = new PlanetCentre(ephemeris, kBody);
+	    planet = new PlanetCentre(ephemeris, kBody);
         
         EarthCentre earth = new EarthCentre(ephemeris);
 
         MovingPoint sun = null;
 
         if (kBody == JPLEphemeris.SUN)
-        	sun = planet;
+	    sun = planet;
         else
-        	sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+	    sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
         double tEarliest = ephemeris.getEarliestDate() + 1.0;
         double tLatest   = ephemeris.getLatestDate() - 1.0;
         double tSpan = tLatest - tEarliest;
 
         boolean silent = Boolean.getBoolean("silent");
-        
-        Random random = randomdates ? new Random() : null;
 
         EarthRotationModel erm = new IAUEarthRotationModel();
 
@@ -85,31 +99,20 @@ public class TestApparentPlace {
         ApparentPlace ap = new ApparentPlace(earth, planet, sun, erm);
 
         try {
-        	if (randomdates) {
-        		double dt = jdfinish - jdstart;
-        		for (int i = 0; i < kSteps; i++) {
-        			double t = jdstart + dt * random.nextDouble();
-        			ap.calculateApparentPlace(t);
-        			if (!timingTest)
-        				displayApparentPlace(t, ap, System.out);
-        			nSteps++;
-        		}
-        	} else {
-        		for (double t = jdstart; t <= jdfinish; t += jdstep) {
-        			ap.calculateApparentPlace(t);
-        			if (!timingTest)
-        				displayApparentPlace(t, ap, System.out);
-        			nSteps++;
-        		}
-        	}
-        }
+	    for (double t = jdstart; t <= jdfinish; t += jdstep) {
+		ap.calculateApparentPlace(t);
+		if (!timingTest)
+		    displayApparentPlace(t, ap, System.out);
+		nSteps++;
+	    }
+	}
         catch (JPLEphemerisException jplee) {
         	jplee.printStackTrace();
         }
         
         long duration = System.currentTimeMillis() - startTime;
         
-        System.out.println("Executed " + nSteps + " steps in " + duration + " ms");
+        System.err.println("Executed " + nSteps + " steps in " + duration + " ms");
     }
     
     private static int parseBody(String bodyname) {
@@ -158,10 +161,10 @@ public class TestApparentPlace {
     	char decsign = (dec < 0.0) ? 'S' : 'N';
 	
     	if (ra < 0.0)
-    		ra += 24.0;
+	    ra += 24.0;
     		
     	if (dec < 0.0)
-    		dec = -dec;
+	    dec = -dec;
 
     	int rah  = (int)ra;
     	ra -= (double)rah;
@@ -187,5 +190,16 @@ public class TestApparentPlace {
     	ps.print("  ");
     	ps.print(dfmtc.format(ap.getLightPathDistance()));
     	ps.println();
-    }    		
- }
+    }
+
+    public static void showUsage() {
+	System.err.println("MANDATORY PARAMETERS");
+	System.err.println("\t-ephemeris\tName of ephemeris file");
+	System.err.println("\t-body\t\tName of body");
+	System.err.println("\t-startdate\tStart date");
+	System.err.println("\t-enddate\tEnd date");
+	System.err.println();
+	System.err.println("OPTIONAL PARAMETERS");
+	System.err.println("\t-step\t\tStep size (days)");
+    }
+}
