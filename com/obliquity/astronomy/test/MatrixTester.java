@@ -1,6 +1,5 @@
 package com.obliquity.astronomy.test;
 
-import java.io.*;
 import java.text.DecimalFormat;
 
 import com.obliquity.astronomy.Matrix;

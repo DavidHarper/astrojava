@@ -1,7 +1,6 @@
 package com.obliquity.astronomy.test;
 
 import com.obliquity.astronomy.*;
-import java.util.Random;
 
 import java.io.*;
 import java.text.*;
@@ -47,9 +46,8 @@ public class TestApparentPlace {
     	double jdfinish = Double.parseDouble(enddate);
     	
     	double jdstep = 0.0;
-    	int kSteps = 0;
     	
-	jdstep = (stepsize == null) ? 1.0 : Double.parseDouble(stepsize);
+    	jdstep = (stepsize == null) ? 1.0 : Double.parseDouble(stepsize);
     	
     	boolean timingTest = Boolean.getBoolean("timingtest");
 
@@ -85,15 +83,7 @@ public class TestApparentPlace {
         else
 	    sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
-        double tEarliest = ephemeris.getEarliestDate() + 1.0;
-        double tLatest   = ephemeris.getLatestDate() - 1.0;
-        double tSpan = tLatest - tEarliest;
-
-        boolean silent = Boolean.getBoolean("silent");
-
         EarthRotationModel erm = new IAUEarthRotationModel();
-
-        PrintStream ps = silent ? null : System.err;
         
         long startTime = System.currentTimeMillis();
         int nSteps = 0;

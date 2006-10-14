@@ -2,13 +2,11 @@ package com.obliquity.astronomy.test;
 
 import com.obliquity.astronomy.*;
 
-import java.io.*;
 import java.text.*;
-import java.lang.*;
 
 public class TestIAUEarthRotationModel {
     public static void main(String args[]) {
-	double JD, jdFixed, jdOfDate;
+	double JD, jdFixed;
 
 	double jdstart, jdfinish, jdstep;
 

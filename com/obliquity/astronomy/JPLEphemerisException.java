@@ -1,9 +1,9 @@
 package com.obliquity.astronomy;
 
-import java.lang.*;
-
 public class JPLEphemerisException extends Exception {
-    public JPLEphemerisException(String s) {
+	private static final long serialVersionUID = -9209776360504563708L;
+
+	public JPLEphemerisException(String s) {
 	super(s);
     }
 }

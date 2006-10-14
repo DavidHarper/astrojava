@@ -4,7 +4,6 @@ public class IAUEarthRotationModel implements EarthRotationModel {
     private PrecessionAngles pAngles = new PrecessionAngles();
     private NutationAngles nAngles = new NutationAngles();
 
-    private final double D2R = Math.PI/180.0;
     private final double S2R = Math.PI/(180.0 * 3600.0);
     private final double H2R = Math.PI/12.0;
 

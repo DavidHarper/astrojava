@@ -1,8 +1,6 @@
 package com.obliquity.astronomy.test;
 
 import java.io.*;
-import java.lang.*;
-import java.text.*;
 import java.util.*;
 
 import com.obliquity.astronomy.*;

@@ -1,8 +1,6 @@
 package com.obliquity.astronomy;
 
 import java.io.*;
-import java.lang.*;
-import java.text.*;
 import java.util.*;
 
 /**
@@ -28,7 +26,8 @@ import java.util.*;
  */
 
 public class JPLEphemeris implements Serializable {
-    private double []limits = null;
+	private static final long serialVersionUID = -2708495076030198158L;
+	private double []limits = null;
     private int [][]offsets = null;
     private double AU;
     private double EMRAT;
