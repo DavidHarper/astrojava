@@ -1,3 +1,5 @@
+package com.obliquity.astronomy.test;
+
 import java.io.*;
 import java.text.DecimalFormat;
 

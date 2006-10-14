@@ -1,3 +1,5 @@
+package com.obliquity.astronomy.test;
+
 import com.obliquity.astronomy.*;
 
 import java.io.*;
