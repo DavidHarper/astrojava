@@ -78,4 +78,6 @@ public class EarthCentre implements MovingPoint {
 	public double getEpoch() {
 		return ephemeris.getEpoch();
 	}
+	
+	public int getBodyCode() { return -1; }
 }

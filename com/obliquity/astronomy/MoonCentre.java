@@ -78,4 +78,6 @@ public class MoonCentre implements MovingPoint {
 	public double getEpoch() {
 		return ephemeris.getEpoch();
 	}
+	
+	public int getBodyCode() { return JPLEphemeris.MOON; }
 }

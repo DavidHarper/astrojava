@@ -17,4 +17,6 @@ public interface MovingPoint {
 	public double getLatestDate();
 
 	public double getEpoch();
+	
+	public int getBodyCode();
 }

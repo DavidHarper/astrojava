@@ -56,4 +56,6 @@ public class PlanetCentre implements MovingPoint {
 	public double getEpoch() {
 		return ephemeris.getEpoch();
 	}
+	
+	public int getBodyCode() { return kBody; }
 }
