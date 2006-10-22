@@ -61,6 +61,22 @@ public class ApparentPlace {
 		else
 			throw new IllegalStateException();
 	}
+	
+	public MovingPoint getTarget() {
+		return target;
+	}
+	
+	public MovingPoint getObserver() {
+		return observer;
+	}
+	
+	public MovingPoint getSun() {
+		return sun;
+	}
+	
+	public EarthRotationModel getEarthRotationModel() {
+		return erm;
+	}
 
 	public void calculateApparentPlace(double t) throws JPLEphemerisException {
 		StateVector svObserver = null;

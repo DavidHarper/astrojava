@@ -19,4 +19,6 @@ public interface MovingPoint {
 	public double getEpoch();
 	
 	public int getBodyCode();
+	
+	public JPLEphemeris getEphemeris();
 }

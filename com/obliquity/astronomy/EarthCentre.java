@@ -80,4 +80,8 @@ public class EarthCentre implements MovingPoint {
 	}
 	
 	public int getBodyCode() { return -1; }
+	
+	public JPLEphemeris getEphemeris() {
+			return ephemeris;
+	}
 }

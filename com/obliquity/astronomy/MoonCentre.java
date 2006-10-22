@@ -80,4 +80,8 @@ public class MoonCentre implements MovingPoint {
 	}
 	
 	public int getBodyCode() { return JPLEphemeris.MOON; }
+	
+	public JPLEphemeris getEphemeris() {
+			return ephemeris;
+	}
 }

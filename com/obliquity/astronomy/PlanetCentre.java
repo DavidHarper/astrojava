@@ -58,4 +58,8 @@ public class PlanetCentre implements MovingPoint {
 	}
 	
 	public int getBodyCode() { return kBody; }
+	
+	public JPLEphemeris getEphemeris() {
+			return ephemeris;
+	}
 }
