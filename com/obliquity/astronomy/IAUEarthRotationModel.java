@@ -9,6 +9,34 @@ public class IAUEarthRotationModel implements EarthRotationModel {
 
 	private final double J2000 = 2451545.0;
 	private final double JCY = 36525.0;
+	
+	public final static int JULIAN_EPOCH = 0;
+	
+	private final double B2000 = 2451544.533;
+	private final double BCY = 36524.21988;
+	
+	public static final int BESSELIAN_EPOCH = 1;
+	
+	public double JulianEpoch(double y) {
+		return J2000 + JCY * (y - 2000.0)/100.0;
+	}
+	
+	public double BesselianEpoch(double y) {
+		return B2000 + BCY * (y - 2000.0)/100.0;
+	}
+	
+	public double PrecessionEpoch(double y, int type) {
+		switch (type) {
+		case JULIAN_EPOCH:
+			return JulianEpoch(y);
+			
+		case BESSELIAN_EPOCH:
+			return BesselianEpoch(y);
+			
+		default:
+			return 0.0;
+		}
+	}
 
 	public double meanObliquity(double JD) {
 		double T = (JD - J2000) / JCY;
