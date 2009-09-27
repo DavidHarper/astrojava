@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * This class encapsulates a JPL planetary ephemeris such as DE200 or DE405. It
  * provides methods for evaluating the position and velocity of any object in
- * the ephemeris at any time instant which is withing the range of the
+ * the ephemeris at any time instant which is within the range of the
  * ephemeris.
  * <P>
  * An object of this class may be created directly from the binary JPL ephemeris
@@ -233,7 +233,7 @@ public class JPLEphemeris implements Serializable {
 
 	/**
 	 * Return the value of the AU parameter contained within the JPL ephemeris.
-	 * This is the length of the astronomical unit expresssed in kilometres.
+	 * This is the length of the astronomical unit expressed in kilometres.
 	 * 
 	 * @return The length of an astronomical unit,, in kilometres.
 	 */
