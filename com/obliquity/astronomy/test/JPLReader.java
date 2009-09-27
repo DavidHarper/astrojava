@@ -72,10 +72,10 @@ public class JPLReader {
 		System.out.println();
 		System.out.println("CONSTANTS");
 
-		Set consts = ephemeris.getConstantsEntrySet();
+		Set<Map.Entry<String, Double>> consts = ephemeris.getConstantsEntrySet();
 
-		for (Iterator iter = consts.iterator(); iter.hasNext();) {
-			Map.Entry entry = (Map.Entry) iter.next();
+		for (Iterator<Map.Entry<String, Double>> iter = consts.iterator(); iter.hasNext();) {
+			Map.Entry<String, Double> entry = iter.next();
 			System.out.println(entry.getKey() + " = " + entry.getValue());
 		}
 	}
