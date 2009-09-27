@@ -37,7 +37,7 @@ public class JPLEphemeris implements Serializable {
 	transient double[] ChebyV = null;
 	private double[] pos = new double[3];
 	private double[] vel = new double[3];
-	private Map mapConstants = new HashMap();
+	private Map<String, Double> mapConstants = new HashMap<String, Double>();
 
 	public static final int FIRST_COMPONENT = 0;
 	public static final int MERCURY = 0;
@@ -267,7 +267,7 @@ public class JPLEphemeris implements Serializable {
 	 * 
 	 * @return the entry set of the constants map.
 	 */
-	public Set getConstantsEntrySet() {
+	public Set<Map.Entry<String,Double>> getConstantsEntrySet() {
 		return mapConstants.entrySet();
 	}
 
