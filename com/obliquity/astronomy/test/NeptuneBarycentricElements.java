@@ -17,6 +17,10 @@ public class NeptuneBarycentricElements {
 	private final double GMB;
 	private final double AU;
 	private final double K;
+	
+	private final double OBLIQUITY = Math.PI/180.0 * (23.0 + 26.0/60.0 + 21.448/3600.0);
+	
+	private final double TWO_PI = 2.0 * Math.PI;
 
 	private Vector position = new Vector();
 	private Vector velocity = new Vector();
@@ -102,6 +106,9 @@ public class NeptuneBarycentricElements {
 		ephemeris.calculatePositionAndVelocity(t, JPLEphemeris.NEPTUNE,
 				position, velocity);
 		
+		position.rotate(OBLIQUITY, Vector.X_AXIS);
+		velocity.rotate(OBLIQUITY, Vector.X_AXIS);
+		
 		position.multiplyBy(AU);
 		velocity.multiplyBy(AU*K);
 		
@@ -138,31 +145,53 @@ public class NeptuneBarycentricElements {
 		double xi = Math.sqrt(W.getX() * W.getX() + W.getY() * W.getY());
 		double yi = W.getZ();
 		
-		double incl = Math.atan2(yi, xi);
+		double incl = Math.atan2(xi, yi);
 		
 		incl *= 180.0/Math.PI;
+		
+		double node = Math.atan2(W.getX(), -W.getY());
+		
+		while (node < 0.0)
+			node += TWO_PI;
+		
+		node %= TWO_PI;
+		
+		double apse = node + Math.atan2(P.getZ(), Q.getZ());
+		
+		while (apse < 0.0)
+			apse += TWO_PI;
+		
+		apse %= TWO_PI;
+		
+		double eAnomaly = Math.atan2(st0*Math.sqrt(-alpha), kt0);
+		
+		double mAnomaly = eAnomaly - ecc * Math.sin(eAnomaly);
+		
+		double lambda = apse + mAnomaly;
+		
+		while (lambda < 0.0)
+			lambda += TWO_PI;
+		
+		lambda %= TWO_PI;
+		
+		node *= 180.0/Math.PI;
+		apse *= 180.0/Math.PI;
+		lambda *= 180.0/Math.PI;
 
 		System.out.print(dfmt1.format(t-tStart));
 		System.out.print(' ');
-/*
-		System.out.print(dfmt2.format(position.getX()));
-		System.out.print(' ');
-		System.out.print(dfmt2.format(position.getY()));
-		System.out.print(' ');
-		System.out.print(dfmt2.format(position.getZ()));
-		System.out.print(' ');
-		System.out.print(dfmt2.format(velocity.getX()));
-		System.out.print(' ');
-		System.out.print(dfmt2.format(velocity.getY()));
-		System.out.print(' ');
-		System.out.print(dfmt2.format(velocity.getZ()));
-*/
 		
 		System.out.print(dfmt2.format(a));
 		System.out.print(' ');
 		System.out.print(dfmt2.format(ecc));
 		System.out.print(' ');
 		System.out.print(dfmt2.format(incl));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(node));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(apse));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(lambda));
 
 		System.out.println();
 	}
