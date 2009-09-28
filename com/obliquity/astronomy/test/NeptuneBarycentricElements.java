@@ -6,8 +6,8 @@ import java.text.DecimalFormat;
 import com.obliquity.astronomy.*;
 
 public class NeptuneBarycentricElements {
-	private final DecimalFormat dfmt1 = new DecimalFormat("#######.00");
-	private final DecimalFormat dfmt2 = new DecimalFormat("###.000000000");
+	private final DecimalFormat dfmt1 = new DecimalFormat("####000.00");
+	private final DecimalFormat dfmt2 = new DecimalFormat("##0.000000000");
 	
 	private final JPLEphemeris ephemeris;
 	private final double step;
