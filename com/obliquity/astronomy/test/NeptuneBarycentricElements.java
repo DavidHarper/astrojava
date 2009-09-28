@@ -1,11 +1,13 @@
 package com.obliquity.astronomy.test;
 
 import java.io.*;
+import java.text.DecimalFormat;
 
 import com.obliquity.astronomy.*;
 
 public class NeptuneBarycentricElements {
-	private static double GMB = 0.0;
+	private static final DecimalFormat dfmt1 = new DecimalFormat("0000000.00");
+	private static final DecimalFormat dfmt2 = new DecimalFormat("############.000");
 	
 	public static void main(String[] args) {
 		if (args.length < 1) {
@@ -31,12 +33,12 @@ public class NeptuneBarycentricElements {
 			System.exit(1);
 		}
 		
-		GMB = calculateMassOfSunAndPlanets(ephemeris);
+		double GMB = calculateMassOfSunAndPlanets(ephemeris);
 
 		double dt = args.length > 1 ? Double.parseDouble(args[1]) : 10.0;
 
 		try {
-			calculateElementsForDateRange(ephemeris, dt);
+			calculateElementsForDateRange(ephemeris, dt, GMB);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -58,31 +60,36 @@ public class NeptuneBarycentricElements {
 	}
 
 	private static void calculateElementsForDateRange(JPLEphemeris ephemeris,
-			double dt) throws JPLEphemerisException {
+			double dt, double GMB) throws JPLEphemerisException {
 		double tEarliest = ephemeris.getEarliestDate();
 		double tLatest = ephemeris.getLatestDate();
-		System.err.println("Ephemeris has number "
-				+ ephemeris.getEphemerisNumber());
-		System.err.println("Date range is " + tEarliest + " to " + tLatest);
-
-		System.err.println("The ephemeris has "
-				+ ephemeris.getNumberOfDataRecords()
-				+ " records, each of length "
-				+ ephemeris.getLengthOfDataRecord());
 
 		for (double t = tEarliest; t < tLatest; t += dt)
-			calculateElements(ephemeris, t);
+			calculateElements(ephemeris, t, GMB);
 	}
 
 	private static Vector position = new Vector();
 	private static Vector velocity = new Vector();
 
-	private static void calculateElements(JPLEphemeris ephemeris, double t)
+	private static void calculateElements(JPLEphemeris ephemeris, double t, double GMB)
 			throws JPLEphemerisException {
 		ephemeris.calculatePositionAndVelocity(t, JPLEphemeris.NEPTUNE,
 				position, velocity);
 
-		
+		System.out.print(dfmt1.format(t));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(position.getX()));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(position.getY()));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(position.getZ()));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(velocity.getX()));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(velocity.getY()));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(velocity.getZ()));
+		System.out.println();
 	}
 
 }
