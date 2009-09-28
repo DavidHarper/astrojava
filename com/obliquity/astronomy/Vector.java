@@ -131,6 +131,12 @@ public class Vector implements java.lang.Cloneable {
 		y = yNew;
 		z = zNew;
 	}
+	
+	public void linearCombination(Vector va, double xa, Vector vb, double xb) {
+		this.x = xa * va.x + xb * vb.x;
+		this.y = xa * va.y + xb * vb.y;
+		this.z = xa * va.z + xb * vb.z;
+	}
 
 	public java.lang.String toString() {
 		return "[" + x + ", " + y + ", " + z + "]";
