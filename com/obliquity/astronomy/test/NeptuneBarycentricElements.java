@@ -118,7 +118,7 @@ public class NeptuneBarycentricElements {
 		double v = velocity.magnitude();
 		
 		double alpha = v * v - 2.0/r;
-		double a = 1.0/alpha;
+		double a = -1.0/alpha;
 		
 		double d0 = position.scalarProduct(velocity);
 		
