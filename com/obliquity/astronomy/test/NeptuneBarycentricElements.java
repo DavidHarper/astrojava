@@ -6,8 +6,36 @@ import java.text.DecimalFormat;
 import com.obliquity.astronomy.*;
 
 public class NeptuneBarycentricElements {
-	private static final DecimalFormat dfmt1 = new DecimalFormat("0000000.00");
-	private static final DecimalFormat dfmt2 = new DecimalFormat("############.000");
+	private final DecimalFormat dfmt1 = new DecimalFormat("#######.00");
+	private final DecimalFormat dfmt2 = new DecimalFormat("###.000000000");
+	
+	private final JPLEphemeris ephemeris;
+	private final double step;
+	private final double tStart;
+	private final double tFinish;
+	
+	private final double GMB;
+	private final double AU;
+	private final double K;
+
+	private Vector position = new Vector();
+	private Vector velocity = new Vector();
+
+	public NeptuneBarycentricElements(JPLEphemeris ephemeris, double step) {
+		this.ephemeris = ephemeris;
+		this.step = step;
+		
+		GMB = calculateMassOfSunAndPlanets();
+		K = 1.0/Math.sqrt(GMB);
+		AU = 1.0/ephemeris.getAU();
+		
+		tStart = ephemeris.getEarliestDate();
+		tFinish = ephemeris.getLatestDate();
+	}
+	
+	public void run() throws JPLEphemerisException {
+		calculateElementsForDateRange();
+	}
 	
 	public static void main(String[] args) {
 		if (args.length < 1) {
@@ -32,13 +60,13 @@ public class NeptuneBarycentricElements {
 			System.err.println("IOException ... " + ioe);
 			System.exit(1);
 		}
-		
-		double GMB = calculateMassOfSunAndPlanets(ephemeris);
 
 		double dt = args.length > 1 ? Double.parseDouble(args[1]) : 10.0;
-
+		
+		NeptuneBarycentricElements runner = new NeptuneBarycentricElements(ephemeris, dt);
+		
 		try {
-			calculateElementsForDateRange(ephemeris, dt, GMB);
+			runner.run();
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -46,7 +74,7 @@ public class NeptuneBarycentricElements {
 		System.exit(0);
 	}
 	
-	private static double calculateMassOfSunAndPlanets(JPLEphemeris ephemeris) {
+	private double calculateMassOfSunAndPlanets() {
 		String[] names = {"GMS", "GM1", "GM2", "GMB", "GM4", "GM5", "GM6", "GM7" };
 		
 		double sum = 0.0;
@@ -59,25 +87,64 @@ public class NeptuneBarycentricElements {
 		return sum;
 	}
 
-	private static void calculateElementsForDateRange(JPLEphemeris ephemeris,
-			double dt, double GMB) throws JPLEphemerisException {
-		double tEarliest = ephemeris.getEarliestDate();
-		double tLatest = ephemeris.getLatestDate();
-
-		for (double t = tEarliest; t < tLatest; t += dt)
-			calculateElements(ephemeris, t, GMB);
+	private void calculateElementsForDateRange() throws JPLEphemerisException {
+		for (double t = tStart; t < tFinish; t += step)
+			calculateElements(t);
 	}
+	
+	private Vector U0 = new Vector();
+	private Vector V0 = new Vector();
+	private Vector P = new Vector();
+	private Vector Q = new Vector();
 
-	private static Vector position = new Vector();
-	private static Vector velocity = new Vector();
-
-	private static void calculateElements(JPLEphemeris ephemeris, double t, double GMB)
+	private void calculateElements(double t)
 			throws JPLEphemerisException {
 		ephemeris.calculatePositionAndVelocity(t, JPLEphemeris.NEPTUNE,
 				position, velocity);
+		
+		position.multiplyBy(AU);
+		velocity.multiplyBy(AU*K);
+		
+		double r = position.magnitude();
+		double v = velocity.magnitude();
+		
+		double alpha = v * v - 2.0/r;
+		double a = 1.0/alpha;
+		
+		double d0 = position.scalarProduct(velocity);
+		
+		double c0 = 1.0 + alpha * r;
+		
+		double ecc = Math.sqrt(c0 * c0 - alpha * d0 * d0);
+		
+		V0.linearCombination(velocity, r, position, -d0/r);
+		V0.normalise();
+		
+		double kt0 = c0/ecc;
+		double st0 = d0/ecc;
+		double xw0 = r * kt0 - d0 * st0;
+		
+		U0.copy(position);
+		U0.normalise();
+		
+		P.linearCombination(U0, kt0, velocity, -st0);
+		P.normalise();
+		
+		Q.linearCombination(U0, st0, velocity, xw0);
+		Q.normalise();
+		
+		Vector W = P.vectorProduct(Q);
+		
+		double xi = Math.sqrt(W.getX() * W.getX() + W.getY() * W.getY());
+		double yi = W.getZ();
+		
+		double incl = Math.atan2(yi, xi);
+		
+		incl *= 180.0/Math.PI;
 
-		System.out.print(dfmt1.format(t));
+		System.out.print(dfmt1.format(t-tStart));
 		System.out.print(' ');
+/*
 		System.out.print(dfmt2.format(position.getX()));
 		System.out.print(' ');
 		System.out.print(dfmt2.format(position.getY()));
@@ -89,6 +156,14 @@ public class NeptuneBarycentricElements {
 		System.out.print(dfmt2.format(velocity.getY()));
 		System.out.print(' ');
 		System.out.print(dfmt2.format(velocity.getZ()));
+*/
+		
+		System.out.print(dfmt2.format(a));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(ecc));
+		System.out.print(' ');
+		System.out.print(dfmt2.format(incl));
+
 		System.out.println();
 	}
 
