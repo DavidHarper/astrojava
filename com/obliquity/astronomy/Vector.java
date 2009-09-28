@@ -3,6 +3,10 @@ package com.obliquity.astronomy;
 import java.lang.Math;
 
 public class Vector implements java.lang.Cloneable {
+	public static final int X_AXIS = 1;
+	public static final int Y_AXIS = 2;
+	public static final int Z_AXIS = 3;
+	
 	protected double x = 0.0, y = 0.0, z = 0.0;
 
 	public Vector() {
@@ -136,6 +140,39 @@ public class Vector implements java.lang.Cloneable {
 		this.x = xa * va.x + xb * vb.x;
 		this.y = xa * va.y + xb * vb.y;
 		this.z = xa * va.z + xb * vb.z;
+	}
+	
+	public void rotate(double angle, int axis) {
+		if (axis != X_AXIS && axis != Y_AXIS && axis != Z_AXIS)
+			return;
+		
+		double cosAngle = Math.cos(angle);
+		double sinAngle = Math.sin(angle);
+		
+		double xNew, yNew, zNew;
+		
+		switch (axis) {
+		case X_AXIS:
+			yNew = y * cosAngle + z * sinAngle;
+			zNew = -y * sinAngle + z * cosAngle;
+			y = yNew;
+			z = zNew;
+			break;
+			
+		case Y_AXIS:
+			zNew = z * cosAngle + x * sinAngle;
+			xNew = -z * sinAngle + x * cosAngle;
+			z = zNew;
+			x = xNew;
+			break;
+			
+		case Z_AXIS:
+			xNew = x * cosAngle + y * sinAngle;
+			yNew = -x * sinAngle + y * cosAngle;
+			x = xNew;
+			y = yNew;
+			break;
+		}
 	}
 
 	public java.lang.String toString() {
