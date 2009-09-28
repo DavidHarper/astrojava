@@ -20,7 +20,7 @@ public class NeptuneBarycentricElements {
 	
 	private final double OBLIQUITY = Math.PI/180.0 * (23.0 + 26.0/60.0 + 21.448/3600.0);
 	
-	private final double meanMotion = 360.0/60189.53;
+	private final double MEAN_MOTION = 360.0/60189.53;
 	
 	private final double TWO_PI = 2.0 * Math.PI;
 
@@ -180,7 +180,7 @@ public class NeptuneBarycentricElements {
 		apse *= 180.0/Math.PI;
 		lambda *= 180.0/Math.PI;
 		
-		lambda -= meanMotion * (t - tStart);
+		lambda -= MEAN_MOTION * (t - tStart);
 		while (lambda < 0.0)
 			lambda += 360.0;
 
