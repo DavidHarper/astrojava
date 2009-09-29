@@ -23,6 +23,8 @@ public class NeptuneBarycentricElements {
 	private final double MEAN_MOTION = 360.0/60189.53;
 	
 	private final double TWO_PI = 2.0 * Math.PI;
+	
+	private final double J2000 = 2451545.0;
 
 	private Vector position = new Vector();
 	private Vector velocity = new Vector();
@@ -43,20 +45,32 @@ public class NeptuneBarycentricElements {
 		calculateElementsForDateRange();
 	}
 	
+	private static final String[] DE406_FILES = {
+		"unxm3000.406", "unxm2700.406", "unxm2400.406", "unxm2100.406",
+		"unxm1800.406", "unxm1500.406", "unxm1200.406", "unxm0900.406",
+		"unxm0600.406", "unxm0300.406", "unxp0000.406", "unxp0300.406",
+		"unxp0600.406", "unxp0900.406", "unxp1200.406", "unxp1500.406",
+		"unxp1800.406", "unxp2100.406", "unxp2400.406", "unxp2700.406"
+	};
+	
 	public static void main(String[] args) {
-		if (args.length < 1) {
-			System.err
-					.println("Usage: NeptuneBarycentricElements filename [interval]");
-			System.exit(1);
-		}
+		String[] filenames = args.length > 0 ? args : DE406_FILES;
 
-		String filename = args[0];
-
-		JPLEphemeris ephemeris = null;
-
+		String strStep = System.getProperty("step", "10.0");
+		double dt = Double.parseDouble(strStep);
+		
+		for (int i = 0; i < filenames.length; i++)
+			processFile(filenames[i], dt);
+		
+		System.exit(0);
+	}
+	
+	private static void processFile(String filename, double dt) {
 		try {
 			System.err.println("Loading file " + filename + " ...");
-			ephemeris = new JPLEphemeris(filename);
+			JPLEphemeris ephemeris = new JPLEphemeris(filename);
+			NeptuneBarycentricElements runner = new NeptuneBarycentricElements(ephemeris, dt);
+			runner.run();
 		} catch (JPLEphemerisException jee) {
 			jee.printStackTrace();
 			System.err.println("JPLEphemerisException ... " + jee);
@@ -66,18 +80,6 @@ public class NeptuneBarycentricElements {
 			System.err.println("IOException ... " + ioe);
 			System.exit(1);
 		}
-
-		double dt = args.length > 1 ? Double.parseDouble(args[1]) : 10.0;
-		
-		NeptuneBarycentricElements runner = new NeptuneBarycentricElements(ephemeris, dt);
-		
-		try {
-			runner.run();
-		} catch (JPLEphemerisException e) {
-			e.printStackTrace();
-		}
-
-		System.exit(0);
 	}
 	
 	private double calculateMassOfSunAndPlanets() {
@@ -174,17 +176,17 @@ public class NeptuneBarycentricElements {
 		while (lambda < 0.0)
 			lambda += TWO_PI;
 		
-		lambda %= TWO_PI;
-		
 		node *= 180.0/Math.PI;
 		apse *= 180.0/Math.PI;
 		lambda *= 180.0/Math.PI;
 		
-		lambda -= MEAN_MOTION * (t - tStart);
+		lambda -= MEAN_MOTION * (t - J2000);
 		while (lambda < 0.0)
 			lambda += 360.0;
+		
+		lambda %= 360.0;
 
-		System.out.print(dfmt1.format(t-tStart));
+		System.out.print(dfmt1.format(t));
 		System.out.print(' ');
 		
 		System.out.print(dfmt2.format(a));
