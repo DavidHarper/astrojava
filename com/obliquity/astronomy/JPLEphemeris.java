@@ -63,8 +63,8 @@ public class JPLEphemeris implements Serializable {
 	 * Constructs a new JPLEphemeris object for a specified time span from a
 	 * binary JPL ephemeris file.
 	 * 
-	 * @param filename
-	 *            The name of the binary JPL ephemeris file from which the data
+	 * @param file
+	 *            The binary JPL ephemeris file from which the data
 	 *            will be loaded.
 	 * 
 	 * @param jdstart
@@ -80,13 +80,11 @@ public class JPLEphemeris implements Serializable {
 	 *            implicit in the ephemeris file.
 	 */
 
-	public JPLEphemeris(String filename, double jdstart, double jdfinis)
+	public JPLEphemeris(File file, double jdstart, double jdfinis)
 			throws IOException, JPLEphemerisException {
 		if (jdstart > jdfinis)
 			throw new JPLEphemerisException(
 					"Start date is greater than end date");
-
-		File file = new File(filename);
 
 		FileInputStream fis = new FileInputStream(file);
 		DataInputStream dis = new DataInputStream(fis);
@@ -217,7 +215,46 @@ public class JPLEphemeris implements Serializable {
 			if (offsets[i][1] > nCheby)
 				nCheby = offsets[i][1];
 	}
+	
+	/**
+	 * Constructs a new JPLEphemeris object from a binary JPL ephemeris file.
+	 * 
+	 * @param filename
+	 *            The name of the binary JPL ephemeris file from which the data
+	 *            will be loaded.
+	 */
+	
+	public JPLEphemeris(File file)
+		throws IOException, JPLEphemerisException {
+		this(file, 0.0, 0.0);
+	}
+	
+	/**
+	 * Constructs a new JPLEphemeris object for a specified time span from a
+	 * binary JPL ephemeris file.
+	 * 
+	 * @param filename
+	 *            The name of the binary JPL ephemeris file from which the data
+	 *            will be loaded.
+	 * 
+	 * @param jdstart
+	 *            The earliest time (expressed as a Julian Date in Barycentric
+	 *            Dynamical Time) at which the ephemeris must be able to return
+	 *            positions and velocities. If zero, use the lower date limit
+	 *            implicit in the ephemeris file.
+	 * 
+	 * @param jfinis
+	 *            The latest time (expressed as a Julian Date in Barycentric
+	 *            Dynamical Time) at which the ephemeris must be able to return
+	 *            positions and velocities. If zero, use the upper date limit
+	 *            implicit in the ephemeris file.
+	 */
 
+	public JPLEphemeris(String filename, double jdstart, double jdfinis)
+			throws IOException, JPLEphemerisException {
+		this(new File(filename), jdstart, jdfinis);
+	}
+	
 	/**
 	 * Constructs a new JPLEphemeris object from a binary JPL ephemeris file.
 	 * 
