@@ -11,7 +11,7 @@ import java.util.*;
  * <P>
  * An object of this class may be created directly from the binary JPL ephemeris
  * files which are distributed via the JPL ftp site:
- * ftp://ssd.jpl.nasa.gov/pub/eph/planets/Linux/
+ * ftp://ssd.jpl.nasa.gov/pub/eph/planets/SunOS/
  * <P>
  * The user may specify a time span for which the ephemeris object should be
  * able to return positions and velocities. Only the data records need to cover
@@ -116,7 +116,7 @@ public class JPLEphemeris implements Serializable {
 
 		AU = dis.readDouble();
 		EMRAT = dis.readDouble();
-
+		
 		position += 16;
 
 		offsets = new int[13][3];
@@ -135,30 +135,16 @@ public class JPLEphemeris implements Serializable {
 			offsets[12][k] = dis.readInt();
 			position += 4;
 		}
-
-		int reclen = -1, ndata = 0;
-
-		switch (numde) {
-		case 200:
-			reclen = 1652 * 4;
-			ndata = 826;
-			break;
-
-		case 405:
-			reclen = 2036 * 4;
-			ndata = 1018;
-			break;
-
-		case 406:
-			reclen = 1456 * 4;
-			ndata = 728;
-			break;
-
-		default:
+		
+		int ndata = getNumberOfCoefficientsPerRecord(numde);
+		
+		if (ndata < 0) {
 			dis.close();
 			throw new JPLEphemerisException("Ephemeris number " + numde
-					+ " not recognised");
+					+ " not recognised");			
 		}
+		
+		int reclen = 8 * ndata;
 
 		if (jdstart == 0.0)
 			jdstart = limits[0];
@@ -223,6 +209,49 @@ public class JPLEphemeris implements Serializable {
 				nCheby = offsets[i][1];
 	}
 	
+	/**
+	 * Return the number of double-precision coefficients per record,
+	 * given the ephemeris number.
+	 * 
+	 * This is the NCOEFF parameter which is defined on the first line of the
+	 * header.NNN file for each ephemeris.
+	 * 
+	 * The list of available ephemerides is given in this document:
+	 * ftp://ssd.jpl.nasa.gov/pub/eph/planets/README.txt
+	 * 
+	 * @param ephemerisNumber
+	 * The number of the ephemeris, for example 406 for DE406/LE406.
+	 * 
+	 * @return The number of double-precision coefficients per record.
+	 */
+	private int getNumberOfCoefficientsPerRecord(int ephemerisNumber) {
+		switch (ephemerisNumber) {
+		case 102:
+			return 773;
+			
+		case 200:
+		case 202:
+			return 826;
+
+		case 403:
+		case 405:
+		case 410:
+		case 413:
+		case 414:
+		case 418:
+		case 421:
+		case 422:
+		case 423:
+			return 1018;
+
+		case 406:
+			return 728;
+
+		default:
+			return -1;
+		}
+	}
+
 	/**
 	 * Constructs a new JPLEphemeris object from a binary JPL ephemeris file.
 	 * 
