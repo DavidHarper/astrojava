@@ -10,8 +10,8 @@ import java.util.*;
  * ephemeris.
  * <P>
  * An object of this class may be created directly from the binary JPL ephemeris
- * files which are distributed by Myles Standish at the JPL ftp site:
- * ftp://ssd.jpl.nasa.gov/pub/eph/export/unix
+ * files which are distributed via the JPL ftp site:
+ * ftp://ssd.jpl.nasa.gov/pub/eph/planets/Linux/
  * <P>
  * The user may specify a time span for which the ephemeris object should be
  * able to return positions and velocities. Only the data records need to cover
