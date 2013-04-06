@@ -69,14 +69,16 @@ public class JPLReader {
 		System.out.println("AU    = " + ephemeris.getAU());
 		System.out.println("EMRAT = " + ephemeris.getEMRAT());
 
-		System.out.println();
-		System.out.println("CONSTANTS");
+		if (Boolean.getBoolean("showConstants")) {
+			System.out.println();
+			System.out.println("CONSTANTS");
 
-		Set<Map.Entry<String, Double>> consts = ephemeris.getConstantsEntrySet();
+			Set<Map.Entry<String, Double>> consts = ephemeris.getConstantsEntrySet();
 
-		for (Iterator<Map.Entry<String, Double>> iter = consts.iterator(); iter.hasNext();) {
-			Map.Entry<String, Double> entry = iter.next();
-			System.out.println(entry.getKey() + " = " + entry.getValue());
+			for (Iterator<Map.Entry<String, Double>> iter = consts.iterator(); iter.hasNext();) {
+				Map.Entry<String, Double> entry = iter.next();
+				System.out.println(entry.getKey() + " = " + entry.getValue());
+			}
 		}
 	}
 }
