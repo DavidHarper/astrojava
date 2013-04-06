@@ -155,6 +155,7 @@ public class JPLEphemeris implements Serializable {
 			break;
 
 		default:
+			dis.close();
 			throw new JPLEphemerisException("Ephemeris number " + numde
 					+ " not recognised");
 		}
@@ -165,11 +166,17 @@ public class JPLEphemeris implements Serializable {
 		if (jdfinis == 0.0)
 			jdfinis = limits[1] - limits[2];
 
-		if (jdstart < limits[0] || jdstart > limits[1])
+		if (jdstart < limits[0] || jdstart > limits[1]) {
+			dis.close();
+		
 			throw new JPLEphemerisException("Start date is outside valid range");
-
-		if (jdfinis < limits[0] || jdfinis > limits[1])
+		}
+		
+		if (jdfinis < limits[0] || jdfinis > limits[1]) {
+			dis.close();
+			
 			throw new JPLEphemerisException("End date is outside valid range");
+		}
 
 		int firstrec = (int) ((jdstart - limits[0]) / limits[2]);
 		int lastrec = (int) ((jdfinis - limits[0]) / limits[2]);
