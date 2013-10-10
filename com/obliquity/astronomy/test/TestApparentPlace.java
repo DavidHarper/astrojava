@@ -4,14 +4,23 @@ import com.obliquity.astronomy.*;
 
 import java.io.*;
 import java.text.*;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class TestApparentPlace {
 	private static final DecimalFormat dfmta = new DecimalFormat("00.000");
 	private static final DecimalFormat dfmtb = new DecimalFormat("00.00");
 	private static final DecimalFormat ifmt = new DecimalFormat("00");
 	private static final DecimalFormat dfmtc = new DecimalFormat("0.0000000");
+	
+	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
+	
+	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
+	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 
 	public static void main(String args[]) {
+		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+		
 		String filename = null;
 		String bodyname = null;
 		String startdate = null;
@@ -48,8 +57,27 @@ public class TestApparentPlace {
 			System.exit(1);
 		}
 
-		double jdstart = Double.parseDouble(startdate);
-		double jdfinish = Double.parseDouble(enddate);
+		Date date = null;
+		
+		try {
+			date = datefmt.parse(startdate);
+		} catch (ParseException e) {
+			System.err.println("Failed to parse \"" + startdate + "\" as an ISO date");
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		double jdstart = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY;
+		
+		try {
+			date = datefmt.parse(enddate);
+		} catch (ParseException e) {
+			System.err.println("Failed to parse \"" + enddate + "\" as an ISO date");
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		double jdfinish = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY;
 
 		double jdstep = 0.0;
 
