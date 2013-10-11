@@ -2,11 +2,22 @@ package com.obliquity.astronomy.test;
 
 import com.obliquity.astronomy.*;
 import java.io.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class RiseSetTest {
 	public static final double TWOPI = 2.0 * Math.PI;
 	
+	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
+	
+	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
+	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
+
 	public static void main(String[] args) {
+		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+		
 		final int NEVENTS = 6;
 
 		String filename = null;
@@ -44,7 +55,18 @@ public class RiseSetTest {
 			System.exit(1);
 		}
 
-		double jdstart = Double.parseDouble(startdate);
+		Date date = null;
+		
+		try {
+			date = datefmt.parse(startdate);
+		} catch (ParseException e) {
+			System.err.println("Failed to parse \"" + startdate + "\" as an ISO date");
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		double jdstart = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY;
+
 		double jdfinish = jdstart + 1.0;
 
 		JPLEphemeris ephemeris = null;
