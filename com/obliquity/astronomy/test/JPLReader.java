@@ -3,6 +3,8 @@ package com.obliquity.astronomy.test;
 import java.io.*;
 import java.util.*;
 
+import javax.swing.JFileChooser;
+
 import com.obliquity.astronomy.*;
 
 public class JPLReader {
@@ -11,19 +13,39 @@ public class JPLReader {
 			"Nutations", "Librations" };
 
 	public static void main(String[] args) {
-		if (args.length < 1) {
-			System.err.println("Usage: JPLReader filename [filename ...]");
-			System.exit(1);
+		File[] files = null;
+
+		if (args.length > 0) {
+			files = new File[args.length];
+			for (int i = 0; i < args.length; i++)
+				files[i] = new File(args[i]);
+		} else {
+			JFileChooser chooser = new JFileChooser();
+
+			chooser.setMultiSelectionEnabled(true);
+
+			File cwd = new File(System.getProperty("user.home"));
+			chooser.setCurrentDirectory(cwd);
+
+			int returnVal = chooser.showOpenDialog(null);
+
+			if (returnVal == JFileChooser.APPROVE_OPTION)
+				files = chooser.getSelectedFiles();
+			else
+				System.exit(1);
 		}
 
-		for (int i = 0; i < args.length; i++) {
-			String filename = args[i];
+		if (files == null || files.length == 0)
+			System.exit(0);
+		
+		Arrays.sort(files);
 
+		for (int i = 0; i < files.length; i++) {
 			JPLEphemeris ephemeris = null;
 
 			try {
-				System.err.println("Loading file " + filename + " ...");
-				ephemeris = new JPLEphemeris(filename);
+				System.out.println("----- Loading file " + files[i].getName() + " -----");
+				ephemeris = new JPLEphemeris(files[i]);
 			} catch (JPLEphemerisException jee) {
 				jee.printStackTrace();
 				System.err.println("JPLEphemerisException ... " + jee);
@@ -80,5 +102,7 @@ public class JPLReader {
 				System.out.println(entry.getKey() + " = " + entry.getValue());
 			}
 		}
+		
+		System.out.println("================================================================================");
 	}
 }
