@@ -8,10 +8,8 @@ import java.util.Date;
 import java.util.TimeZone;
 
 public class CompareEphemerides {
-	private static final DecimalFormat dfmta = new DecimalFormat("00.000");
+	private static final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private static final DecimalFormat dfmtb = new DecimalFormat("00.00");
-	private static final DecimalFormat ifmt = new DecimalFormat("00");
-	private static final DecimalFormat dfmtc = new DecimalFormat("0.0000000");
 	
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -200,7 +198,7 @@ public class CompareEphemerides {
 	private static void displayApparentPlaceDifference(double t, ApparentPlace ap1,
 			ApparentPlace ap2, PrintStream ps) {
 		double ra1 = ap1.getRightAscension();
-		double dec1 = ap2.getDeclination();
+		double dec1 = ap1.getDeclination();
 		
 		double ra2 = ap2.getRightAscension();
 		double dec2 = ap2.getDeclination();
@@ -211,7 +209,7 @@ public class CompareEphemerides {
 		diffDec *= 3600.0 * 180.0/Math.PI;
 		diffRA  *= 3600.0 * 180.0/Math.PI;
 		
-		System.out.println(t + TAB + diffRA + TAB + diffDec);
+		System.out.println(t + TAB + dfmta.format(diffRA) + TAB + dfmta.format(diffDec));
 	}
 
 	public static void showUsage() {
