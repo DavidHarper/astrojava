@@ -242,6 +242,8 @@ public class JPLEphemeris implements Serializable {
 		case 421:
 		case 422:
 		case 423:
+		case 430:
+		case 431:
 			return 1018;
 
 		case 406:
