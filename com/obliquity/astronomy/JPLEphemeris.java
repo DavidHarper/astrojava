@@ -222,7 +222,7 @@ public class JPLEphemeris implements Serializable {
 	 * @param ephemerisNumber
 	 * The number of the ephemeris, for example 406 for DE406/LE406.
 	 * 
-	 * @return The number of double-precision coefficients per record.
+	 * @return The number of double-precision coefficients per record, or -1 if the ephemeris number is unknown.
 	 */
 	private int getNumberOfCoefficientsPerRecord(int ephemerisNumber) {
 		switch (ephemerisNumber) {
