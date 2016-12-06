@@ -35,7 +35,14 @@ import java.util.*;
  * <P>
  * An object of this class may be created directly from the binary JPL ephemeris
  * files which are distributed via the JPL ftp site:
- * ftp://ssd.jpl.nasa.gov/pub/eph/planets/SunOS/
+ * ftp://ssd.jpl.nasa.gov/pub/eph/planets/
+ * <P>
+ * This version of the code can read both the big-endian (SunOS) and
+ * the little-endian (Linux) binary data files. The constructor code
+ * determines the binary byte order automatically by reading the ephemeris
+ * number at offset 2840. If it is not within the range [0,2000] when
+ * read as a big-endian integer, the file is assumed to be in little-endian
+ * format, and all data are byte-reversed as they are read from the file.
  * <P>
  * The user may specify a time span for which the ephemeris object should be
  * able to return positions and velocities. Only the data records need to cover
@@ -111,46 +118,81 @@ public class JPLEphemeris implements Serializable {
 					"Start date is greater than end date");
 
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
-
-		long offset = 6 * 14 * 3;
-
+		
+		// Assume that we are reading a big-endian file by default.
+		boolean reverseBytes = false;
+		
+		// Go to the offset of the NUMDE integer.
+		long offset = 2840;
+		
 		raf.seek(offset);
-
-		byte cnam[] = new byte[2400];
-
-		raf.readFully(cnam);
-
-		limits = new double[3];
-
-		for (int j = 0; j < 3; j++) {
-			limits[j] = raf.readDouble();
-		}
-
-		int ncon = raf.readInt();
-
-		AU = raf.readDouble();
-		EMRAT = raf.readDouble();
-
-		offsets = new int[13][3];
-
-		for (int j = 0; j < 12; j++) {
-			for (int k = 0; k < 3; k++) {
-				offsets[j][k] = raf.readInt();
-			}
-		}
-
+		
 		numde = raf.readInt();
-
-		for (int k = 0; k < 3; k++) {
-			offsets[12][k] = raf.readInt();
+		
+		// If NUMDE is not within the range [0, 2000] then the file may be in
+		// little-endian format, so reverse the bytes.
+		if (numde < 0 || numde > 2000) {
+			reverseBytes = true;
+			
+			numde = Integer.reverseBytes(numde);
 		}
 		
+		// Get the number of coefficients per record for this ephemeris number.
 		int ndata = getNumberOfCoefficientsPerRecord(numde);
 		
 		if (ndata < 0) {
 			raf.close();
 			throw new JPLEphemerisException("Ephemeris number " + numde
 					+ " not recognised");			
+		}
+		
+		// Go to the offset of the NCON integer.
+		offset = 2676;
+
+		raf.seek(offset);
+		
+		// Read the value of NCON.  This is the number of constants in the file.
+		// It may be greater than 400 for some versions.
+		int ncon = readInt(raf, reverseBytes);
+		
+		// The block of bytes containing the names of constants is always at least
+		// 2400 bytes long, but if NCON is greater than 400, we must allocate a larger
+		// byte array and read the first 2400 bytes here.
+		int arraySize = ncon < 400 ? 2400 : ncon * 6;
+
+		byte cnam[] = new byte[arraySize];
+
+		offset = 6 * 14 * 3;
+
+		raf.seek(offset);
+
+		raf.read(cnam, 0, 2400);
+
+		limits = new double[3];
+
+		for (int j = 0; j < 3; j++) {
+			limits[j] = readDouble(raf, reverseBytes);
+		}
+
+		// We already have NCON.
+		raf.skipBytes(4);
+
+		AU = readDouble(raf, reverseBytes);
+		EMRAT = readDouble(raf, reverseBytes);
+
+		offsets = new int[13][3];
+
+		for (int j = 0; j < 12; j++) {
+			for (int k = 0; k < 3; k++) {
+				offsets[j][k] = readInt(raf, reverseBytes);
+			}
+		}
+
+		// We already have DENUM.
+		raf.skipBytes(4);
+
+		for (int k = 0; k < 3; k++) {
+			offsets[12][k] = readInt(raf, reverseBytes);
 		}
 		
 		int reclen = 8 * ndata;
@@ -172,6 +214,11 @@ public class JPLEphemeris implements Serializable {
 			
 			throw new JPLEphemerisException("End date is outside valid range");
 		}
+		
+		// If there are more than 400 constants, we must read the remainder of the
+		// bytes containing the names of the constants.
+		if (ncon > 400)
+			raf.read(cnam, 2400, arraySize - 2400);
 
 		int firstrec = (int) ((jdstart - limits[0]) / limits[2]);
 		int lastrec = (int) ((jdfinis - limits[0]) / limits[2]);
@@ -180,7 +227,7 @@ public class JPLEphemeris implements Serializable {
 		raf.seek(reclen);
 
 		for (int iconst = 0; iconst < ncon; iconst++) {
-			double cval = raf.readDouble();
+			double cval = readDouble(raf, reverseBytes);
 
 			String cname = new String(cnam, iconst * 6, 6, "UTF-8").trim();
 
@@ -198,7 +245,7 @@ public class JPLEphemeris implements Serializable {
 
 		for (int j = 0; j < numrecs; j++) {
 			for (int k = 0; k < ndata; k++)
-				data[j][k] = raf.readDouble();
+				data[j][k] = readDouble(raf, reverseBytes);
 		}
 
 		raf.close();
@@ -209,6 +256,24 @@ public class JPLEphemeris implements Serializable {
 		for (int i = 0; i < offsets.length; i++)
 			if (offsets[i][1] > nCheby)
 				nCheby = offsets[i][1];
+	}
+	
+	private int readInt(RandomAccessFile raf, boolean reverseBytes) throws IOException {
+		int value = raf.readInt();
+		
+		if (reverseBytes)
+			value = Integer.reverseBytes(value);
+		
+		return value;
+	}
+	
+	private double readDouble(RandomAccessFile raf, boolean reverseBytes) throws IOException {
+		if (reverseBytes) {
+			long bits = raf.readLong();
+			bits = Long.reverseBytes(bits);
+			return Double.longBitsToDouble(bits);
+		} else
+			return raf.readDouble();
 	}
 	
 	/**
