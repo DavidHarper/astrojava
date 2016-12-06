@@ -110,60 +110,45 @@ public class JPLEphemeris implements Serializable {
 			throw new JPLEphemerisException(
 					"Start date is greater than end date");
 
-		FileInputStream fis = new FileInputStream(file);
-		DataInputStream dis = new DataInputStream(fis);
+		RandomAccessFile raf = new RandomAccessFile(file, "r");
 
-		int position = 0;
+		long offset = 6 * 14 * 3;
 
-		int offset = 6 * 14 * 3;
-
-		dis.skipBytes(offset);
-
-		position += offset;
+		raf.seek(offset);
 
 		byte cnam[] = new byte[2400];
 
-		dis.readFully(cnam);
-
-		position += 2400;
+		raf.readFully(cnam);
 
 		limits = new double[3];
 
 		for (int j = 0; j < 3; j++) {
-			limits[j] = dis.readDouble();
-			position += 8;
+			limits[j] = raf.readDouble();
 		}
 
-		int ncon = dis.readInt();
+		int ncon = raf.readInt();
 
-		position += 4;
-
-		AU = dis.readDouble();
-		EMRAT = dis.readDouble();
-		
-		position += 16;
+		AU = raf.readDouble();
+		EMRAT = raf.readDouble();
 
 		offsets = new int[13][3];
 
 		for (int j = 0; j < 12; j++) {
 			for (int k = 0; k < 3; k++) {
-				offsets[j][k] = dis.readInt();
-				position += 4;
+				offsets[j][k] = raf.readInt();
 			}
 		}
 
-		numde = dis.readInt();
-		position += 4;
+		numde = raf.readInt();
 
 		for (int k = 0; k < 3; k++) {
-			offsets[12][k] = dis.readInt();
-			position += 4;
+			offsets[12][k] = raf.readInt();
 		}
 		
 		int ndata = getNumberOfCoefficientsPerRecord(numde);
 		
 		if (ndata < 0) {
-			dis.close();
+			raf.close();
 			throw new JPLEphemerisException("Ephemeris number " + numde
 					+ " not recognised");			
 		}
@@ -177,13 +162,13 @@ public class JPLEphemeris implements Serializable {
 			jdfinis = limits[1] - limits[2];
 
 		if (jdstart < limits[0] || jdstart > limits[1]) {
-			dis.close();
+			raf.close();
 		
 			throw new JPLEphemerisException("Start date is outside valid range");
 		}
 		
 		if (jdfinis < limits[0] || jdfinis > limits[1]) {
-			dis.close();
+			raf.close();
 			
 			throw new JPLEphemerisException("End date is outside valid range");
 		}
@@ -192,27 +177,20 @@ public class JPLEphemeris implements Serializable {
 		int lastrec = (int) ((jdfinis - limits[0]) / limits[2]);
 		int numrecs = 0;
 
-		offset = reclen - position;
-		dis.skipBytes(offset);
-
-		position = 0;
+		raf.seek(reclen);
 
 		for (int iconst = 0; iconst < ncon; iconst++) {
-			double cval = dis.readDouble();
-			position += 8;
+			double cval = raf.readDouble();
 
 			String cname = new String(cnam, iconst * 6, 6, "UTF-8").trim();
 
 			mapConstants.put(cname, new Double(cval));
 		}
 
-		offset = reclen - position;
-		dis.skipBytes(offset);
+		offset = (firstrec + 2) * reclen;
+		raf.seek(offset);
 
 		numrecs = (int) Math.round((limits[1] - limits[0]) / limits[2]);
-
-		for (int j = 0; j < firstrec; j++)
-			dis.skipBytes(reclen);
 
 		numrecs = lastrec - firstrec + 1;
 
@@ -220,10 +198,10 @@ public class JPLEphemeris implements Serializable {
 
 		for (int j = 0; j < numrecs; j++) {
 			for (int k = 0; k < ndata; k++)
-				data[j][k] = dis.readDouble();
+				data[j][k] = raf.readDouble();
 		}
 
-		dis.close();
+		raf.close();
 
 		limits[0] = data[0][0];
 		limits[1] = data[numrecs - 1][1];
