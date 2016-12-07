@@ -104,6 +104,12 @@ public class Vector implements java.lang.Cloneable {
 		y = V[1];
 		z = V[2];
 	}
+	
+	public void setComponents(double x, double y, double z) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+	}
 
 	public double[] getComponents() {
 		return toArray();
