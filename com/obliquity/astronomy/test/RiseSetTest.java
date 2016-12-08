@@ -144,13 +144,10 @@ public class RiseSetTest {
 	private static int calculateRiseSetTime(ApparentPlace ap, Place place,
 			double jdstart, int type, int limb, RiseSetEvent[] rse) {
 		MovingPoint observer = ap.getObserver();
-		MovingPoint target = ap.getTarget();
 
 		if (!(observer instanceof EarthCentre)) {
 			return RiseSetEvent.INVALID_ARGUMENT;
 		}
-
-		int body = target.getBodyCode();
 
 		int nEvents = 0;
 		

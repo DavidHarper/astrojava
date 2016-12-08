@@ -27,7 +27,6 @@ package com.obliquity.astronomy.test;
 import com.obliquity.astronomy.*;
 
 import java.awt.*;
-import java.awt.Event.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.*;
@@ -35,6 +34,7 @@ import java.text.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
+@SuppressWarnings("serial")
 public class TestPrecession extends JPanel {
 	public TestPrecession() {
 		super(null);
@@ -71,13 +71,13 @@ public class TestPrecession extends JPanel {
 
 	class PositionPanel extends JPanel {
 		protected String[] strEpoch = { "J", "B" };
-		protected JComboBox cbxEpoch = new JComboBox(strEpoch);
+		protected JComboBox<String> cbxEpoch = new JComboBox<String>(strEpoch);
 		protected JTextField txtEpoch;
 
 		protected JTextField rah, ram, ras, decd, decm, decs;
 
 		protected String[] strDecNS = { "N", "S" };
-		protected JComboBox cbxDecNS = new JComboBox(strDecNS);
+		protected JComboBox<String> cbxDecNS = new JComboBox<String>(strDecNS);
 
 		protected NumberFormat f5_2 = NumberFormat.getInstance();
 		protected DecimalFormat i2 = new DecimalFormat("00");
