@@ -25,6 +25,9 @@
 package com.obliquity.astronomy;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.util.*;
 
 /**
@@ -69,6 +72,17 @@ public class JPLEphemeris implements Serializable {
 	private double[] pos = new double[3];
 	private double[] vel = new double[3];
 	private Map<String, Double> mapConstants = new HashMap<String, Double>();
+	
+	private final int INITIAL_BUFFER_SIZE = 1018 * 4;
+	private final int CNAME_OFFSET = 6 * 14 * 3;
+	private final int LIMITS_OFFSET = CNAME_OFFSET + 2400;
+	private final int NCON_OFFSET = LIMITS_OFFSET + 3 * 8;
+	private final int AU_OFFSET = NCON_OFFSET + 4;
+	private final int EMRAT_OFFSET = AU_OFFSET + 8;
+	private final int OFFSETS_OFFSET = EMRAT_OFFSET + 8;
+	private final int NUMDE_OFFSET = OFFSETS_OFFSET + 12 * 3 * 4;
+	private final int EXTRA_OFFSETS_OFFSET = NUMDE_OFFSET + 4;
+	private final int EXTRA_CNAME_OFFSET = EXTRA_OFFSETS_OFFSET + 3 * 4;
 
 	public static final int FIRST_COMPONENT = 0;
 	public static final int MERCURY = 0;
@@ -118,42 +132,38 @@ public class JPLEphemeris implements Serializable {
 					"Start date is greater than end date");
 
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
+
+		FileChannel fc = raf.getChannel();
+
+		ByteBuffer buffer = ByteBuffer.allocate(INITIAL_BUFFER_SIZE);
+
+		fc.read(buffer);
 		
-		// Assume that we are reading a big-endian file by default.
-		boolean reverseBytes = false;
-		
-		// Go to the offset of the NUMDE integer.
-		long offset = 2840;
-		
-		raf.seek(offset);
-		
-		numde = raf.readInt();
-		
-		// If NUMDE is not within the range [0, 2000] then the file may be in
-		// little-endian format, so reverse the bytes.
-		if (numde < 0 || numde > 2000) {
-			reverseBytes = true;
+		buffer.flip();
+
+		buffer.order(ByteOrder.BIG_ENDIAN);
+
+		numde = buffer.getInt(NUMDE_OFFSET);
+
+		if (!isValidEphemerisNumber(numde)) {
+			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			
-			numde = Integer.reverseBytes(numde);
+			numde = buffer.getInt(NUMDE_OFFSET);
 		}
 		
 		// Get the number of coefficients per record for this ephemeris number.
 		int ndata = getNumberOfCoefficientsPerRecord(numde);
 		
 		if (ndata < 0) {
+			fc.close();
 			raf.close();
 			throw new JPLEphemerisException("Ephemeris number " + numde
 					+ " not recognised");			
 		}
 		
-		// Go to the offset of the NCON integer.
-		offset = 2676;
-
-		raf.seek(offset);
-		
 		// Read the value of NCON.  This is the number of constants in the file.
 		// It may be greater than 400 for some versions.
-		int ncon = readInt(raf, reverseBytes);
+		int ncon = buffer.getInt(NCON_OFFSET);
 		
 		// The block of bytes containing the names of constants is always at least
 		// 2400 bytes long, but if NCON is greater than 400, we must allocate a larger
@@ -161,38 +171,36 @@ public class JPLEphemeris implements Serializable {
 		int arraySize = ncon < 400 ? 2400 : ncon * 6;
 
 		byte cnam[] = new byte[arraySize];
+		
+		buffer.position(CNAME_OFFSET);
+		
+		buffer.get(cnam, 0, 2400);
 
-		offset = 6 * 14 * 3;
-
-		raf.seek(offset);
-
-		raf.read(cnam, 0, 2400);
-
+		buffer.position(LIMITS_OFFSET);
+		
 		limits = new double[3];
 
 		for (int j = 0; j < 3; j++) {
-			limits[j] = readDouble(raf, reverseBytes);
+			limits[j] = buffer.getDouble();
 		}
 
-		// We already have NCON.
-		raf.skipBytes(4);
-
-		AU = readDouble(raf, reverseBytes);
-		EMRAT = readDouble(raf, reverseBytes);
+		AU = buffer.getDouble(AU_OFFSET);
+		EMRAT = buffer.getDouble(EMRAT_OFFSET);
 
 		offsets = new int[13][3];
 
+		buffer.position(OFFSETS_OFFSET);
+		
 		for (int j = 0; j < 12; j++) {
 			for (int k = 0; k < 3; k++) {
-				offsets[j][k] = readInt(raf, reverseBytes);
+				offsets[j][k] = buffer.getInt();
 			}
 		}
 
-		// We already have DENUM.
-		raf.skipBytes(4);
-
+		buffer.position(EXTRA_OFFSETS_OFFSET);
+		
 		for (int k = 0; k < 3; k++) {
-			offsets[12][k] = readInt(raf, reverseBytes);
+			offsets[12][k] = buffer.getInt();
 		}
 		
 		int reclen = 8 * ndata;
@@ -217,25 +225,43 @@ public class JPLEphemeris implements Serializable {
 		
 		// If there are more than 400 constants, we must read the remainder of the
 		// bytes containing the names of the constants.
-		if (ncon > 400)
-			raf.read(cnam, 2400, arraySize - 2400);
-
+		if (ncon > 400) {
+			buffer.position(EXTRA_CNAME_OFFSET);
+		
+			buffer.get(cnam, 2400, arraySize - 2400);
+		}
+		
 		int firstrec = (int) ((jdstart - limits[0]) / limits[2]);
 		int lastrec = (int) ((jdfinis - limits[0]) / limits[2]);
 		int numrecs = 0;
-
-		raf.seek(reclen);
+		
+		// Create a new ByteBuffer which as the correct record length for this ephemeris
+		ByteOrder byteOrder = buffer.order();
+		
+		buffer = ByteBuffer.allocate(reclen);
+		
+		buffer.order(byteOrder);
+		
+		// Read record #2, which contains the values of the constants as an array
+		// of double values.
+		fc.position(reclen);
+	
+		buffer.clear();
+		
+		fc.read(buffer);
+		
+		buffer.flip();
 
 		for (int iconst = 0; iconst < ncon; iconst++) {
-			double cval = readDouble(raf, reverseBytes);
-
 			String cname = new String(cnam, iconst * 6, 6, "UTF-8").trim();
+
+			double cval = buffer.getDouble();
 
 			mapConstants.put(cname, new Double(cval));
 		}
 
-		offset = (firstrec + 2) * reclen;
-		raf.seek(offset);
+		long offset = (firstrec + 2) * reclen;
+		fc.position(offset);
 
 		numrecs = (int) Math.round((limits[1] - limits[0]) / limits[2]);
 
@@ -244,10 +270,17 @@ public class JPLEphemeris implements Serializable {
 		data = new double[numrecs][ndata];
 
 		for (int j = 0; j < numrecs; j++) {
+			buffer.clear();
+			
+			fc.read(buffer);
+			
+			buffer.flip();
+			
 			for (int k = 0; k < ndata; k++)
-				data[j][k] = readDouble(raf, reverseBytes);
+				data[j][k] = buffer.getDouble();
 		}
 
+		fc.close();
 		raf.close();
 
 		limits[0] = data[0][0];
@@ -258,22 +291,8 @@ public class JPLEphemeris implements Serializable {
 				nCheby = offsets[i][1];
 	}
 	
-	private int readInt(RandomAccessFile raf, boolean reverseBytes) throws IOException {
-		int value = raf.readInt();
-		
-		if (reverseBytes)
-			value = Integer.reverseBytes(value);
-		
-		return value;
-	}
-	
-	private double readDouble(RandomAccessFile raf, boolean reverseBytes) throws IOException {
-		if (reverseBytes) {
-			long bits = raf.readLong();
-			bits = Long.reverseBytes(bits);
-			return Double.longBitsToDouble(bits);
-		} else
-			return raf.readDouble();
+	private boolean isValidEphemerisNumber(int numde) {
+		return numde > 0 && numde < 2000;
 	}
 	
 	/**
