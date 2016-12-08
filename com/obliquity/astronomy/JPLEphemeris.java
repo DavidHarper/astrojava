@@ -160,21 +160,6 @@ public class JPLEphemeris implements Serializable {
 			throw new JPLEphemerisException("Ephemeris number " + numde
 					+ " not recognised");			
 		}
-		
-		// Read the value of NCON.  This is the number of constants in the file.
-		// It may be greater than 400 for some versions.
-		int ncon = buffer.getInt(NCON_OFFSET);
-		
-		// The block of bytes containing the names of constants is always at least
-		// 2400 bytes long, but if NCON is greater than 400, we must allocate a larger
-		// byte array and read the first 2400 bytes here.
-		int arraySize = ncon < 400 ? 2400 : ncon * 6;
-
-		byte cnam[] = new byte[arraySize];
-		
-		buffer.position(CNAME_OFFSET);
-		
-		buffer.get(cnam, 0, 2400);
 
 		buffer.position(LIMITS_OFFSET);
 		
@@ -182,6 +167,26 @@ public class JPLEphemeris implements Serializable {
 
 		for (int j = 0; j < 3; j++) {
 			limits[j] = buffer.getDouble();
+		}
+
+		if (jdstart == 0.0)
+			jdstart = limits[0];
+
+		if (jdfinis == 0.0)
+			jdfinis = limits[1] - limits[2];
+
+		if (jdstart < limits[0] || jdstart > limits[1]) {
+			fc.close();
+			raf.close();
+		
+			throw new JPLEphemerisException("Start date is outside valid range");
+		}
+		
+		if (jdfinis < limits[0] || jdfinis > limits[1]) {
+			fc.close();
+			raf.close();
+			
+			throw new JPLEphemerisException("End date is outside valid range");
 		}
 
 		AU = buffer.getDouble(AU_OFFSET);
@@ -203,25 +208,20 @@ public class JPLEphemeris implements Serializable {
 			offsets[12][k] = buffer.getInt();
 		}
 		
-		int reclen = 8 * ndata;
-
-		if (jdstart == 0.0)
-			jdstart = limits[0];
-
-		if (jdfinis == 0.0)
-			jdfinis = limits[1] - limits[2];
-
-		if (jdstart < limits[0] || jdstart > limits[1]) {
-			raf.close();
+		// Read the value of NCON.  This is the number of constants in the file.
+		// It may be greater than 400 for some versions.
+		int ncon = buffer.getInt(NCON_OFFSET);
 		
-			throw new JPLEphemerisException("Start date is outside valid range");
-		}
+		// The block of bytes containing the names of constants is always at least
+		// 2400 bytes long, but if NCON is greater than 400, we must allocate a larger
+		// byte array and read the first 2400 bytes here.
+		int arraySize = ncon < 400 ? 2400 : ncon * 6;
+
+		byte cnam[] = new byte[arraySize];
 		
-		if (jdfinis < limits[0] || jdfinis > limits[1]) {
-			raf.close();
-			
-			throw new JPLEphemerisException("End date is outside valid range");
-		}
+		buffer.position(CNAME_OFFSET);
+		
+		buffer.get(cnam, 0, 2400);
 		
 		// If there are more than 400 constants, we must read the remainder of the
 		// bytes containing the names of the constants.
@@ -234,6 +234,8 @@ public class JPLEphemeris implements Serializable {
 		int firstrec = (int) ((jdstart - limits[0]) / limits[2]);
 		int lastrec = (int) ((jdfinis - limits[0]) / limits[2]);
 		int numrecs = 0;
+		
+		int reclen = 8 * ndata;
 		
 		// Create a new ByteBuffer which as the correct record length for this ephemeris
 		ByteOrder byteOrder = buffer.order();
