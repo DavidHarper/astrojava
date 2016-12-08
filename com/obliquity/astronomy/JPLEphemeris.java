@@ -73,7 +73,6 @@ public class JPLEphemeris implements Serializable {
 	private double[] vel = new double[3];
 	private Map<String, Double> mapConstants = new HashMap<String, Double>();
 	
-	private final int INITIAL_BUFFER_SIZE = 1018 * 4;
 	private final int CNAME_OFFSET = 6 * 14 * 3;
 	private final int LIMITS_OFFSET = CNAME_OFFSET + 2400;
 	private final int NCON_OFFSET = LIMITS_OFFSET + 3 * 8;
@@ -135,7 +134,9 @@ public class JPLEphemeris implements Serializable {
 
 		FileChannel fc = raf.getChannel();
 
-		ByteBuffer buffer = ByteBuffer.allocate(INITIAL_BUFFER_SIZE);
+		ByteBuffer buffer = ByteBuffer.allocate(4);
+		
+		fc.position(NUMDE_OFFSET);
 
 		fc.read(buffer);
 		
@@ -143,12 +144,14 @@ public class JPLEphemeris implements Serializable {
 
 		buffer.order(ByteOrder.BIG_ENDIAN);
 
-		numde = buffer.getInt(NUMDE_OFFSET);
+		numde = buffer.getInt();
 
 		if (!isValidEphemerisNumber(numde)) {
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			
-			numde = buffer.getInt(NUMDE_OFFSET);
+			buffer.rewind();
+			
+			numde = buffer.getInt();
 		}
 		
 		// Get the number of coefficients per record for this ephemeris number.
@@ -160,6 +163,21 @@ public class JPLEphemeris implements Serializable {
 			throw new JPLEphemerisException("Ephemeris number " + numde
 					+ " not recognised");			
 		}
+
+		int reclen = 8 * ndata;
+		
+		// Create a new ByteBuffer which is the correct record length for this ephemeris
+		ByteOrder byteOrder = buffer.order();
+		
+		buffer = ByteBuffer.allocate(reclen);
+		
+		buffer.order(byteOrder);
+		
+		fc.position(0);
+		
+		fc.read(buffer);
+		
+		buffer.flip();
 
 		buffer.position(LIMITS_OFFSET);
 		
@@ -235,14 +253,6 @@ public class JPLEphemeris implements Serializable {
 		int lastrec = (int) ((jdfinis - limits[0]) / limits[2]);
 		int numrecs = 0;
 		
-		int reclen = 8 * ndata;
-		
-		// Create a new ByteBuffer which as the correct record length for this ephemeris
-		ByteOrder byteOrder = buffer.order();
-		
-		buffer = ByteBuffer.allocate(reclen);
-		
-		buffer.order(byteOrder);
 		
 		// Read record #2, which contains the values of the constants as an array
 		// of double values.
