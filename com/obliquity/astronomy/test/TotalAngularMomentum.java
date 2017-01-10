@@ -39,7 +39,7 @@ public class TotalAngularMomentum {
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
 	
 	private static final DecimalFormat dfmt1 = new DecimalFormat("0.0000000");
-	private static final DecimalFormat dfmt2 = new DecimalFormat("0.00000000");
+	private static final DecimalFormat dfmt2 = new DecimalFormat("0.000000000000000E0");
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
@@ -115,16 +115,21 @@ public class TotalAngularMomentum {
 			System.exit(1);
 		}
 		
+		double AU = 1000.0 * ephemeris.getConstant("AU");
+		double day = 86400.0;
+		
+		double toSI = (AU * AU * AU)/(day * day);
+		
 		double GM[] = new double[11];
 		
-		GM[JPLEphemeris.SUN] = ephemeris.getConstant("GMS");
+		GM[JPLEphemeris.SUN] = ephemeris.getConstant("GMS") * toSI;
 		
 		for (int i = 0; i < 9; i++) {
 			if (i != JPLEphemeris.EMB)
-				GM[i] = ephemeris.getConstant("GM" + (i+1));
+				GM[i] = ephemeris.getConstant("GM" + (i+1)) * toSI;
 		}
 		
-		GM[JPLEphemeris.EMB] = ephemeris.getConstant("GMB");
+		GM[JPLEphemeris.EMB] = ephemeris.getConstant("GMB") * toSI;
 		
 		Vector P = new Vector();
 		Vector V = new Vector();
@@ -156,6 +161,8 @@ public class TotalAngularMomentum {
 				System.out.print(dfmt2.format(totalJ.getY())); 
 				System.out.print(TAB);
 				System.out.print(dfmt2.format(totalJ.getZ())); 
+				System.out.print(TAB);
+				System.out.print(dfmt2.format(totalJ.magnitude())); 
 				System.out.println();
 			}
 		} catch (JPLEphemerisException jplee) {
