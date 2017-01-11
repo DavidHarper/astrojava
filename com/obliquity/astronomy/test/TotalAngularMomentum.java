@@ -165,7 +165,7 @@ public class TotalAngularMomentum {
 				if (debug) 
 					printComponents(t, dfmt1, "SUN J", totalJ, dfmt2);
 				
-				for (int iBody = 0; iBody < 8; iBody++) {
+				for (int iBody = 0; iBody < 9; iBody++) {
 					ephemeris.calculatePositionAndVelocity(t, iBody,
 							P, V);
 					
