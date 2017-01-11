@@ -40,6 +40,7 @@ public class TotalAngularMomentum {
 	
 	private static final DecimalFormat dfmt1 = new DecimalFormat("0.0000000");
 	private static final DecimalFormat dfmt2 = new DecimalFormat("0.000000000000000E0");
+	private static final DecimalFormat dfmt3 = new DecimalFormat("0.000000000000000");
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
@@ -138,6 +139,12 @@ public class TotalAngularMomentum {
 			for (int i = 0; i< 11; i++)
 				System.out.println("# GM_" + i + " = " + dfmt2.format(GM[i]));
 		}
+
+		Vector invariablePlaneX = new Vector();
+		Vector invariablePlaneY = new Vector();
+		Vector invariablePlaneZ = new Vector();
+		
+		calculateInvariablePlaneVectors(3.85263363 * Math.PI/180.0, 23.00888303 * Math.PI/180.0, invariablePlaneX, invariablePlaneY, invariablePlaneZ);
 		
 		Vector P = new Vector();
 		Vector V = new Vector();
@@ -190,7 +197,16 @@ public class TotalAngularMomentum {
 					totalJ.add(J);
 				}
 				
-				printComponents(t, dfmt1, null, totalJ, dfmt2);
+				// Scale down the magnitude
+				totalJ.multiplyBy(1.0/2.0E33);
+				
+				double x = totalJ.scalarProduct(invariablePlaneX);
+				double y = totalJ.scalarProduct(invariablePlaneY);
+				double z = totalJ.scalarProduct(invariablePlaneZ);
+				
+				totalJ = new Vector(x, y, z);
+				
+				printComponents(t, dfmt1, null, totalJ, dfmt3);
 			}
 		} catch (JPLEphemerisException jplee) {
 			jplee.printStackTrace();
@@ -214,6 +230,18 @@ public class TotalAngularMomentum {
 		System.out.print(TAB);
 		System.out.print(dfmt2.format(V.magnitude())); 
 		System.out.println();		
+	}
+
+	private static void calculateInvariablePlaneVectors(double node, double incl,
+			Vector X, Vector Y,	Vector Z) {
+		double cn = Math.cos(node);
+		double sn = Math.sin(node);
+		double ci = Math.cos(incl);
+		double si = Math.sin(incl);
+		
+		X.setComponents(cn, sn, 0.0);
+		Y.setComponents(-sn*ci, cn*ci, si);
+		Z.setComponents(sn*si, -cn*si, ci);
 	}
 	
 	public static void showUsage() {
