@@ -115,8 +115,11 @@ public class TotalAngularMomentum {
 			System.exit(1);
 		}
 		
+		boolean debug = Boolean.getBoolean("debug");
+		
 		double AU = 1000.0 * ephemeris.getConstant("AU");
 		double day = 86400.0;
+		double vFactor = 1000.0/day;
 		
 		double toSI = (AU * AU * AU)/(day * day);
 		
@@ -131,33 +134,58 @@ public class TotalAngularMomentum {
 		
 		GM[JPLEphemeris.EMB] = ephemeris.getConstant("GMB") * toSI;
 		
+		if (debug) {
+			for (int i = 0; i< 11; i++)
+				System.out.println("# GM_" + i + " = " + dfmt2.format(GM[i]));
+		}
+		
 		Vector P = new Vector();
 		Vector V = new Vector();
-		
-		boolean debug = Boolean.getBoolean("debug");
 		
 		try {
 			for (double t = jdstart; t <= jdfinish; t += jdstep) {
 				ephemeris.calculatePositionAndVelocity(t, JPLEphemeris.SUN,
 						P, V);
 				
+				// Convert kilometres to metres
+				P.multiplyBy(1000.0);
+				
+				// Convert kilometres/day to metres/second
+				V.multiplyBy(vFactor);
+				
+				if (debug) {
+					printComponents(t, dfmt1, "SUN P", P, dfmt2);
+					printComponents(t, dfmt1, "SUN V", V, dfmt2);
+				}
+				
 				P.multiplyBy(GM[JPLEphemeris.SUN]);
 				
 				Vector totalJ = P.vectorProduct(V);
 				
-				if (debug)
-					printComponents(t, dfmt1, "SUN", totalJ, dfmt2);
+				if (debug) 
+					printComponents(t, dfmt1, "SUN J", totalJ, dfmt2);
 				
 				for (int iBody = 0; iBody < 8; iBody++) {
 					ephemeris.calculatePositionAndVelocity(t, iBody,
 							P, V);
+					
+					// Convert kilometres to metres
+					P.multiplyBy(1000.0);
+					
+					// Convert kilometres/day to metres/second
+					V.multiplyBy(vFactor);
+
+					if (debug) {
+						printComponents(t, dfmt1, "BODY_" + (iBody+1) + " P", P, dfmt2);
+						printComponents(t, dfmt1, "BODY_" + (iBody+1) + " V", V, dfmt2);
+					}
 					
 					P.multiplyBy(GM[iBody]);
 					
 					Vector J = P.vectorProduct(V);
 					
 					if (debug)
-						printComponents(t, dfmt1, "BODY_" + (iBody+1), J, dfmt2);
+						printComponents(t, dfmt1, "BODY_" + (iBody+1) + " J", J, dfmt2);
 					
 					totalJ.add(J);
 				}
