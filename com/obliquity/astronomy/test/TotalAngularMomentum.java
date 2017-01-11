@@ -134,6 +134,8 @@ public class TotalAngularMomentum {
 		Vector P = new Vector();
 		Vector V = new Vector();
 		
+		boolean debug = Boolean.getBoolean("debug");
+		
 		try {
 			for (double t = jdstart; t <= jdfinish; t += jdstep) {
 				ephemeris.calculatePositionAndVelocity(t, JPLEphemeris.SUN,
@@ -143,6 +145,9 @@ public class TotalAngularMomentum {
 				
 				Vector totalJ = P.vectorProduct(V);
 				
+				if (debug)
+					printComponents(t, dfmt1, "SUN", totalJ, dfmt2);
+				
 				for (int iBody = 0; iBody < 8; iBody++) {
 					ephemeris.calculatePositionAndVelocity(t, iBody,
 							P, V);
@@ -151,23 +156,36 @@ public class TotalAngularMomentum {
 					
 					Vector J = P.vectorProduct(V);
 					
+					if (debug)
+						printComponents(t, dfmt1, "BODY_" + (iBody+1), J, dfmt2);
+					
 					totalJ.add(J);
 				}
 				
-				System.out.print(dfmt1.format(t));
-				System.out.print(TAB);
-				System.out.print(dfmt2.format(totalJ.getX())); 
-				System.out.print(TAB);
-				System.out.print(dfmt2.format(totalJ.getY())); 
-				System.out.print(TAB);
-				System.out.print(dfmt2.format(totalJ.getZ())); 
-				System.out.print(TAB);
-				System.out.print(dfmt2.format(totalJ.magnitude())); 
-				System.out.println();
+				printComponents(t, dfmt1, null, totalJ, dfmt2);
 			}
 		} catch (JPLEphemerisException jplee) {
 			jplee.printStackTrace();
 		}
+	}
+	
+	private static void printComponents(double t, DecimalFormat dfmt1, String message, Vector V, DecimalFormat dfmt2) {
+		System.out.print(dfmt1.format(t));
+		
+		if (message != null) {
+			System.out.print(TAB);
+			System.out.print(message);
+		}
+		
+		System.out.print(TAB);
+		System.out.print(dfmt2.format(V.getX())); 
+		System.out.print(TAB);
+		System.out.print(dfmt2.format(V.getY())); 
+		System.out.print(TAB);
+		System.out.print(dfmt2.format(V.getZ())); 
+		System.out.print(TAB);
+		System.out.print(dfmt2.format(V.magnitude())); 
+		System.out.println();		
 	}
 	
 	public static void showUsage() {
