@@ -271,6 +271,14 @@ public class SimpleAlmanac {
 		
 		ps.print("  " + constellation);
 		
+		ps.print("  ");
+		
+		printAngle(ra1875, ifmta, ifmta, dfmta, ps, false);
+		
+		ps.print("  ");
+		
+		printAngle(dec1875, ifmta, ifmta, dfmtb, ps, true);
+		
 		ps.println();
 	}
 
