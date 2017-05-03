@@ -23,7 +23,7 @@ public class SimpleAlmanac {
 	private final DecimalFormat dfmtb = new DecimalFormat("00.00");
 	private final DecimalFormat ifmta = new DecimalFormat("00");
 	private final DecimalFormat dfmtc = new DecimalFormat("0.0000000");
-	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	private ApparentPlace ap;
 	private SimplePrecession sp;
@@ -51,6 +51,7 @@ public class SimpleAlmanac {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		boolean useJ2000 = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -67,6 +68,9 @@ public class SimpleAlmanac {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-j2000"))
+				useJ2000 = true;
 		}
 
 		if (filename == null || bodyname == null || startdate == null
@@ -139,7 +143,7 @@ public class SimpleAlmanac {
 		else
 			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
-		EarthRotationModel erm = new IAUEarthRotationModel();
+		EarthRotationModel erm = useJ2000 ? null : new IAUEarthRotationModel();
 
 		ApparentPlace ap = new ApparentPlace(earth, planet, sun, erm);
 		
