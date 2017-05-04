@@ -14,9 +14,11 @@ import com.obliquity.astronomy.almanac.EarthRotationModel;
 import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
+import com.obliquity.astronomy.almanac.Matrix;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.Vector;
 
 public class SimpleAlmanac {
 	private final DecimalFormat dfmta = new DecimalFormat("00.000");
@@ -26,7 +28,8 @@ public class SimpleAlmanac {
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	private ApparentPlace ap;
-	private SimplePrecession sp;
+	private IAUEarthRotationModel erm = new IAUEarthRotationModel();
+	private Matrix precessJ2000toB1875; 
 	
 	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -36,11 +39,13 @@ public class SimpleAlmanac {
 	public SimpleAlmanac(ApparentPlace ap) {
 		this.ap = ap;
 		
-		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));	
 		
-		double B1875 = SimplePrecession.yearToBesselianEpoch(1875.0);
-		
-		sp = new SimplePrecession(SimplePrecession.J2000, B1875);
+		// Calculate the precession matrix from J2000 to B1875
+		double epochJ2000 = erm.JulianEpoch(2000.0);
+		double epochB1875 = erm.BesselianEpoch(1875.0);
+		precessJ2000toB1875 = new Matrix();
+		erm.precessionMatrix(epochJ2000, epochB1875, precessJ2000toB1875);
 	}
 
 	public static void main(String args[]) {
@@ -225,10 +230,6 @@ public class SimpleAlmanac {
 
 		double ra = ap.getRightAscension();
 		double dec = ap.getDeclination();
-		
-		double posB1875[] = {ra, dec};
-		
-		sp.precess(posB1875);
 
 		ra *= 12.0 / Math.PI;
 		dec *= 180.0 / Math.PI;
@@ -264,12 +265,19 @@ public class SimpleAlmanac {
 		
 		ps.print(dfmtc.format(ap.getLightPathDistance()));
 		
-		double ra1875 = posB1875[0] * 12.0/Math.PI;
+		// Calculate the RA and Dec referred to B1875 for constellation identification
+		Vector dc = (Vector)ap.getDirectionCosines().clone();
+		
+		dc.multiplyBy(precessJ2000toB1875);	
+		
+		double ra1875 = Math.atan2(dc.getY(), dc.getX()) * 12.0/Math.PI;
 		
 		while (ra1875 < 0.0)
 			ra1875 += 24.0;
 		
-		double dec1875 = posB1875[1] * 180.0/Math.PI;
+		double aux = Math.sqrt(dc.getX() * dc.getX() + dc.getY() * dc.getY());
+		
+		double dec1875 = Math.atan2(dc.getZ(), aux) * 180.0/Math.PI;
 		
 		String constellation = ConstellationFinder.getZone(ra1875, dec1875);
 		
