@@ -252,8 +252,8 @@ public class TestApparentPlace {
 	}
 	
 	private static void displayApparentPlaceEquatorial(double t, ApparentPlace ap, PrintStream ps) {
-		double ra = ap.getRightAscension() * 12.0 / Math.PI;
-		double dec = ap.getDeclination() * 180.0 / Math.PI;
+		double ra = ap.getRightAscensionOfDate() * 12.0 / Math.PI;
+		double dec = ap.getDeclinationOfDate() * 180.0 / Math.PI;
 
 		if (ra < 0.0)
 			ra += 24.0;
@@ -286,8 +286,8 @@ public class TestApparentPlace {
 		
 		obliquity += na.getDeps();
 		
-		double ra = ap.getRightAscension();
-		double dec = ap.getDeclination();
+		double ra = ap.getRightAscensionOfDate();
+		double dec = ap.getDeclinationOfDate();
 		
 		double x = Math.cos(dec) * Math.cos(ra);
 		double y = Math.sin(obliquity) * Math.sin(dec) + Math.cos(obliquity) * Math.cos(dec) * Math.sin(ra);

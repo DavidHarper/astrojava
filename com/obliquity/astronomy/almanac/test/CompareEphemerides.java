@@ -221,11 +221,11 @@ public class CompareEphemerides {
 
 	private static void displayApparentPlaceDifference(double t, ApparentPlace ap1,
 			ApparentPlace ap2, PrintStream ps) {
-		double ra1 = ap1.getRightAscension();
-		double dec1 = ap1.getDeclination();
+		double ra1 = ap1.getRightAscensionOfDate();
+		double dec1 = ap1.getDeclinationOfDate();
 		
-		double ra2 = ap2.getRightAscension();
-		double dec2 = ap2.getDeclination();
+		double ra2 = ap2.getRightAscensionOfDate();
+		double dec2 = ap2.getDeclinationOfDate();
 
 		double diffDec = dec2 - dec1;
 		double diffRA = (ra2 - ra1) * Math.cos(dec1);

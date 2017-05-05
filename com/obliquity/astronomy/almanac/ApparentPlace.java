@@ -30,16 +30,25 @@ public class ApparentPlace {
 	protected MovingPoint sun;
 	protected EarthRotationModel erm;
 
-	protected Vector dc = null;
 	protected double pl = 0.0;
 	protected double gd = 0.0;
-	protected double ra;
-	protected double dec;
+
+	protected Vector dcOfDate = null;
+	protected double raOfDate;
+	protected double decOfDate;
+	
+	protected Vector dcJ2000 = null;
+	protected double raJ2000;
+	protected double decJ2000;
 
 	protected Matrix precess = new Matrix();
 	protected Matrix nutate = new Matrix();
 	
 	protected boolean isValid = false;
+	protected boolean isValidOfDate = false;
+	
+	protected final String NO_POSITION_OF_DATE = "The position referred to the equator and equinox of date is not available.";
+	protected final String NO_POSITION_CALCULATED = "The apparent place has not yet been calculated.";
 
 	private final static double EPSILON = 1.0e-9;
 
@@ -51,39 +60,60 @@ public class ApparentPlace {
 		this.erm = erm;
 	}
 
-	public Vector getDirectionCosines() throws IllegalStateException {
-		if (isValid)
-			return dc;	
+	public Vector getDirectionCosinesOfDate() throws IllegalStateException {
+		if (isValidOfDate)
+			return dcOfDate;	
 		else
-			throw new IllegalStateException();
+			throw new IllegalStateException(isValid ? NO_POSITION_OF_DATE : NO_POSITION_CALCULATED);
+	}
+
+	public Vector getDirectionCosinesJ2000() throws IllegalStateException {
+		if (isValid)
+			return dcJ2000;	
+		else
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
 
 	public double getLightPathDistance() throws IllegalStateException {
 		if (isValid)
 			return pl;
 		else
-			throw new IllegalStateException();
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
 
 	public double getGeometricDistance() throws IllegalStateException {
 		if (isValid)
 			return gd;
 		else
-			throw new IllegalStateException();
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
 
-	public double getRightAscension() throws IllegalStateException {
-		if (isValid)
-			return ra;
+	public double getRightAscensionOfDate() throws IllegalStateException {
+		if (isValidOfDate)
+			return raOfDate;
 		else
-			throw new IllegalStateException();
+			throw new IllegalStateException(isValid ? NO_POSITION_OF_DATE : NO_POSITION_CALCULATED);
 	}
 
-	public double getDeclination() throws IllegalStateException {
-		if (isValid)
-			return dec;
+	public double getDeclinationOfDate() throws IllegalStateException {
+		if (isValidOfDate)
+			return decOfDate;
 		else
-			throw new IllegalStateException();
+			throw new IllegalStateException(isValid ? NO_POSITION_OF_DATE : NO_POSITION_CALCULATED);
+	}
+
+	public double getRightAscensionJ2000() throws IllegalStateException {
+		if (isValid)
+			return raJ2000;
+		else
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
+	}
+
+	public double getDeclinationJ2000() throws IllegalStateException {
+		if (isValid)
+			return decJ2000;
+		else
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
 	
 	public MovingPoint getTarget() {
@@ -200,6 +230,17 @@ public class ApparentPlace {
 		P.add(V);
 
 		P.normalise();
+		
+		dcJ2000 = new Vector(P);
+		
+		double x = dcJ2000.getX();
+		double y = dcJ2000.getY();
+		double z = dcJ2000.getZ();
+
+		raJ2000 = Math.atan2(y, x);
+		decJ2000 = Math.atan2(z, Math.sqrt(x * x + y * y));
+		
+		isValid = true;
 
 		if (erm != null) {
 			double ut = t - erm.deltaT(t);
@@ -209,17 +250,16 @@ public class ApparentPlace {
 
 			P.multiplyBy(precess);
 			P.multiplyBy(nutate);
+			dcOfDate = new Vector(P);
+
+			 x = dcOfDate.getX();
+			 y = dcOfDate.getY();
+			 z = dcOfDate.getZ();
+
+			raOfDate = Math.atan2(y, x);
+			decOfDate = Math.atan2(z, Math.sqrt(x * x + y * y));
+			
+			isValidOfDate = true;
 		}
-
-		dc = new Vector(P);
-
-		double x = dc.getX();
-		double y = dc.getY();
-		double z = dc.getZ();
-
-		ra = Math.atan2(y, x);
-		dec = Math.atan2(z, Math.sqrt(x * x + y * y));
-		
-		isValid = true;
 	}
 }

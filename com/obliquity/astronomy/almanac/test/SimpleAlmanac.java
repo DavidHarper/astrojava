@@ -1,3 +1,27 @@
+/*
+ * astrojava - a package for reading JPL ephemeris files
+ *
+ * Copyright (C) 2006-2014 David Harper at obliquity.com
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Library General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA  02111-1307, USA.
+ *
+ * See the COPYING file located in the top-level-directory of
+ * the archive of this library for complete text of license.
+ */
+
 package com.obliquity.astronomy.almanac.test;
 
 import java.io.IOException;
@@ -56,7 +80,6 @@ public class SimpleAlmanac {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
-		boolean useJ2000 = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -73,9 +96,6 @@ public class SimpleAlmanac {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
-			
-			if (args[i].equalsIgnoreCase("-j2000"))
-				useJ2000 = true;
 		}
 
 		if (filename == null || bodyname == null || startdate == null
@@ -148,7 +168,7 @@ public class SimpleAlmanac {
 		else
 			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
-		EarthRotationModel erm = useJ2000 ? null : new IAUEarthRotationModel();
+		EarthRotationModel erm = new IAUEarthRotationModel();
 
 		ApparentPlace ap = new ApparentPlace(earth, planet, sun, erm);
 		
@@ -228,8 +248,8 @@ public class SimpleAlmanac {
 	private void displayApparentPlace(double t, PrintStream ps) throws JPLEphemerisException {
 		ap.calculateApparentPlace(t);
 
-		double ra = ap.getRightAscension();
-		double dec = ap.getDeclination();
+		double ra = ap.getRightAscensionOfDate();
+		double dec = ap.getDeclinationOfDate();
 
 		ra *= 12.0 / Math.PI;
 		dec *= 180.0 / Math.PI;
@@ -266,7 +286,7 @@ public class SimpleAlmanac {
 		ps.print(dfmtc.format(ap.getLightPathDistance()));
 		
 		// Calculate the RA and Dec referred to B1875 for constellation identification
-		Vector dc = (Vector)ap.getDirectionCosines().clone();
+		Vector dc = (Vector)ap.getDirectionCosinesJ2000().clone();
 		
 		dc.multiplyBy(precessJ2000toB1875);	
 		

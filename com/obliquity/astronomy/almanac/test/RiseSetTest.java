@@ -180,12 +180,12 @@ public class RiseSetTest {
 			
 			double gast = ap.getEarthRotationModel().greenwichApparentSiderealTime(t);
 			
-			gha[i] = (gast - ap.getRightAscension()) % TWOPI;
+			gha[i] = (gast - ap.getRightAscensionOfDate()) % TWOPI;
 			
 			if (gha[i] < 0.0)
 				gha[i] += TWOPI;
 			
-			dec[i] = ap.getDeclination();
+			dec[i] = ap.getDeclinationOfDate();
 			
 			if (isMoon) {
 				hp[i] = Math.asin(earthRadius/ap.getGeometricDistance());
