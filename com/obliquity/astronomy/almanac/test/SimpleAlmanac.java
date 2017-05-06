@@ -45,6 +45,12 @@ import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.Vector;
 
 public class SimpleAlmanac {
+	public static final int OF_DATE = 1;
+	public static final int J2000 = 2;
+	public static final int B1875 = 3;
+	
+	private int targetEpoch = OF_DATE;
+	
 	private final DecimalFormat dfmta = new DecimalFormat("00.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("00.00");
 	private final DecimalFormat ifmta = new DecimalFormat("00");
@@ -53,15 +59,18 @@ public class SimpleAlmanac {
 	
 	private ApparentPlace ap;
 	private IAUEarthRotationModel erm = new IAUEarthRotationModel();
-	private Matrix precessJ2000toB1875; 
+	private Matrix precessJ2000toB1875 = null; 
 	
 	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat("yyyy-MM-dd");
 	
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
-	public SimpleAlmanac(ApparentPlace ap) {
+	private static final double TWO_PI = 2.0 * Math.PI;
+	
+	public SimpleAlmanac(ApparentPlace ap, int targetEpoch) {
 		this.ap = ap;
+		this.targetEpoch = targetEpoch;
 		
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));	
 		
@@ -80,6 +89,7 @@ public class SimpleAlmanac {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		int targetEpoch = OF_DATE;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -96,6 +106,15 @@ public class SimpleAlmanac {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-j2000"))
+				targetEpoch = J2000;
+			
+			if (args[i].equalsIgnoreCase("-b1875"))
+				targetEpoch = B1875;
+			
+			if (args[i].equalsIgnoreCase("ofdate"))
+				targetEpoch = OF_DATE;
 		}
 
 		if (filename == null || bodyname == null || startdate == null
@@ -168,11 +187,11 @@ public class SimpleAlmanac {
 		else
 			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
-		EarthRotationModel erm = new IAUEarthRotationModel();
+		EarthRotationModel erm = targetEpoch == OF_DATE ? new IAUEarthRotationModel() : null;
 
 		ApparentPlace ap = new ApparentPlace(earth, planet, sun, erm);
 		
-		SimpleAlmanac almanac = new SimpleAlmanac(ap);
+		SimpleAlmanac almanac = new SimpleAlmanac(ap, targetEpoch);
 		
 		almanac.run(jdstart, jdfinish, jdstep);
 	}
@@ -248,8 +267,41 @@ public class SimpleAlmanac {
 	private void displayApparentPlace(double t, PrintStream ps) throws JPLEphemerisException {
 		ap.calculateApparentPlace(t);
 
-		double ra = ap.getRightAscensionOfDate();
-		double dec = ap.getDeclinationOfDate();
+		double ra = 0.0, dec = 0.0, ra1875, dec1875;
+		String epochName = null;
+
+		Vector dc = (Vector)ap.getDirectionCosinesJ2000().clone();
+		
+		dc.multiplyBy(precessJ2000toB1875);	
+		
+		ra1875 = Math.atan2(dc.getY(), dc.getX());
+		
+		while (ra1875 < 0.0)
+			ra1875 += TWO_PI;
+		
+		double aux = Math.sqrt(dc.getX() * dc.getX() + dc.getY() * dc.getY());
+		
+		dec1875 = Math.atan2(dc.getZ(), aux);
+		
+		switch (targetEpoch) {
+		case OF_DATE:
+			ra = ap.getRightAscensionOfDate();
+			dec = ap.getDeclinationOfDate();
+			epochName = "OF_DATE";
+			break;
+			
+		case J2000:
+			ra = ap.getRightAscensionJ2000();
+			dec = ap.getDeclinationJ2000();
+			epochName = "J2000";
+			break;
+			
+		case B1875:
+			ra = ra1875;
+			dec = dec1875;
+			epochName = "B1875";
+			break;
+		}
 
 		ra *= 12.0 / Math.PI;
 		dec *= 180.0 / Math.PI;
@@ -284,32 +336,12 @@ public class SimpleAlmanac {
 		ps.print("  ");
 		
 		ps.print(dfmtc.format(ap.getLightPathDistance()));
-		
-		// Calculate the RA and Dec referred to B1875 for constellation identification
-		Vector dc = (Vector)ap.getDirectionCosinesJ2000().clone();
-		
-		dc.multiplyBy(precessJ2000toB1875);	
-		
-		double ra1875 = Math.atan2(dc.getY(), dc.getX()) * 12.0/Math.PI;
-		
-		while (ra1875 < 0.0)
-			ra1875 += 24.0;
-		
-		double aux = Math.sqrt(dc.getX() * dc.getX() + dc.getY() * dc.getY());
-		
-		double dec1875 = Math.atan2(dc.getZ(), aux) * 180.0/Math.PI;
-		
+
 		String constellation = ConstellationFinder.getZone(ra1875, dec1875);
 		
 		ps.print("  " + constellation);
 		
-		ps.print("  ");
-		
-		printAngle(ra1875, ifmta, ifmta, dfmta, ps, false);
-		
-		ps.print("  ");
-		
-		printAngle(dec1875, ifmta, ifmta, dfmtb, ps, true);
+		ps.print("  " + epochName);
 		
 		ps.println();
 	}
@@ -323,6 +355,9 @@ public class SimpleAlmanac {
 		System.err.println();
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-step\t\tStep size (days)");
+		System.err.println("\t-j2000\tCalculate position for epoch J2000");
+		System.err.println("\t-b1875\tCalculate position for epoch B1875");
+		System.err.println("\t-ofdate\tCalculate position for epoch of date (this is the default");
 	}
 
 }
