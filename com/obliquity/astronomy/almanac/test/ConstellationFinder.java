@@ -232,7 +232,16 @@ public class ConstellationFinder {
 	}
 	
 	public static String getZone(double ra, double dec) {
+		dec *= 180.0/Math.PI;
+		
 		int j0 = findFirstZone(dec);
+		
+		ra *= 12.0/Math.PI;
+		
+		ra %= 24.0;
+		
+		while (ra < 0.0)
+			ra += 24.0;
 		
 		for (int j = j0; j < zoneData.length; j++)
 			if (zoneData[j][0] <= ra && ra <= zoneData[j][1])
