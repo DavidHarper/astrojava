@@ -38,8 +38,6 @@ import com.obliquity.astronomy.almanac.*;
 public class LunarEclipses {
 	private static final char TAB = '\t';
 	
-	private static final double TWO_PI = 2.0 * PI;
-	
 	private static final double LUNAR_MONTH = 29.53059;
 	
 	private static final double EARTH_RADIUS = 6378.0, MOON_RADIUS = 1737.0, SUN_RADIUS = 695700.0;
@@ -172,15 +170,12 @@ public class LunarEclipses {
 		AU = ephemeris.getAU();
 	}
 
-	public void testForLunarEclipse(double t) throws JPLEphemerisException {
-		apSun.calculateApparentPlace(t);
-		apMoon.calculateApparentPlace(t);
+	public void testForLunarEclipse(double t0) throws JPLEphemerisException {
+		apSun.calculateApparentPlace(t0);
+		apMoon.calculateApparentPlace(t0);
 		
 		double rSun = AU * apSun.getGeometricDistance();
 		double rMoon = AU * apMoon.getGeometricDistance();
-		
-		System.out.println(TAB + "r(Sun)  = " + rSun);
-		System.out.println(TAB + "r(Moon) = " + rMoon);
 		
 		// Half-angle at vertex of umbral cone
 		double theta = asin((SUN_RADIUS - EARTH_RADIUS)/rSun);
@@ -202,22 +197,43 @@ public class LunarEclipses {
 		
 		double decSun = apSun.getDeclinationOfDate();
 		
-		System.out.println(TAB + " raSun  = " + dfmta.format(12.0 * raSun/PI));
-		System.out.println(TAB + " decSun = " + dfmta.format(180.0 * decSun/PI));
-		
 		double raMoon = apMoon.getRightAscensionOfDate();
 		
 		double decMoon = apMoon.getDeclinationOfDate();
-		
-		System.out.println(TAB + " raMoon  = " + dfmta.format(12.0 * raMoon/PI));
-		System.out.println(TAB + " decMoon = " + dfmta.format(180.0 * decMoon/PI));
 
 		double q = sin(decMoon) * sin(decSun) + cos(decMoon) * cos(decSun) * cos(raMoon-raSun);
 		
 		q = 180.0 - acos(q) * 180.0/PI;
+
+		if (q < gamma1) {
+			System.out.println(TAB + "TOTAL ECLIPSE");
+		} else if (q < gamma2) {
+			System.out.println(TAB + "PARTIAL ECLIPSE");
+		} else
+			return;
 		
-		System.out.println(TAB + " gamma1 = " + dfmta.format(gamma1));
-		System.out.println(TAB + " gamma2 = " + dfmta.format(gamma2));
-		System.out.println(TAB + " elong  = " + dfmta.format(q));
+		System.out.println(TAB + "gamma1 = " + dfmta.format(gamma1));
+		System.out.println(TAB + "gamma2 = " + dfmta.format(gamma2));
+		
+		for (double dm = -90.0; dm < 100.0; dm += 10.0) {
+			double t = t0 + dm/1440.0;
+			
+			apSun.calculateApparentPlace(t);
+			apMoon.calculateApparentPlace(t);
+
+			raSun = apSun.getRightAscensionOfDate();
+			
+			decSun = apSun.getDeclinationOfDate();
+			
+			raMoon = apMoon.getRightAscensionOfDate();
+			
+			decMoon = apMoon.getDeclinationOfDate();
+
+			q = sin(decMoon) * sin(decSun) + cos(decMoon) * cos(decSun) * cos(raMoon-raSun);
+			
+			q = 180.0 - acos(q) * 180.0/PI;
+			
+			System.out.println(TAB + dfmta.format(dm) + "    " + dfmta.format(q));
+		}
 	} 
 }
