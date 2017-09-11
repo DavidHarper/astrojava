@@ -36,17 +36,16 @@ import java.util.TimeZone;
 import com.obliquity.astronomy.almanac.*;
 
 public class LunarEclipses {
-	private static final char TAB = '\t';
-	
 	private static final double LUNAR_MONTH = 29.53059;
 	
-	private static final double EARTH_RADIUS = 6378.0, MOON_RADIUS = 1737.0, SUN_RADIUS = 695700.0;
+	private static final double EARTH_RADIUS = 6378.0, MOON_RADIUS = 1738.0, SUN_RADIUS = 696000.0;
 	
 	private static final double ADJUSTED_EARTH_RADIUS = EARTH_RADIUS * 1.02;
 	
 	private static final double SEMI_INTERVAL = 90.0;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
+	private final DecimalFormat dfmtb = new DecimalFormat("0.0");
 	
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
@@ -248,9 +247,9 @@ public class LunarEclipses {
 		double x = x0 + xDot * tMin;
 		double y = y0 + yDot * tMin;
 		
-		q = sqrt(x * x + y * y);
+		double qMin = sqrt(x * x + y * y);
 		
-		if (q > gamma2)
+		if (qMin > gamma2)
 			return;
 				
 		String PREFIX = timeToDateString(t0, prefixfmt);
@@ -261,11 +260,31 @@ public class LunarEclipses {
 		System.out.println(PREFIX + "gamma1 = " + dfmta.format(gamma1));
 		System.out.println(PREFIX + "gamma2 = " + dfmta.format(gamma2));
 		
-		tMin = t0 + tMin/1440.0;
+		double tMinimumGamma = t0 + tMin/1440.0;
 		
-		System.out.println(PREFIX + "Minimum gamma: " + timeToDateString(tMin, datefmt) + " : gamma = " + dfmta.format(q));
+		System.out.println(PREFIX + "Minimum gamma: " + timeToDateString(tMinimumGamma, datefmt) + " : gamma = " + dfmta.format(qMin));
 		
-		System.out.println(PREFIX + (q < gamma1 ? "TOTAL" : "PARTIAL") + " ECLIPSE");
+		System.out.println(PREFIX + (qMin < gamma1 ? "TOTAL" : "PARTIAL") + " ECLIPSE");
+		
+		double a = xDot * xDot + yDot * yDot;
+		double b = 2.0 * (x0 * xDot + y0 * yDot);
+		double q0squared = x0 * x0 + y0 * y0;
+		
+		// Exterior contacts with umbra
+		double c = q0squared - gamma2 * gamma2;
+		
+		//double f1 =  -b/(2.0 * a);
+		double f2 = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
+		
+		System.out.println(PREFIX + "Partial duration: " + dfmtb.format(2.0 * f2) + " minutes");
+		
+		if (qMin < gamma1) {
+			c = q0squared - gamma1 * gamma1;
+			
+			f2 = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
+			
+			System.out.println(PREFIX + "Total duration: " + dfmtb.format(2.0 * f2) + " minutes");
+		}
 	}
 	
 	private String timeToDateString(double t, SimpleDateFormat fmt) {
