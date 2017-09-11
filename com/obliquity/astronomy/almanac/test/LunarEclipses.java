@@ -41,6 +41,8 @@ public class LunarEclipses {
 	private static final double LUNAR_MONTH = 29.53059;
 	
 	private static final double EARTH_RADIUS = 6378.0, MOON_RADIUS = 1737.0, SUN_RADIUS = 695700.0;
+	
+	private static final double ADJUSTED_EARTH_RADIUS = EARTH_RADIUS * 1.02;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	
@@ -178,30 +180,30 @@ public class LunarEclipses {
 		double rMoon = AU * apMoon.getGeometricDistance();
 		
 		// Half-angle at vertex of umbral cone
-		double theta = asin((SUN_RADIUS - EARTH_RADIUS)/rSun);
+		double theta = asin((SUN_RADIUS - ADJUSTED_EARTH_RADIUS)/rSun);
 		
 		// Complement of theta
 		double beta = 0.5 * PI - theta;
 		
-		double alpha1 = acos((EARTH_RADIUS - MOON_RADIUS)/rMoon);
+		double alpha1 = acos((ADJUSTED_EARTH_RADIUS - MOON_RADIUS)/rMoon);
 		
 		double gamma1 = beta - alpha1;
 		gamma1 *= 180.0/PI;
 		
-		double alpha2 = acos((EARTH_RADIUS + MOON_RADIUS)/rMoon);
+		double alpha2 = acos((ADJUSTED_EARTH_RADIUS + MOON_RADIUS)/rMoon);
 		
 		double gamma2 = beta - alpha2;
 		gamma2 *= 180.0/PI;
 		
-		double raSun = apSun.getRightAscensionOfDate();
+		double raVertex = apSun.getRightAscensionOfDate();
 		
-		double decSun = apSun.getDeclinationOfDate();
+		double decVertex = apSun.getDeclinationOfDate();
 		
 		double raMoon = apMoon.getRightAscensionOfDate();
 		
 		double decMoon = apMoon.getDeclinationOfDate();
 
-		double q = sin(decMoon) * sin(decSun) + cos(decMoon) * cos(decSun) * cos(raMoon-raSun);
+		double q = sin(decMoon) * sin(decVertex) + cos(decMoon) * cos(decVertex) * cos(raMoon-raVertex);
 		
 		q = 180.0 - acos(q) * 180.0/PI;
 
@@ -215,25 +217,68 @@ public class LunarEclipses {
 		System.out.println(TAB + "gamma1 = " + dfmta.format(gamma1));
 		System.out.println(TAB + "gamma2 = " + dfmta.format(gamma2));
 		
-		for (double dm = -90.0; dm < 100.0; dm += 10.0) {
+		double xStart = 0.0, yStart = 0.0, xEnd = 0.0, yEnd = 0.0, x0 = 0.0, y0 = 0.0;
+		
+		for (int j = -90; j < 100; j += 10) {
+			double dm = (double)j;
+			
 			double t = t0 + dm/1440.0;
 			
 			apSun.calculateApparentPlace(t);
 			apMoon.calculateApparentPlace(t);
 
-			raSun = apSun.getRightAscensionOfDate();
+			raVertex = apSun.getRightAscensionOfDate() + PI;
 			
-			decSun = apSun.getDeclinationOfDate();
+			decVertex = -apSun.getDeclinationOfDate();
 			
 			raMoon = apMoon.getRightAscensionOfDate();
 			
 			decMoon = apMoon.getDeclinationOfDate();
+			
+			double x = ((raMoon - raVertex) * 180.0/PI) % 360.0;
+			
+			while (x < -180.0)
+				x += 360.0;
+			
+			x *= cos(decVertex);
 
-			q = sin(decMoon) * sin(decSun) + cos(decMoon) * cos(decSun) * cos(raMoon-raSun);
+			double y = (decMoon - decVertex) * 180.0/PI;
 			
-			q = 180.0 - acos(q) * 180.0/PI;
+			switch (j) {
+			case -90:
+				xStart = x;
+				yStart = y;
+				break;
 			
-			System.out.println(TAB + dfmta.format(dm) + "    " + dfmta.format(q));
+			case 0:
+				x0 = x;
+				y0 = y;
+				break;
+				
+			case 90:
+				xEnd = x;
+				yEnd = y;
+				break;
+			}
+			
+			q = sin(decMoon) * sin(decVertex) + cos(decMoon) * cos(decVertex) * cos(raMoon-raVertex);
+			
+			q = acos(q) * 180.0/PI;
+			
+			System.out.println(TAB + dfmta.format(dm) + "    " + dfmta.format(x) + "    " + dfmta.format(y) + "    " + dfmta.format(q));
 		}
+		
+		double xDot = (xEnd - xStart)/180.0;
+		double yDot = (yEnd - yStart)/180.0;
+		
+		double tMin = - (x0 * xDot + y0 * yDot)/(xDot * xDot + yDot * yDot);
+		
+		double x = x0 + xDot * tMin;
+		double y = y0 + yDot * tMin;
+		
+		q = sqrt(x * x + y * y);
+		
+		System.out.println(TAB + "Minimum distance is at " + dfmta.format(tMin) + " : x = " + dfmta.format(x) + ", y = " + dfmta.format(y) +
+				", q = " + dfmta.format(q));
 	} 
 }
