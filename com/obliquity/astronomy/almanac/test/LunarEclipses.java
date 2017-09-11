@@ -43,8 +43,16 @@ public class LunarEclipses {
 	private static final double EARTH_RADIUS = 6378.0, MOON_RADIUS = 1737.0, SUN_RADIUS = 695700.0;
 	
 	private static final double ADJUSTED_EARTH_RADIUS = EARTH_RADIUS * 1.02;
+	
+	private static final double SEMI_INTERVAL = 90.0;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
+	
+	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
+
+	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
+	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
 	private final double AU;
 	
@@ -53,11 +61,8 @@ public class LunarEclipses {
 	private ApparentPlace apSun, apMoon;
 	
 	public static void main(String args[]) {
-		SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
-		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-		
-		final double UNIX_EPOCH_AS_JD = 2440587.5;
-		final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
+		SimpleDateFormat parsefmt = new SimpleDateFormat("yyyy-MM-dd");
+		parsefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 	
 		String filename = null;
 		String startdate = null;
@@ -82,7 +87,7 @@ public class LunarEclipses {
 		Date date = null;
 		
 		try {
-			date = datefmt.parse(startdate);
+			date = parsefmt.parse(startdate);
 		} catch (ParseException e) {
 			System.err.println("Failed to parse \"" + startdate + "\" as an ISO date");
 			e.printStackTrace();
@@ -92,7 +97,7 @@ public class LunarEclipses {
 		double jdstart = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY;
 		
 		try {
-			date = datefmt.parse(enddate);
+			date = parsefmt.parse(enddate);
 		} catch (ParseException e) {
 			System.err.println("Failed to parse \"" + enddate + "\" as an ISO date");
 			e.printStackTrace();
@@ -122,8 +127,6 @@ public class LunarEclipses {
 		
 		double t = jdstart;
 		
-		datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-		
 		while (t < jdfinish) {
 			try {
 				t = mp.getDateOfNextPhase(t, MoonPhases.FULL_MOON);
@@ -131,14 +134,6 @@ public class LunarEclipses {
 				e.printStackTrace();
 				System.exit(1);
 			}
-			
-			double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
-			
-			long ticks = (long)dticks;
-			
-			date = new Date(ticks);
-			
-			System.out.println(datefmt.format(date));
 			
 			try {
 				le.testForLunarEclipse(t);
@@ -206,21 +201,11 @@ public class LunarEclipses {
 		double q = sin(decMoon) * sin(decVertex) + cos(decMoon) * cos(decVertex) * cos(raMoon-raVertex);
 		
 		q = 180.0 - acos(q) * 180.0/PI;
-
-		if (q < gamma1) {
-			System.out.println(TAB + "TOTAL ECLIPSE");
-		} else if (q < gamma2) {
-			System.out.println(TAB + "PARTIAL ECLIPSE");
-		} else
-			return;
 		
-		System.out.println(TAB + "gamma1 = " + dfmta.format(gamma1));
-		System.out.println(TAB + "gamma2 = " + dfmta.format(gamma2));
+		double xx[] = new double[3], yy[] = new double[3], tt[] = { -SEMI_INTERVAL, 0.0, SEMI_INTERVAL };
 		
-		double xStart = 0.0, yStart = 0.0, xEnd = 0.0, yEnd = 0.0, x0 = 0.0, y0 = 0.0;
-		
-		for (int j = -90; j < 100; j += 10) {
-			double dm = (double)j;
+		for (int j = 0; j < tt.length; j++) {
+			double dm = tt[j];
 			
 			double t = t0 + dm/1440.0;
 			
@@ -244,32 +229,19 @@ public class LunarEclipses {
 
 			double y = (decMoon - decVertex) * 180.0/PI;
 			
-			switch (j) {
-			case -90:
-				xStart = x;
-				yStart = y;
-				break;
-			
-			case 0:
-				x0 = x;
-				y0 = y;
-				break;
-				
-			case 90:
-				xEnd = x;
-				yEnd = y;
-				break;
-			}
+			xx[j] = x;
+			yy[j] = y;
 			
 			q = sin(decMoon) * sin(decVertex) + cos(decMoon) * cos(decVertex) * cos(raMoon-raVertex);
 			
 			q = acos(q) * 180.0/PI;
-			
-			System.out.println(TAB + dfmta.format(dm) + "    " + dfmta.format(x) + "    " + dfmta.format(y) + "    " + dfmta.format(q));
 		}
 		
-		double xDot = (xEnd - xStart)/180.0;
-		double yDot = (yEnd - yStart)/180.0;
+		double xDot = (xx[2] - xx[0])/(2.0 * SEMI_INTERVAL);
+		double yDot = (yy[2] - yy[0])/SEMI_INTERVAL;
+		
+		double x0 = xx[1];
+		double y0 = yy[1];
 		
 		double tMin = - (x0 * xDot + y0 * yDot)/(xDot * xDot + yDot * yDot);
 		
@@ -278,7 +250,31 @@ public class LunarEclipses {
 		
 		q = sqrt(x * x + y * y);
 		
-		System.out.println(TAB + "Minimum distance is at " + dfmta.format(tMin) + " : x = " + dfmta.format(x) + ", y = " + dfmta.format(y) +
-				", q = " + dfmta.format(q));
-	} 
+		if (q > gamma2)
+			return;
+				
+		String PREFIX = timeToDateString(t0, prefixfmt);
+
+		System.out.println();
+		System.out.println(PREFIX + "FULL MOON: " + timeToDateString(t0, datefmt));
+		
+		System.out.println(PREFIX + "gamma1 = " + dfmta.format(gamma1));
+		System.out.println(PREFIX + "gamma2 = " + dfmta.format(gamma2));
+		
+		tMin = t0 + tMin/1440.0;
+		
+		System.out.println(PREFIX + "Minimum gamma: " + timeToDateString(tMin, datefmt) + " : gamma = " + dfmta.format(q));
+		
+		System.out.println(PREFIX + (q < gamma1 ? "TOTAL" : "PARTIAL") + " ECLIPSE");
+	}
+	
+	private String timeToDateString(double t, SimpleDateFormat fmt) {
+		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
+		
+		long ticks = (long)dticks;
+		
+		Date date = new Date(ticks);
+
+		return fmt.format(date);
+	}
 }
