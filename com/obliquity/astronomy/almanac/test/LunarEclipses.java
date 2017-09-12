@@ -42,7 +42,7 @@ public class LunarEclipses {
 	
 	private static final double ADJUSTED_EARTH_RADIUS = EARTH_RADIUS * 1.02;
 	
-	private static final double SEMI_INTERVAL = 90.0;
+	private static final double SEMI_INTERVAL = 120.0;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("0.0");
