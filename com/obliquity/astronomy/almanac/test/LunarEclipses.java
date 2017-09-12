@@ -47,7 +47,7 @@ public class LunarEclipses {
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("0.0");
 	
-	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
@@ -240,7 +240,7 @@ public class LunarEclipses {
 		}
 		
 		double xDot = (xx[2] - xx[0])/(2.0 * SEMI_INTERVAL);
-		double yDot = (yy[2] - yy[0])/SEMI_INTERVAL;
+		double yDot = (yy[2] - yy[0])/(2.0 * SEMI_INTERVAL);
 		
 		double x0 = xx[1];
 		double y0 = yy[1];
