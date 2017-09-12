@@ -164,6 +164,9 @@ public class LunarEclipses {
 		apMoon = new ApparentPlace(earth, moon, sun, erm);
 		
 		AU = ephemeris.getAU();
+		
+		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+		prefixfmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 	}
 
 	public void testForLunarEclipse(double t0) throws JPLEphemerisException {
