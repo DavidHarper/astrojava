@@ -113,7 +113,7 @@ public class SimpleAlmanac {
 			if (args[i].equalsIgnoreCase("-b1875"))
 				targetEpoch = B1875;
 			
-			if (args[i].equalsIgnoreCase("ofdate"))
+			if (args[i].equalsIgnoreCase("-ofdate"))
 				targetEpoch = OF_DATE;
 		}
 
