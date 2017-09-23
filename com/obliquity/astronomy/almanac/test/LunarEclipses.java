@@ -45,7 +45,7 @@ public class LunarEclipses {
 	private static final double SEMI_INTERVAL = 120.0;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
-	private final DecimalFormat dfmtb = new DecimalFormat("0.0");
+	private final DecimalFormat dfmtb = new DecimalFormat("##0.0");
 	
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
@@ -66,6 +66,7 @@ public class LunarEclipses {
 		String filename = null;
 		String startdate = null;
 		String enddate = null;
+		boolean onlyTotal = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -76,6 +77,9 @@ public class LunarEclipses {
 
 			if (args[i].equalsIgnoreCase("-enddate"))
 				enddate = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-only-total"))
+				onlyTotal = true;
 		}
 
 		if (filename == null || startdate == null || enddate == null) {
@@ -135,7 +139,7 @@ public class LunarEclipses {
 			}
 			
 			try {
-				le.testForLunarEclipse(t);
+				le.testForLunarEclipse(t, onlyTotal);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -150,6 +154,9 @@ public class LunarEclipses {
 		System.err.println("\t-ephemeris\tName of ephemeris file");
 		System.err.println("\t-startdate\tStart date");
 		System.err.println("\t-enddate\tEnd date");
+		
+		System.err.println("OPTIONAL PARAMETERS");
+		System.err.println("\t-only-total\tOnly list total eclipses");
 	}
 
 	public LunarEclipses(JPLEphemeris ephemeris) {
@@ -169,7 +176,7 @@ public class LunarEclipses {
 		prefixfmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 	}
 
-	public void testForLunarEclipse(double t0) throws JPLEphemerisException {
+	public void testForLunarEclipse(double t0, boolean onlyTotal) throws JPLEphemerisException {
 		apSun.calculateApparentPlace(t0);
 		apMoon.calculateApparentPlace(t0);
 		
@@ -252,12 +259,16 @@ public class LunarEclipses {
 		
 		double qMin = sqrt(x * x + y * y);
 		
+		// Do not report misses or penumbral eclipses.
 		if (qMin > gamma2)
 			return;
+		
+		// Do not report partial eclipses if the use wants only total eclipses.
+		if (qMin > gamma1 && onlyTotal)
+			return;
 				
-		String PREFIX = timeToDateString(t0, prefixfmt);
+		String PREFIX = "# " + timeToDateString(t0, prefixfmt);
 
-		System.out.println();
 		System.out.println(PREFIX + "FULL MOON: " + timeToDateString(t0, datefmt));
 		
 		System.out.println(PREFIX + "gamma1 = " + dfmta.format(gamma1));
@@ -277,17 +288,21 @@ public class LunarEclipses {
 		double c = q0squared - gamma2 * gamma2;
 		
 		//double f1 =  -b/(2.0 * a);
-		double f2 = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
+		double partialDuration = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
 		
-		System.out.println(PREFIX + "Partial duration: " + dfmtb.format(2.0 * f2) + " minutes");
+		System.out.println(PREFIX + "Partial duration: " + dfmtb.format(2.0 * partialDuration) + " minutes");
+		
+		double totalDuration = 0.0;
 		
 		if (qMin < gamma1) {
 			c = q0squared - gamma1 * gamma1;
 			
-			f2 = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
+			totalDuration = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
 			
-			System.out.println(PREFIX + "Total duration: " + dfmtb.format(2.0 * f2) + " minutes");
+			System.out.println(PREFIX + "Total duration: " + dfmtb.format(2.0 * totalDuration) + " minutes");
 		}
+		
+		System.out.println(timeToDateString(tMinimumGamma, datefmt) + " " + dfmtb.format(2.0 * partialDuration) + " " + dfmtb.format(2.0 * totalDuration));
 	}
 	
 	private String timeToDateString(double t, SimpleDateFormat fmt) {
