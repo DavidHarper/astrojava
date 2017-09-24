@@ -27,6 +27,7 @@ package com.obliquity.astronomy.almanac.test;
 import static java.lang.Math.*;
 
 import java.io.IOException;
+import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,7 +50,7 @@ public class LunarEclipses {
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("##0.0");
 	
-	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private final SimpleDateFormat datefmt = new SimpleDateFormat("G yyyy-MM-dd HH:mm:ss");
 	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
@@ -175,6 +176,14 @@ public class LunarEclipses {
 		AU = ephemeris.getAU();
 		
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+				
+		DateFormatSymbols dfs = datefmt.getDateFormatSymbols();
+		
+		String[] eras = {"BCE", " CE"};
+		dfs.setEras(eras);
+		
+		datefmt.setDateFormatSymbols(dfs);
+		
 		prefixfmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 	}
 
