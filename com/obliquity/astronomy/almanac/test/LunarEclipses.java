@@ -40,9 +40,11 @@ public class LunarEclipses {
 	
 	private static final double EARTH_RADIUS = 6378.0, MOON_RADIUS = 1738.0, SUN_RADIUS = 696000.0;
 	
-	private static final double ADJUSTED_EARTH_RADIUS = EARTH_RADIUS * 1.02;
+	private static final double MEAN_EARTH_RADIUS = 0.998340 * EARTH_RADIUS;
 	
 	private static final double SEMI_INTERVAL = 120.0;
+	
+	private static final double RADIANS_TO_ARCSEC = 3600.0 * 180.0/Math.PI;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("##0.0");
@@ -176,40 +178,13 @@ public class LunarEclipses {
 		prefixfmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 	}
 
+	// Reference: Explanatory Supplement to the Astronomical Almanac, first edition (1961),
+	// fourth impression (1977).  Section 9E, "Lunar Eclipses"
 	public void testForLunarEclipse(double t0, boolean onlyTotal) throws JPLEphemerisException {
-		apSun.calculateApparentPlace(t0);
-		apMoon.calculateApparentPlace(t0);
+		boolean debug = Boolean.getBoolean("debug");
 		
-		double rSun = AU * apSun.getGeometricDistance();
-		double rMoon = AU * apMoon.getGeometricDistance();
-		
-		// Half-angle at vertex of umbral cone
-		double theta = asin((SUN_RADIUS - ADJUSTED_EARTH_RADIUS)/rSun);
-		
-		// Complement of theta
-		double beta = 0.5 * PI - theta;
-		
-		double alpha1 = acos((ADJUSTED_EARTH_RADIUS - MOON_RADIUS)/rMoon);
-		
-		double gamma1 = beta - alpha1;
-		gamma1 *= 180.0/PI;
-		
-		double alpha2 = acos((ADJUSTED_EARTH_RADIUS + MOON_RADIUS)/rMoon);
-		
-		double gamma2 = beta - alpha2;
-		gamma2 *= 180.0/PI;
-		
-		double raVertex = apSun.getRightAscensionOfDate();
-		
-		double decVertex = apSun.getDeclinationOfDate();
-		
-		double raMoon = apMoon.getRightAscensionOfDate();
-		
-		double decMoon = apMoon.getDeclinationOfDate();
-
-		double q = sin(decMoon) * sin(decVertex) + cos(decMoon) * cos(decVertex) * cos(raMoon-raVertex);
-		
-		q = 180.0 - acos(q) * 180.0/PI;
+		if (debug)
+			System.out.println("\n\nDEBUG: Testing for lunar eclipse with t0 = " + t0);
 		
 		double xx[] = new double[3], yy[] = new double[3], tt[] = { -SEMI_INTERVAL, 0.0, SEMI_INTERVAL };
 		
@@ -221,90 +196,124 @@ public class LunarEclipses {
 			apSun.calculateApparentPlace(t);
 			apMoon.calculateApparentPlace(t);
 
-			raVertex = apSun.getRightAscensionOfDate() + PI;
+			double raVertex = apSun.getRightAscensionOfDate() + PI;
 			
-			decVertex = -apSun.getDeclinationOfDate();
+			double decVertex = -apSun.getDeclinationOfDate();
 			
-			raMoon = apMoon.getRightAscensionOfDate();
+			double raMoon = apMoon.getRightAscensionOfDate();
 			
-			decMoon = apMoon.getDeclinationOfDate();
+			double decMoon = apMoon.getDeclinationOfDate();
 			
-			double x = ((raMoon - raVertex) * 180.0/PI) % 360.0;
+			xx[j] = cos(decMoon) * sin(raMoon - raVertex);
 			
-			while (x < -180.0)
-				x += 360.0;
+			yy[j] = cos(decVertex) * sin(decMoon) - sin(decVertex) * cos(decMoon) * cos(raMoon - raVertex);
 			
-			x *= cos(decVertex);
-
-			double y = (decMoon - decVertex) * 180.0/PI;
-			
-			xx[j] = x;
-			yy[j] = y;
-			
-			q = sin(decMoon) * sin(decVertex) + cos(decMoon) * cos(decVertex) * cos(raMoon-raVertex);
-			
-			q = acos(q) * 180.0/PI;
+			if (debug)
+				System.out.println("DEBUG: Interpolation point t = " + t + " : x = " + xx[j] + ", y = " + yy[j]);
 		}
 		
 		double xDot = (xx[2] - xx[0])/(2.0 * SEMI_INTERVAL);
 		double yDot = (yy[2] - yy[0])/(2.0 * SEMI_INTERVAL);
+		
+		if (debug)
+			System.out.println("DEBUG: xDot = " + xDot + ", yDot = " + yDot);
 		
 		double x0 = xx[1];
 		double y0 = yy[1];
 		
 		double tMin = - (x0 * xDot + y0 * yDot)/(xDot * xDot + yDot * yDot);
 		
-		double x = x0 + xDot * tMin;
-		double y = y0 + yDot * tMin;
+		if (debug)
+			System.out.println("DEBUG: Correction to time for closest approach is " + tMin);
 		
-		double qMin = sqrt(x * x + y * y);
+		double xMin = x0 + xDot * tMin;
+		double yMin = y0 + yDot * tMin;
 		
-		// Do not report misses or penumbral eclipses.
-		if (qMin > gamma2)
-			return;
+		double n = sqrt(xDot * xDot + yDot * yDot);
 		
-		// Do not report partial eclipses if the use wants only total eclipses.
-		if (qMin > gamma1 && onlyTotal)
-			return;
-				
-		String PREFIX = "# " + timeToDateString(t0, prefixfmt);
+		double delta = abs(x0 * yDot - y0 * xDot)/n;
+		
+		tMin = t0 + tMin/1440.0;
 
-		System.out.println(PREFIX + "FULL MOON: " + timeToDateString(t0, datefmt));
+		apSun.calculateApparentPlace(tMin);
+		apMoon.calculateApparentPlace(tMin);
 		
-		System.out.println(PREFIX + "gamma1 = " + dfmta.format(gamma1));
-		System.out.println(PREFIX + "gamma2 = " + dfmta.format(gamma2));
+		double rSun = AU * apSun.getGeometricDistance();
 		
-		double tMinimumGamma = t0 + tMin/1440.0;
+		double parallaxSun = asin(EARTH_RADIUS/rSun);
+		double semiDiameterSun = asin(SUN_RADIUS/rSun);
 		
-		System.out.println(PREFIX + "Minimum gamma: " + timeToDateString(tMinimumGamma, datefmt) + " : gamma = " + dfmta.format(qMin));
+		double rMoon = AU * apMoon.getGeometricDistance();
 		
-		System.out.println(PREFIX + (qMin < gamma1 ? "TOTAL" : "PARTIAL") + " ECLIPSE");
+		double parallaxMoon = asin(MEAN_EARTH_RADIUS/rMoon);
+		double semiDiameterMoon = asin(MOON_RADIUS/rMoon);
 		
-		double a = xDot * xDot + yDot * yDot;
-		double b = 2.0 * (x0 * xDot + y0 * yDot);
-		double q0squared = x0 * x0 + y0 * y0;
+		if (debug)
+			System.out.println("DEBUG: parallax of Sun = " + (parallaxSun * RADIANS_TO_ARCSEC)  +
+					", semi-diameter of Sun = " + (semiDiameterSun * RADIANS_TO_ARCSEC) +
+					", parallax of Moon = " + (parallaxMoon * RADIANS_TO_ARCSEC) +
+					", semi-diameter of Moon = " + (semiDiameterMoon * RADIANS_TO_ARCSEC));
 		
-		// Exterior contacts with umbra
-		double c = q0squared - gamma2 * gamma2;
+		// Radius of the penumbra at the distance of the Moon
+		double f1 = 1.02 * (parallaxMoon + semiDiameterSun + parallaxSun);
 		
-		//double f1 =  -b/(2.0 * a);
-		double partialDuration = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
+		// Radius of the umbra at the distance of the Moon
+		double f2 = 1.02 * (parallaxMoon - semiDiameterSun + parallaxSun);
 		
-		System.out.println(PREFIX + "Partial duration: " + dfmtb.format(2.0 * partialDuration) + " minutes");
+		if (debug)
+			System.out.println("DEBUG: f1 = " + f1 + ", f2 = " + f2 );
 		
-		double totalDuration = 0.0;
+		// Start/end of penumbral phase
+		double L1 = f1 + semiDiameterMoon;
 		
-		if (qMin < gamma1) {
-			c = q0squared - gamma1 * gamma1;
-			
-			totalDuration = sqrt(b * b - 4.0 * a * c)/(2.0 * a);
-			
-			System.out.println(PREFIX + "Total duration: " + dfmtb.format(2.0 * totalDuration) + " minutes");
-		}
+		// Start/end of partial phase
+		double L2 = f2 + semiDiameterMoon;
 		
-		System.out.println(timeToDateString(tMinimumGamma, datefmt) + " " + dfmtb.format(2.0 * partialDuration) + " " + dfmtb.format(2.0 * totalDuration));
+		// Start/end of total phase
+		double L3 = f2 - semiDiameterMoon;
+		
+		if (debug)
+			System.out.println("DEBUG: L1 = " + L1 + ", L2 = " + L2 + ", L3 = " + L3);
+		
+		double q1 = L1 * L1 - delta * delta;
+		
+		// Test for no eclipse
+		if (q1 < 0.0)
+			return;
+		
+		double q2 = L2 * L2 - delta * delta;
+		
+		// Test for penumbral eclipse
+		if (q2 < 0.0)
+			return;
+		
+		double q3 = L3 * L3 - delta * delta;
+		
+		// Test for total eclipse
+		if (q3 < 0.0 && onlyTotal)
+			return;
+		
+		double mMin = sqrt(xMin * xMin + yMin * yMin);
+		
+		double maxMag = (L2 - mMin)/(2.0 * semiDiameterMoon);
+		
+		if (debug)
+			System.out.println("DEBUG: q2 = " + q2 + ", q3 = " + q3 + ", mMin = " + mMin + ", max magnitude = " + dfmta.format(maxMag));
+		
+		String eclipseType = q3 < 0.0 ? "PARTIAL" : "TOTAL";
+		
+		double partialDuration = 2.0 * sqrt(q2)/n;
+		
+		double totalDuration = q3 < 0.0 ? 0.0 : 2.0 * sqrt(q3)/n;
+		
+		if (debug)
+			System.out.println("DEBUG: partial duration = " + partialDuration + ", total duration = " + totalDuration);
+		
+		System.out.println(timeToDateString(tMin, datefmt) + " " + eclipseType + " " + dfmta.format(maxMag) +
+				" " + dfmtb.format(partialDuration) +
+				" " + dfmtb.format(totalDuration));
 	}
-	
+
 	private String timeToDateString(double t, SimpleDateFormat fmt) {
 		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
 		
