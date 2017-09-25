@@ -4,7 +4,7 @@ public class AstronomicalDate {
 	private int year, month, day, hour, minute;
 	double second;
 
-	private static final double GREGORIAN_TRANSITION_JD = 2299160;
+	private static final int GREGORIAN_TRANSITION_JD = 2299160;
 	private static final int GREGORIAN_TRANSITION_DATE = 15821004;
 
 	public AstronomicalDate(int year, int month, int day, int hour, int minute,
