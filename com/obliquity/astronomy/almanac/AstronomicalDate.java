@@ -105,7 +105,6 @@ public class AstronomicalDate {
 
 		return (double) JD - 0.5 + ((double) this.hour) / 24.0
 				+ ((double) this.minute) / 1440.0 + (this.second) / 86400.0;
-
 	}
 
 	public int getYear() {
@@ -130,5 +129,10 @@ public class AstronomicalDate {
 
 	public double getSecond() {
 		return second;
+	}
+	
+	public boolean equals(AstronomicalDate that) {
+		return this.year == that.year && this.month == that.month && this.day == that.day &&
+				this.hour == that.hour && this.minute == that.minute && Math.abs(this.second - that.second) < 0.01;
 	}
 }
