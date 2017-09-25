@@ -49,7 +49,11 @@ public class LunarEclipses {
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("##0.0");
-	
+
+	private final DecimalFormat fmtSeconds = new DecimalFormat("00.00");
+	private final DecimalFormat fmtYear = new DecimalFormat(" 0000;-0000");
+	private final DecimalFormat fmtTwoDigits = new DecimalFormat("00");
+
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("G yyyy-MM-dd HH:mm:ss");
 	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
 
@@ -318,18 +322,14 @@ public class LunarEclipses {
 		if (debug)
 			System.out.println("DEBUG: partial duration = " + partialDuration + ", total duration = " + totalDuration);
 		
-		System.out.println(timeToDateString(tMin, datefmt) + " " + eclipseType + " " + dfmta.format(maxMag) +
+		AstronomicalDate date = new AstronomicalDate(tMin);
+		
+		String dateString = fmtYear.format(date.getYear()) + "-" + fmtTwoDigits.format(date.getMonth()) +
+				"-" + fmtTwoDigits.format(date.getDay()) + " " + fmtTwoDigits.format(date.getHour()) +
+				":" + fmtTwoDigits.format(date.getMinute()) + ":" + fmtSeconds.format(date.getSecond());
+		
+		System.out.println(dateString + " " + eclipseType + " " + dfmta.format(maxMag) +
 				" " + dfmtb.format(partialDuration) +
 				" " + dfmtb.format(totalDuration));
-	}
-
-	private String timeToDateString(double t, SimpleDateFormat fmt) {
-		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
-		
-		long ticks = (long)dticks;
-		
-		Date date = new Date(ticks);
-
-		return fmt.format(date);
 	}
 }
