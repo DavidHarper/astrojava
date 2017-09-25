@@ -50,7 +50,6 @@ public class LunarEclipses {
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("##0.0");
 
-	private final DecimalFormat fmtSeconds = new DecimalFormat("00.00");
 	private final DecimalFormat fmtYear = new DecimalFormat(" 0000;-0000");
 	private final DecimalFormat fmtTwoDigits = new DecimalFormat("00");
 
@@ -326,7 +325,7 @@ public class LunarEclipses {
 		
 		String dateString = fmtYear.format(date.getYear()) + "-" + fmtTwoDigits.format(date.getMonth()) +
 				"-" + fmtTwoDigits.format(date.getDay()) + " " + fmtTwoDigits.format(date.getHour()) +
-				":" + fmtTwoDigits.format(date.getMinute()) + ":" + fmtSeconds.format(date.getSecond());
+				":" + fmtTwoDigits.format(date.getMinute()) + ":" + fmtTwoDigits.format(date.getSecond());
 		
 		System.out.println(dateString + " " + eclipseType + " " + dfmta.format(maxMag) +
 				" " + dfmtb.format(partialDuration) +
