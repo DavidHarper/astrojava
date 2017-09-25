@@ -72,7 +72,7 @@ public class AstronomicalDate {
 		this.second = 60.0 * t;
 	}
 
-	double getJulianDate() {
+	public double getJulianDate() {
 		int D, M, Y, mu, JD;
 		int ThisDate;
 
