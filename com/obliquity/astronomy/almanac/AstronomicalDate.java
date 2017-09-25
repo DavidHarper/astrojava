@@ -60,7 +60,7 @@ public class AstronomicalDate {
 
 		this.day = D;
 
-		t = 24.0 * (djd + 0.5 % 1.0);
+		t = 24.0 * ((djd + 0.5) % 1.0);
 
 		this.hour = (int) t;
 
