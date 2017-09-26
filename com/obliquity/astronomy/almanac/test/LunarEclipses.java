@@ -323,8 +323,8 @@ public class LunarEclipses {
 		
 		AstronomicalDate date = new AstronomicalDate(tMin);
 		
-		String dateString = fmtYear.format(date.getYear()) + "-" + fmtTwoDigits.format(date.getMonth()) +
-				"-" + fmtTwoDigits.format(date.getDay()) + " " + fmtTwoDigits.format(date.getHour()) +
+		String dateString = fmtYear.format(date.getYear()) + " " + fmtTwoDigits.format(date.getMonth()) +
+				" " + fmtTwoDigits.format(date.getDay()) + " " + fmtTwoDigits.format(date.getHour()) +
 				":" + fmtTwoDigits.format(date.getMinute()) + ":" + fmtTwoDigits.format(date.getSecond());
 		
 		System.out.println(dateString + " " + eclipseType + " " + dfmta.format(maxMag) +
