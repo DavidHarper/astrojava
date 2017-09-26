@@ -127,7 +127,7 @@ public class TestAstronomicalDate {
 			while (true) {
 				System.out.print("> ");
 				line = br.readLine();
-				if (line == null)
+				if (line == null || line.length() == 0)
 					break;
 				lineNumber++;
 				try {
