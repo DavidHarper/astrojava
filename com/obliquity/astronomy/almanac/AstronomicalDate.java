@@ -20,13 +20,17 @@ public class AstronomicalDate {
 	public AstronomicalDate(int year, int month, int day) {
 		this(year, month, day, 0, 0, 0.0);
 	}
+	
+	// This is a nasty hack to enable the routine to handle
+	// negative Julian Day numbers.
+	private static final int JULIAN_CYCLES_OFFSET = 10000;
 
 	public AstronomicalDate(double djd) {
 		int K, L, N, I, J, D, M, Y;
 		int JD;
 		double t;
 
-		JD = (int) (djd + 0.5);
+		JD = (int) Math.floor(djd + 0.5);
 
 		if (JD > GREGORIAN_TRANSITION_JD) {
 			// Gregorian calendar
@@ -42,7 +46,7 @@ public class AstronomicalDate {
 			Y = 100 * (N - 49) + I + L;
 		} else {
 			// Julian calendar
-			J = JD + 1402;
+			J = JD + 1402 + 1461 * JULIAN_CYCLES_OFFSET;
 			K = (J - 1) / 1461;
 			L = J - 1461 * K;
 			N = (L - 1) / 365 - L / 1461;
@@ -51,7 +55,7 @@ public class AstronomicalDate {
 			D = I - (2447 * J) / 80;
 			I = J / 11;
 			M = J + 2 - 12 * I;
-			Y = 4 * K + N + I - 4716;
+			Y = 4 * K + N + I - 4716 - 4 * JULIAN_CYCLES_OFFSET;
 		}
 
 		this.year = Y;
@@ -60,7 +64,7 @@ public class AstronomicalDate {
 
 		this.day = D;
 
-		t = 24.0 * ((djd + 0.5) % 1.0);
+		t = (24.0 * (0.5 + djd - Math.floor(djd))) % 24.0;
 
 		this.hour = (int) t;
 
