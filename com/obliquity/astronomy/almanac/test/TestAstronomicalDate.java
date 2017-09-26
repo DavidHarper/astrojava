@@ -1,5 +1,8 @@
 package com.obliquity.astronomy.almanac.test;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.util.Random;
 
@@ -9,21 +12,26 @@ public class TestAstronomicalDate {
 	private static final double J2000 = 2451545.5;
 	private static final double JULIAN_MILLENNIUM = 365.25 * 1000.0;
 	
+	private DecimalFormat dfmta = new DecimalFormat("0.00000");
+	private DecimalFormat dfmtb = new DecimalFormat("00.00");
+	private DecimalFormat ifmta = new DecimalFormat(" 0000;-0000");
+	private DecimalFormat ifmtb = new DecimalFormat("00");
+
 	public static void main(String[] args) {
 		TestAstronomicalDate tad = new TestAstronomicalDate();
 		
-		tad.run();
+		boolean interactive = Boolean.getBoolean("interactive");
+		
+		if (interactive)
+			tad.runInteractive();
+		else
+			tad.run();
 		
 		System.exit(0);;
 	}
 	
 	public void run() {
 		Random random = new Random();
-		
-		DecimalFormat dfmta = new DecimalFormat("0.00000");
-		DecimalFormat dfmtb = new DecimalFormat("00.00");
-		DecimalFormat ifmta = new DecimalFormat(" 0000;-0000");
-		DecimalFormat ifmtb = new DecimalFormat("00");
 
 		System.out.println("TEST 1: Julian Day Number to date to Julian Day Number");
 		
@@ -106,5 +114,77 @@ public class TestAstronomicalDate {
 		default:
 			return 1 + random.nextInt(30);
 		}
+	}
+	
+	public void runInteractive() {
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+		String line = null;
+
+		int lineNumber = 0;
+
+		try {
+			while (true) {
+				System.out.print("> ");
+				line = br.readLine();
+				if (line == null)
+					break;
+				lineNumber++;
+				try {
+					parseLine(line);
+				} catch (Exception e) {
+					System.err.println("Error at line " + lineNumber
+							+ " of input file: \"" + line + "\"");
+					e.printStackTrace();
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void parseLine(String line) {
+		String[] words = line.trim().split("\\s+");
+
+		switch (words.length) {
+			case 1:
+				testJDToDate(words[0]);
+				break;
+				
+			case 3:
+				testDateToJD(words);
+				break;
+				
+			default:
+				System.err.println("Found " + words.length + " words on line, cannot process");
+				break;
+		}
+	}
+	
+	private void testJDToDate(String jdString) throws NumberFormatException {
+		double jd = Double.parseDouble(jdString);
+		
+		AstronomicalDate date = new AstronomicalDate(jd);
+		
+		System.out.println(dfmta.format(jd) + " ==> " + ifmta.format(date.getYear()) + " " +
+				ifmtb.format(date.getMonth()) + " " +
+				ifmtb.format(date.getDay()) + "  " +
+				ifmtb.format(date.getHour()) + ":" +
+				ifmtb.format(date.getMinute()) + ":" +
+				dfmtb.format(date.getSecond()));
+	}
+	
+	private void testDateToJD(String[] words) {
+		int year = Integer.parseInt(words[0]);
+		int month = Integer.parseInt(words[1]);
+		int day = Integer.parseInt(words[2]);
+		
+		AstronomicalDate date = new AstronomicalDate(year, month, day);
+		
+		System.out.println(
+				ifmta.format(year) + " " +
+				ifmtb.format(month) + " " +
+				ifmtb.format(day) + "  " + " ==> " +
+				dfmta.format(date.getJulianDate()));
 	}
 }
