@@ -27,6 +27,7 @@ package com.obliquity.astronomy.almanac.test;
 import static java.lang.Math.*;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -117,6 +118,9 @@ public class MoonPhases {
 		
 		datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		
+		DecimalFormat fmtYear = new DecimalFormat(" 0000;-0000");
+		DecimalFormat fmtTwoDigits = new DecimalFormat("00");
+		
 		while (t < jdfinish) {
 			try {
 				t = mp.getDateOfNextPhase(t, FULL_MOON);
@@ -125,13 +129,13 @@ public class MoonPhases {
 				System.exit(1);
 			}
 			
-			double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
+			AstronomicalDate ad = new AstronomicalDate(t);
 			
-			long ticks = (long)dticks;
+			String dateString = fmtYear.format(ad.getYear()) + " " + fmtTwoDigits.format(ad.getMonth()) +
+					" " + fmtTwoDigits.format(ad.getDay()) + " " + fmtTwoDigits.format(ad.getHour()) +
+					":" + fmtTwoDigits.format(ad.getMinute()) + ":" + fmtTwoDigits.format(ad.getSecond());
 			
-			date = new Date(ticks);
-			
-			System.out.println(datefmt.format(date));
+			System.out.println(dateString);
 			
 			t += 29.0;
 		}
