@@ -54,7 +54,6 @@ public class SimpleAlmanac {
 	private final DecimalFormat dfmta = new DecimalFormat("00.000");
 	private final DecimalFormat dfmtb = new DecimalFormat("00.00");
 	private final DecimalFormat ifmta = new DecimalFormat("00");
-	private final DecimalFormat dfmtc = new DecimalFormat("0.0000000");
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	private ApparentPlace ap;
@@ -72,7 +71,7 @@ public class SimpleAlmanac {
 		this.ap = ap;
 		this.targetEpoch = targetEpoch;
 		
-		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));	
+		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 		
 		// Calculate the precession matrix from J2000 to B1875
 		double epochJ2000 = erm.JulianEpoch(2000.0);
@@ -331,11 +330,11 @@ public class SimpleAlmanac {
 		
 		ps.print("  ");
 		
-		ps.print(dfmtc.format(ap.getGeometricDistance()));
+		ps.format("%10.7f", ap.getGeometricDistance());
 		
 		ps.print("  ");
 		
-		ps.print(dfmtc.format(ap.getLightPathDistance()));
+		ps.format("%10.7f", ap.getLightPathDistance());
 
 		String constellation = ConstellationFinder.getZone(ra1875, dec1875);
 		
