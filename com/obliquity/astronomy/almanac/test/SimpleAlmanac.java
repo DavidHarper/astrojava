@@ -32,6 +32,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import static java.lang.Math.*;
+
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.EarthCentre;
 import com.obliquity.astronomy.almanac.EarthRotationModel;
@@ -56,7 +58,7 @@ public class SimpleAlmanac {
 	private final DecimalFormat ifmta = new DecimalFormat("00");
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
-	private ApparentPlace ap;
+	private ApparentPlace apTarget, apSun;
 	private IAUEarthRotationModel erm = new IAUEarthRotationModel();
 	private Matrix precessJ2000toB1875 = null; 
 	
@@ -67,8 +69,9 @@ public class SimpleAlmanac {
 	
 	private static final double TWO_PI = 2.0 * Math.PI;
 	
-	public SimpleAlmanac(ApparentPlace ap, int targetEpoch) {
-		this.ap = ap;
+	public SimpleAlmanac(ApparentPlace apTarget, ApparentPlace apSun, int targetEpoch) {
+		this.apTarget = apTarget;
+		this.apSun = apSun;
 		this.targetEpoch = targetEpoch;
 		
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -188,9 +191,11 @@ public class SimpleAlmanac {
 
 		EarthRotationModel erm = targetEpoch == OF_DATE ? new IAUEarthRotationModel() : null;
 
-		ApparentPlace ap = new ApparentPlace(earth, planet, sun, erm);
+		ApparentPlace apTarget = new ApparentPlace(earth, planet, sun, erm);
 		
-		SimpleAlmanac almanac = new SimpleAlmanac(ap, targetEpoch);
+		ApparentPlace apSun = (kBody == JPLEphemeris.SUN ? apTarget : new ApparentPlace(earth, sun, sun, erm));
+		
+		SimpleAlmanac almanac = new SimpleAlmanac(apTarget, apSun, targetEpoch);
 		
 		almanac.run(jdstart, jdfinish, jdstep);
 	}
@@ -264,12 +269,12 @@ public class SimpleAlmanac {
 	}
 	
 	private void displayApparentPlace(double t, PrintStream ps) throws JPLEphemerisException {
-		ap.calculateApparentPlace(t);
+		apTarget.calculateApparentPlace(t);
 
 		double ra = 0.0, dec = 0.0, ra1875, dec1875;
 		String epochName = null;
 
-		Vector dc = (Vector)ap.getDirectionCosinesJ2000().clone();
+		Vector dc = (Vector)apTarget.getDirectionCosinesJ2000().clone();
 		
 		dc.multiplyBy(precessJ2000toB1875);	
 		
@@ -284,14 +289,14 @@ public class SimpleAlmanac {
 		
 		switch (targetEpoch) {
 		case OF_DATE:
-			ra = ap.getRightAscensionOfDate();
-			dec = ap.getDeclinationOfDate();
+			ra = apTarget.getRightAscensionOfDate();
+			dec = apTarget.getDeclinationOfDate();
 			epochName = "OF_DATE";
 			break;
 			
 		case J2000:
-			ra = ap.getRightAscensionJ2000();
-			dec = ap.getDeclinationJ2000();
+			ra = apTarget.getRightAscensionJ2000();
+			dec = apTarget.getDeclinationJ2000();
 			epochName = "J2000";
 			break;
 			
@@ -330,11 +335,11 @@ public class SimpleAlmanac {
 		
 		ps.print("  ");
 		
-		ps.format("%10.7f", ap.getGeometricDistance());
+		ps.format("%10.7f", apTarget.getGeometricDistance());
 		
 		ps.print("  ");
 		
-		ps.format("%10.7f", ap.getLightPathDistance());
+		ps.format("%10.7f", apTarget.getLightPathDistance());
 
 		String constellation = ConstellationFinder.getZone(ra1875, dec1875);
 		
@@ -342,7 +347,194 @@ public class SimpleAlmanac {
 		
 		ps.print("  " + epochName);
 		
+		if (targetIsPlanet()) {
+			apSun.calculateApparentPlace(t);
+			
+			ra = apTarget.getRightAscensionJ2000();
+			dec = apTarget.getDeclinationJ2000();
+			
+			double raSun = apSun.getRightAscensionJ2000();
+			double decSun = apSun.getDeclinationJ2000();
+
+			double elongation = calculateElongation(ra, dec, raSun, decSun);
+			
+			ps.printf("  %6.2f", elongation * 180.0/PI);
+			
+			double dEarthSun = apSun.getGeometricDistance();
+			
+			double dEarthPlanet = apTarget.getGeometricDistance();
+			
+			double dPlanetSun = calculatePlanetSunDistance(dEarthSun, dEarthPlanet, elongation);
+			
+			double phaseAngle = calculatePhaseAngle(dEarthSun, dEarthPlanet, dPlanetSun);
+			
+			ps.printf("  %6.2f", phaseAngle * 180.0/PI);
+			
+			double phase = 0.5 * (1.0 + cos(phaseAngle));
+			
+			ps.printf("  %5.3f", phase);
+			
+			double magnitude = calculateMagnitude(dEarthPlanet, dPlanetSun, phaseAngle, t);
+			
+			ps.printf("  %5.2f", magnitude);
+		}
+		
 		ps.println();
+	}
+	
+	private double calculateElongation(double ra1, double dec1, double ra2, double dec2) {
+		double x = sin(dec1) * sin(dec2) + cos(dec1) * cos(dec2) * cos(ra1 - ra2);
+		
+		return acos(x);
+	}
+	
+	private double calculatePlanetSunDistance(double dEarthSun, double dEarthPlanet, double elongation) {
+		double dSquared = dEarthSun * dEarthSun + dEarthPlanet * dEarthPlanet - 2.0 * dEarthSun * dEarthPlanet * cos(elongation);
+		
+		return sqrt(dSquared);
+	}
+	
+	private double calculatePhaseAngle(double dEarthSun, double dEarthPlanet, double dPlanetSun) {
+		double x = (dEarthPlanet * dEarthPlanet + dPlanetSun * dPlanetSun - dEarthSun * dEarthSun)/(2.0 * dEarthPlanet * dPlanetSun);
+		
+		return acos(x);
+	}
+	
+	private double calculateMagnitude(double dEarthPlanet, double dPlanetSun, double phaseAngle, double t) throws JPLEphemerisException {
+		double phaseDegrees = phaseAngle * 180.0/PI;
+		
+		double distanceModulus = 5.0 * log10(dEarthPlanet * dPlanetSun);
+		
+		int targetCode = apTarget.getTarget().getBodyCode();
+		
+		double a = 0.0;
+		
+		switch (targetCode) {
+		case JPLEphemeris.MERCURY:
+			a = phaseDegrees/100.0;
+			return -0.42 + distanceModulus + 3.8 * a - 2.73 * a * a + 2.0 * a * a * a;
+			
+		case JPLEphemeris.VENUS:
+			a = phaseDegrees/100.0;
+			return -4.40 + distanceModulus + 0.09 * a + 2.39 * a * a - 0.65 * a * a * a;
+			
+		case JPLEphemeris.MARS:
+			return -1.52 + distanceModulus + 0.016 * phaseDegrees;
+			
+		case JPLEphemeris.JUPITER:
+			return -9.40 + distanceModulus + 0.005 * phaseDegrees;
+			
+		case JPLEphemeris.SATURN:
+			return -8.88 + distanceModulus + saturnRingCorrection(t);
+			
+		case JPLEphemeris.URANUS:
+			return -7.19 + distanceModulus + 0.002 * phaseDegrees;
+			
+		case JPLEphemeris.NEPTUNE:
+			return -6.87 + distanceModulus;
+			
+		case JPLEphemeris.PLUTO:
+			return -1.0 + distanceModulus;
+			
+		default:
+			throw new IllegalStateException("Cannot calculate a magnitude for the target body.");
+		}	
+	}
+	
+	private double saturnRingCorrection(double t) throws JPLEphemerisException {
+		double ra = apTarget.getRightAscensionOfDate();
+		double dec = apTarget.getDeclinationOfDate();
+		
+		double[] eclipticCoordinates = getSaturnEclipticCoordinates(t);
+		
+		double hlong = eclipticCoordinates[0];
+		double hlat = eclipticCoordinates[1];
+		
+		// Julian centuries since 1900
+		double tau = (t - 2415020.0)/36525.0;
+		
+		double R = PI/180.0;
+		
+		// Ring orientation angles
+		double node = (168.11780 + 1.39352 * tau + 0.00041 * tau * tau) * R;
+		double incl = (28.07443 - 0.01302 * tau) * R;
+		double nn = (126.35863 + 3.99712 * tau + 0.23542 * tau * tau) * R;
+		double jj = (6.91086 - 0.44892 * tau + 0.01291 * tau * tau) * R;
+		double omega = (42.92442 - 2.73981 * tau - 0.23517 * tau * tau) * R;
+		double dln = (hlong - node);
+		      
+		double udash = atan2(sin(incl)*sin(hlat)+cos(incl)*cos(hlat)*sin(dln),
+		         cos(hlat)*cos(dln));
+
+		double dran = ra - nn;
+		double u = atan2(sin(jj)*sin(dec)+cos(jj)*cos(dec)*sin(dran),
+				cos(dec)*cos(dran));
+
+		double sinb = -cos(jj)*sin(dec)+sin(jj)*cos(dec)*sin(dran);
+		
+		double udwu = udash + omega - u;
+		
+		while (udwu > PI)
+			udwu = udwu - 2.0*PI;
+		
+		while (udwu < -PI)
+			udwu = udwu + 2.0*PI;
+		
+		return 0.044 * abs(udwu/R) - 2.60 * abs(sinb) + 1.25 * sinb * sinb;
+	}
+	
+	private double[] getSaturnEclipticCoordinates(double t) throws JPLEphemerisException {
+		int targetCode = apTarget.getTarget().getBodyCode();
+		
+		if (targetCode != JPLEphemeris.SATURN)
+			throw new IllegalStateException("Do not use this method for a target which is not Saturn.");
+		
+		MovingPoint mp = apTarget.getTarget();
+		
+		Vector pos = mp.getPosition(t);
+		
+		Matrix precess = erm.precessionMatrix(J2000, t);
+		
+		pos.multiplyBy(precess);
+		
+		double obliquity = erm.meanObliquity(t);
+		
+		double xa = pos.getX();
+		double ya = pos.getY();
+		double za = pos.getZ();
+		
+		double ce = cos(obliquity);
+		double se = sin(obliquity);
+		
+		double xe = xa;
+		double ye = ya * ce + za * se;
+		double ze = -ya * se + za * ce;
+		
+		double[] coords = new double[2];
+		
+		coords[0] = atan2(ye,xe);
+		coords[1] = atan2(ze, sqrt(xe * xe + ye * ye));
+		
+		return coords;
+	}
+	
+	private boolean targetIsPlanet() {
+		int targetCode = apTarget.getTarget().getBodyCode();
+		
+		switch (targetCode) {
+		case JPLEphemeris.MERCURY:
+		case JPLEphemeris.VENUS:
+		case JPLEphemeris.MARS:
+		case JPLEphemeris.JUPITER:
+		case JPLEphemeris.SATURN:
+		case JPLEphemeris.URANUS:
+		case JPLEphemeris.NEPTUNE:
+		case JPLEphemeris.PLUTO:
+			return true;
+			
+		default:
+			return false;
+		}	
 	}
 
 	public static void showUsage() {
