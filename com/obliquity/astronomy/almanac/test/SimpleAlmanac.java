@@ -358,7 +358,7 @@ public class SimpleAlmanac {
 
 			double elongation = calculateElongation(ra, dec, raSun, decSun);
 			
-			ps.printf("  %6.2f", elongation * 180.0/PI);
+			ps.printf("  %7.2f", elongation * 180.0/PI);
 			
 			double dEarthSun = apSun.getGeometricDistance();
 			
@@ -385,7 +385,7 @@ public class SimpleAlmanac {
 	private double calculateElongation(double ra1, double dec1, double ra2, double dec2) {
 		double x = sin(dec1) * sin(dec2) + cos(dec1) * cos(dec2) * cos(ra1 - ra2);
 		
-		return acos(x);
+		return signum(ra1 - ra2) * acos(x);
 	}
 	
 	private double calculatePlanetSunDistance(double dEarthSun, double dEarthPlanet, double elongation) {
@@ -442,6 +442,8 @@ public class SimpleAlmanac {
 	}
 	
 	private double saturnRingCorrection(double t) throws JPLEphemerisException {
+		final double R = PI/180.0;
+
 		double ra = apTarget.getRightAscensionOfDate();
 		double dec = apTarget.getDeclinationOfDate();
 		
@@ -450,10 +452,10 @@ public class SimpleAlmanac {
 		double hlong = eclipticCoordinates[0];
 		double hlat = eclipticCoordinates[1];
 		
+		//System.err.println("\n# SaturnRingCorrection: long = " + (hlong/R) + " ; lat = " + (hlat/R));
+		
 		// Julian centuries since 1900
 		double tau = (t - 2415020.0)/36525.0;
-		
-		double R = PI/180.0;
 		
 		// Ring orientation angles
 		double node = (168.11780 + 1.39352 * tau + 0.00041 * tau * tau) * R;
@@ -465,10 +467,17 @@ public class SimpleAlmanac {
 		      
 		double udash = atan2(sin(incl)*sin(hlat)+cos(incl)*cos(hlat)*sin(dln),
 		         cos(hlat)*cos(dln));
+		
+		if (udash < -PI)
+			udash += 2.0 * PI;
 
 		double dran = ra - nn;
+		
 		double u = atan2(sin(jj)*sin(dec)+cos(jj)*cos(dec)*sin(dran),
 				cos(dec)*cos(dran));
+		
+		if (u < -PI)
+			u += 2.0 * PI;
 
 		double sinb = -cos(jj)*sin(dec)+sin(jj)*cos(dec)*sin(dran);
 		
@@ -479,6 +488,8 @@ public class SimpleAlmanac {
 		
 		while (udwu < -PI)
 			udwu = udwu + 2.0*PI;
+		
+		//System.err.println("\n# SaturnRingCorrection: t = " + t + " ; b = " + (180.0*asin(sinb)/PI) + " ; u = " + (u/R) + " ; udash = " + (udash/R));
 		
 		return 0.044 * abs(udwu/R) - 2.60 * abs(sinb) + 1.25 * sinb * sinb;
 	}
@@ -493,7 +504,21 @@ public class SimpleAlmanac {
 		
 		Vector pos = mp.getPosition(t);
 		
-		Matrix precess = erm.precessionMatrix(J2000, t);
+		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; barycentric position of Saturn = " + pos);
+		
+		MovingPoint mps = apSun.getTarget();
+		
+		Vector posSun = mps.getPosition(t);
+		
+		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; barycentric position of Sun = " + posSun);
+		
+		pos.subtract(posSun);
+		
+		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; heliocentric position of Saturn = " + pos);
+		
+		Matrix precess = erm.precessionMatrix(mp.getEpoch(), t);
+		
+		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; precession matrix = " + precess);
 		
 		pos.multiplyBy(precess);
 		
@@ -509,6 +534,9 @@ public class SimpleAlmanac {
 		double xe = xa;
 		double ye = ya * ce + za * se;
 		double ze = -ya * se + za * ce;
+		
+		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; equatorial x,y,z = [" + xa + ", " + ya + ", " + za + "] ; ecliptic x,y,z = "
+		//		+ xe + ", " + ye + ", " + ze + "]");
 		
 		double[] coords = new double[2];
 		
