@@ -377,6 +377,10 @@ public class SimpleAlmanac {
 			double magnitude = calculateMagnitude(dEarthPlanet, dPlanetSun, phaseAngle, t);
 			
 			ps.printf("  %5.2f", magnitude);
+			
+			double semiDiameter = calculateSemiDiameter(dEarthPlanet);
+			
+			ps.printf("  %5.2f", 2.0 * semiDiameter);
 		}
 		
 		ps.println();
@@ -452,8 +456,6 @@ public class SimpleAlmanac {
 		double hlong = eclipticCoordinates[0];
 		double hlat = eclipticCoordinates[1];
 		
-		//System.err.println("\n# SaturnRingCorrection: long = " + (hlong/R) + " ; lat = " + (hlat/R));
-		
 		// Julian centuries since 1900
 		double tau = (t - 2415020.0)/36525.0;
 		
@@ -488,9 +490,7 @@ public class SimpleAlmanac {
 		
 		while (udwu < -PI)
 			udwu = udwu + 2.0*PI;
-		
-		//System.err.println("\n# SaturnRingCorrection: t = " + t + " ; b = " + (180.0*asin(sinb)/PI) + " ; u = " + (u/R) + " ; udash = " + (udash/R));
-		
+
 		return 0.044 * abs(udwu/R) - 2.60 * abs(sinb) + 1.25 * sinb * sinb;
 	}
 	
@@ -504,21 +504,13 @@ public class SimpleAlmanac {
 		
 		Vector pos = mp.getPosition(t);
 		
-		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; barycentric position of Saturn = " + pos);
-		
 		MovingPoint mps = apSun.getTarget();
 		
 		Vector posSun = mps.getPosition(t);
 		
-		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; barycentric position of Sun = " + posSun);
-		
 		pos.subtract(posSun);
 		
-		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; heliocentric position of Saturn = " + pos);
-		
 		Matrix precess = erm.precessionMatrix(mp.getEpoch(), t);
-		
-		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; precession matrix = " + precess);
 		
 		pos.multiplyBy(precess);
 		
@@ -535,15 +527,46 @@ public class SimpleAlmanac {
 		double ye = ya * ce + za * se;
 		double ze = -ya * se + za * ce;
 		
-		//System.err.println("\n# getSaturnEclipticCoordinates: t = " + t + " ; equatorial x,y,z = [" + xa + ", " + ya + ", " + za + "] ; ecliptic x,y,z = "
-		//		+ xe + ", " + ye + ", " + ze + "]");
-		
 		double[] coords = new double[2];
 		
 		coords[0] = atan2(ye,xe);
 		coords[1] = atan2(ze, sqrt(xe * xe + ye * ye));
 		
 		return coords;
+	}
+	
+	private double calculateSemiDiameter(double d) {
+		int targetCode = apTarget.getTarget().getBodyCode();
+				
+		switch (targetCode) {
+		case JPLEphemeris.MERCURY:
+			return 3.34/d;
+			
+		case JPLEphemeris.VENUS:
+			return 8.41/d;
+			
+		case JPLEphemeris.MARS:
+			return 4.68/d;
+			
+		case JPLEphemeris.JUPITER:
+			return 98.47/d;
+			
+		case JPLEphemeris.SATURN:
+			return 83.33/d;
+			
+		case JPLEphemeris.URANUS:
+			return 34.28/d;
+			
+		case JPLEphemeris.NEPTUNE:
+			return 36.56/d;
+
+		case JPLEphemeris.PLUTO:
+			return 1.64/d;
+			
+		default:
+			throw new IllegalStateException("Cannot calculate a magnitude for the target body.");
+		}	
+
 	}
 	
 	private boolean targetIsPlanet() {
