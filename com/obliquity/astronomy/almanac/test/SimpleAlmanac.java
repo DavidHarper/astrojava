@@ -410,7 +410,7 @@ public class SimpleAlmanac {
 		double x = sin(dec1) * sin(dec2)
 				+ cos(dec1) * cos(dec2) * cos(ra1 - ra2);
 
-		return signum(ra1 - ra2) * acos(x);
+		return acos(x);
 	}
 	
 	private double calculateEclipticElongation(double ra1, double dec1, double ra2,
