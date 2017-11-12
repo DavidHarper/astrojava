@@ -476,7 +476,7 @@ public class SimpleAlmanac {
 		double ra = apTarget.getRightAscensionOfDate();
 		double dec = apTarget.getDeclinationOfDate();
 
-		double[] eclipticCoordinates = getSaturnEclipticCoordinates(t);
+		double[] eclipticCoordinates = getHeliocentricEclipticCoordinates(t);
 
 		double hlong = eclipticCoordinates[0];
 		double hlat = eclipticCoordinates[1];
@@ -520,14 +520,8 @@ public class SimpleAlmanac {
 		return 0.044 * abs(udwu / R) - 2.60 * abs(sinb) + 1.25 * sinb * sinb;
 	}
 
-	private double[] getSaturnEclipticCoordinates(double t)
+	private double[] getHeliocentricEclipticCoordinates(double t)
 			throws JPLEphemerisException {
-		int targetCode = apTarget.getTarget().getBodyCode();
-
-		if (targetCode != JPLEphemeris.SATURN)
-			throw new IllegalStateException(
-					"Do not use this method for a target which is not Saturn.");
-
 		MovingPoint mp = apTarget.getTarget();
 
 		Vector pos = mp.getPosition(t);
