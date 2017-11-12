@@ -371,6 +371,10 @@ public class SimpleAlmanac {
 			double elongation = calculateElongation(ra, dec, raSun, decSun);
 
 			ps.printf("  %7.2f", elongation * 180.0 / PI);
+			
+			elongation = calculateEclipticElongation(ra, dec, raSun, decSun, t);
+
+			ps.printf("  %7.2f", elongation * 180.0 / PI);
 
 			double dEarthSun = apSun.getGeometricDistance();
 
@@ -407,6 +411,35 @@ public class SimpleAlmanac {
 				+ cos(dec1) * cos(dec2) * cos(ra1 - ra2);
 
 		return signum(ra1 - ra2) * acos(x);
+	}
+	
+	private double calculateEclipticElongation(double ra1, double dec1, double ra2,
+			double dec2, double t) {
+		double longitude1 = calculateEclipticLongitude(ra1, dec1, t);
+		double longitude2 = calculateEclipticLongitude(ra2, dec2, t);
+		
+		double elongation = longitude1 - longitude2;
+		
+		while (elongation < -PI)
+			elongation += 2.0 * PI;
+		
+		while (elongation > PI)
+			elongation -= 2.0 * PI;
+
+		return elongation;
+	}
+	
+	private double calculateEclipticLongitude(double ra, double dec, double t) {
+		double xa = cos(ra) * cos(dec);
+		double ya = sin(ra) * cos(dec);
+		double za = sin(dec);
+		
+		double obliquity = erm.meanObliquity(t);
+		
+		double xe = xa;
+		double ye = ya * cos(obliquity) + za * sin(obliquity);
+
+		return atan2(ye, xe);
 	}
 
 	private double calculatePlanetSunDistance(double dEarthSun,
@@ -635,6 +668,7 @@ public class SimpleAlmanac {
 				"\tEpoch of Right Ascension and Declination",
 				"[For planets only]",
 				"\tElongation",
+				"\tElongation in ecliptic longitude",
 				"\tPhase angle",
 				"\tIlluminated fraction",
 				"\tApparent magnitude",
