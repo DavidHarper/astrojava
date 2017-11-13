@@ -42,12 +42,11 @@ public class RiseSetTest {
 
 	public static void main(String[] args) {
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-		
-		final int NEVENTS = 6;
 
 		String filename = null;
 		String bodyname = null;
 		String startdate = null;
+		String enddate = null;
 		String longitude = null;
 		String latitude = null;
 
@@ -61,6 +60,9 @@ public class RiseSetTest {
 			if (args[i].equalsIgnoreCase("-startdate"))
 				startdate = args[++i];
 
+			if (args[i].equalsIgnoreCase("-enddate"))
+				enddate = args[++i];
+
 			if (args[i].equalsIgnoreCase("-latitude"))
 				latitude = args[++i];
 
@@ -68,7 +70,7 @@ public class RiseSetTest {
 				longitude = args[++i];
 		}
 
-		if (filename == null || bodyname == null || startdate == null) {
+		if (filename == null || bodyname == null || startdate == null || enddate == null) {
 			showUsage();
 			System.exit(1);
 		}
@@ -80,19 +82,29 @@ public class RiseSetTest {
 			System.exit(1);
 		}
 
-		Date date = null;
+		Date startDate = null;
 		
 		try {
-			date = datefmt.parse(startdate);
+			startDate = datefmt.parse(startdate);
 		} catch (ParseException e) {
-			System.err.println("Failed to parse \"" + startdate + "\" as an ISO date");
+			System.err.println("Failed to parse start date \"" + startdate + "\" as an ISO date");
 			e.printStackTrace();
 			System.exit(1);
 		}
 		
-		double jdstart = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY;
+		double jdstart = UNIX_EPOCH_AS_JD + ((double)startDate.getTime())/MILLISECONDS_PER_DAY;
 
-		double jdfinish = jdstart + 1.0;
+		Date endDate = null;
+		
+		try {
+			endDate = datefmt.parse(enddate);
+		} catch (ParseException e) {
+			System.err.println("Failed to parse end date \"" + enddate + "\" as an ISO date");
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		double jdfinish = UNIX_EPOCH_AS_JD + ((double)endDate.getTime())/MILLISECONDS_PER_DAY;
 
 		JPLEphemeris ephemeris = null;
 
@@ -134,81 +146,25 @@ public class RiseSetTest {
 
 		Place place = new Place(lat, lon, 0.0, 0.0);
 
-		RiseSetEvent rse[] = new RiseSetEvent[NEVENTS];
-
-		int rc = calculateRiseSetTime(ap, place, jdstart,
-				RiseSetEvent.RISE_SET, RiseSetEvent.UPPER_LIMB, rse);
-
-		System.out.println(rc);
+		RiseSetEvent rse[] = calculateRiseSetTime(ap, place, jdstart, jdfinish,
+				RiseSetEvent.RISE_SET, RiseSetEvent.UPPER_LIMB);
+		
+		if (rse != null && rse.length > 0) {
+			for (RiseSetEvent e : rse)
+				System.out.println(e);
+		}
 	}
 
-	private static int calculateRiseSetTime(ApparentPlace ap, Place place,
-			double jdstart, int type, int limb, RiseSetEvent[] rse) {
+	private static RiseSetEvent[] calculateRiseSetTime(ApparentPlace ap, Place place,
+			double jdstart, double jdfinish, int type, int limb) {
 		MovingPoint observer = ap.getObserver();
 
-		if (!(observer instanceof EarthCentre)) {
-			return RiseSetEvent.INVALID_ARGUMENT;
-		}
-
-		int nEvents = 0;
+		if (!(observer instanceof EarthCentre)) 
+			throw new IllegalArgumentException("Observer is not EarthCentre");
 		
-		double ghapoly[] = new double[3];
-		double decpoly[] = new double[3];
-		double hppoly[] = new double[3];
 		
-		calculatePolynomialApproximation(ap, jdstart, ghapoly, decpoly, hppoly);
 		
-		return nEvents;
-	}
-
-	private static void calculatePolynomialApproximation(ApparentPlace ap,
-			double t0, double ghapoly[], double decpoly[], double hppoly[]) {
-		double gha[] = new double[3];
-		double dec[] = new double[3];
-		double hp[] = new double[3];
-		double earthRadius = 6378137.0/ap.getObserver().getEphemeris().getAU();
-		boolean isMoon = ap.getTarget().getBodyCode() == JPLEphemeris.MOON;
-		
-		for (int i = 0; i < 3; i++) {
-			double t = t0 + 0.5 * (double)i;
-			
-			try {
-				ap.calculateApparentPlace(t);
-			}
-			catch (JPLEphemerisException jee) {
-			}
-			
-			double gast = ap.getEarthRotationModel().greenwichApparentSiderealTime(t);
-			
-			gha[i] = (gast - ap.getRightAscensionOfDate()) % TWOPI;
-			
-			if (gha[i] < 0.0)
-				gha[i] += TWOPI;
-			
-			dec[i] = ap.getDeclinationOfDate();
-			
-			if (isMoon) {
-				hp[i] = Math.asin(earthRadius/ap.getGeometricDistance());
-			}
-		}
-		
-		while (gha[1] < gha[0])
-			gha[1] += TWOPI;
-		
-		while (gha[2] < gha[1])
-			gha[2] += TWOPI;
-		
-		calculatePolynomialCoefficients(gha, ghapoly);
-		calculatePolynomialCoefficients(dec, decpoly);
-		
-		if (isMoon)
-			calculatePolynomialCoefficients(hp, hppoly);
-	}
-	
-	private static void calculatePolynomialCoefficients(double[] values, double[] coeffs) {
-		coeffs[0] = values[0];
-		coeffs[1] = -values[2] + 4.0 * values[1] - 3.0 * values[0];
-		coeffs[2] = 2.0 * values[2] - 4.0 * values[1] + 2.0 * values[0];
+		return null;
 	}
 
 	private static int parseBody(String bodyname) {
