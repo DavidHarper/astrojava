@@ -39,6 +39,12 @@ public class RiseSetTest {
 	
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
+	
+	private static final double EPSILON = 0.1/86400.0;
+	
+	private static final double HORIZONTAL_REFRACTION = (-34.0 / 60.0) * Math.PI/180.0;
+	
+	private static final double SOLAR_SEMIDIAMETER = (16.0 / 60.0) * Math.PI/180.0;
 
 	public static void main(String[] args) {
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -145,9 +151,19 @@ public class RiseSetTest {
 		double lon = Double.parseDouble(longitude) * Math.PI / 180.0;
 
 		Place place = new Place(lat, lon, 0.0, 0.0);
+		
+		RiseSetTest rst = new RiseSetTest();
+		
+		try {
+			rst.run(ap, place, jdstart, jdfinish);
+		} catch (JPLEphemerisException e) {
+			e.printStackTrace();
+		}
+	}
 
+	public void run(ApparentPlace ap, Place place, double jdstart, double jdfinish) throws JPLEphemerisException {
 		RiseSetEvent rse[] = calculateRiseSetTime(ap, place, jdstart, jdfinish,
-				RiseSetEvent.RISE_SET, RiseSetEvent.UPPER_LIMB);
+					RiseSetEvent.RISE_SET, RiseSetEvent.UPPER_LIMB);
 		
 		if (rse != null && rse.length > 0) {
 			for (RiseSetEvent e : rse)
@@ -155,16 +171,164 @@ public class RiseSetTest {
 		}
 	}
 
-	private static RiseSetEvent[] calculateRiseSetTime(ApparentPlace ap, Place place,
-			double jdstart, double jdfinish, int type, int limb) {
+	private RiseSetEvent[] calculateRiseSetTime(ApparentPlace ap, Place place,
+			double jdstart, double jdfinish, int type, int limb) throws JPLEphemerisException {
 		MovingPoint observer = ap.getObserver();
 
 		if (!(observer instanceof EarthCentre)) 
 			throw new IllegalArgumentException("Observer is not EarthCentre");
 		
+		// Calculate altitude and hour angle at the start of the interval
 		
+		ap.calculateApparentPlace(jdstart);
 		
-		return null;
+		double ra = ap.getRightAscensionOfDate();
+		double dec = ap.getDeclinationOfDate();
+		
+		double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(jdstart);
+		
+		double ha = reduceAngle(gmst - ra + place.getLongitude());
+
+		double phi = place.getLatitude();
+		
+		double q = Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha);
+		
+		double a = Math.asin(q);
+		
+		debug("At initial time " + jdstart + ", hour angle = " + (180.0 * ha/Math.PI) + ", altitude = " + (180.0 * a/Math.PI));
+		
+		java.util.Vector<RiseSetEvent> events = new java.util.Vector<RiseSetEvent>();
+		
+		boolean startAtPreviousTransit = a > 0.0 && ha > 0.0;
+		
+		// Calculate approximate time of first transit
+		double transitTime = 0.0;
+		
+		if (startAtPreviousTransit) {
+			// ha > 0 by definition
+			transitTime = jdstart - ha / TWOPI;
+		} else {
+			if (ha > 0.0) {
+				transitTime = jdstart + (TWOPI - ha) / TWOPI;
+			} else {
+				transitTime = jdstart - ha / TWOPI;
+			}
+		}
+		
+		debug("Approximate time of first transit is " + transitTime);
+		
+		transitTime = findNearestTransit(ap, place, transitTime);
+		
+		debug("Improved time of first transit is " + transitTime);
+		
+		double riseTime = 0.0, setTime;
+		
+		do {
+			riseTime = findPreviousRiseTime(ap, place, transitTime);
+			
+			if (riseTime >= jdstart && riseTime < jdfinish)
+				events.add(new RiseSetEvent(RiseSetEvent.RISING, riseTime));
+			
+			setTime = findNextSetTime(ap, place, transitTime);
+			
+			if (setTime >= jdstart && setTime <= jdfinish)
+				events.add(new RiseSetEvent(RiseSetEvent.SETTING, setTime));
+			
+			transitTime = findNearestTransit(ap, place, transitTime + 1.0);
+		} while (riseTime < jdfinish);
+		
+		RiseSetEvent[] rse = new RiseSetEvent[events.size()];
+		
+		return events.toArray(rse);
+	}
+	
+	private double findNearestTransit(ApparentPlace ap, Place place, double t0) throws JPLEphemerisException {
+		double dt = 0.0;
+		double t = t0;
+		
+		do {
+			ap.calculateApparentPlace(t);
+			
+			double ra = ap.getRightAscensionOfDate();
+			
+			double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(t);
+			
+			double ha = reduceAngle(gmst - ra + place.getLongitude());
+			
+			dt = -ha / TWOPI;
+			
+			t += dt;
+		} while (Math.abs(dt) > EPSILON);
+		
+		return t;
+	}
+	
+	private double findPreviousRiseTime(ApparentPlace ap, Place place, double transitTime) throws JPLEphemerisException {
+		ap.calculateApparentPlace(transitTime);
+		
+		double dec = ap.getDeclinationOfDate();
+		
+		int body = ap.getTarget().getBodyCode();
+		
+		double targetAltitude = HORIZONTAL_REFRACTION;
+		
+		if (body == JPLEphemeris.SUN)
+			targetAltitude -= SOLAR_SEMIDIAMETER;
+		
+		double phi = place.getLatitude();
+		
+		double q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
+		
+		double sda = Math.acos(q);
+		
+		double dt = sda/TWOPI;
+		
+		double riseTime = transitTime - dt;
+		
+		return riseTime;
+	}
+	
+	private double findNextSetTime(ApparentPlace ap, Place place, double transitTime) throws JPLEphemerisException {
+		ap.calculateApparentPlace(transitTime);
+		
+		double dec = ap.getDeclinationOfDate();
+		
+		int body = ap.getTarget().getBodyCode();
+		
+		double targetAltitude = HORIZONTAL_REFRACTION;
+		
+		if (body == JPLEphemeris.SUN)
+			targetAltitude -= SOLAR_SEMIDIAMETER;
+		
+		double phi = place.getLatitude();
+		
+		double q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
+		
+		double sda = Math.acos(q);
+		
+		double dt = sda/TWOPI;
+		
+		double setTime = transitTime + dt;
+		
+		return setTime;
+	}
+	
+	// Reduce an angle to the range (-PI, PI]
+	private double reduceAngle(double x) {
+		while (x > Math.PI)
+			x -= TWOPI;
+		
+		while (x <= -Math.PI)
+			x+= TWOPI;
+		
+		return x;
+	}
+	
+	private void debug(String str) {
+		if (Boolean.getBoolean("debug")) {
+			System.err.print("DEBUG: ");
+			System.err.println(str);
+		}
 	}
 
 	private static int parseBody(String bodyname) {
