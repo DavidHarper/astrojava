@@ -70,4 +70,18 @@ public class RiseSetEvent {
 	public double getTime() {
 		return time;
 	}
+	
+	public String toString() {
+		return "RiseSetEvent[" + eventTypeToString(event) + ", time = " + time + "]";
+	}
+	
+	public static String eventTypeToString(int type) {
+		switch (type) {
+		case RISING: return "RISING";
+		
+		case SETTING: return "SETTING";
+		
+		default: return "UNKNOWN";
+		}
+	}
 }
