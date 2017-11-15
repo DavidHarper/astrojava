@@ -63,6 +63,10 @@ public class RiseSetEvent {
 		return event;
 	}
 	
+	public String getEventAsString() {
+		return eventTypeToString(event);
+	}
+	
 	public void setTime(double time) {
 		this.time = time;
 	}
