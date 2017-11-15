@@ -229,12 +229,17 @@ public class RiseSetTest {
 		do {
 			riseTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.RISING);
 			
-			if (riseTime >= jdstart && riseTime < jdfinish)
+			if (!Double.isNaN(riseTime) && riseTime >= jdstart && riseTime < jdfinish)
 				events.add(new RiseSetEvent(RiseSetEvent.RISING, riseTime));
+			
+			// If target is circumpolar, replace rising time with transit time - 12 hours
+			// for the end-of-loop test.
+			if (Double.isNaN(riseTime))
+				riseTime = transitTime - 0.5;
 			
 			setTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.SETTING);
 			
-			if (setTime >= jdstart && setTime <= jdfinish)
+			if (!Double.isNaN(setTime) && setTime >= jdstart && setTime <= jdfinish)
 				events.add(new RiseSetEvent(RiseSetEvent.SETTING, setTime));
 			
 			transitTime = findNearestTransit(ap, place, transitTime + 1.0);
@@ -281,6 +286,10 @@ public class RiseSetTest {
 		double phi = place.getLatitude();
 		
 		double q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
+		
+		// Return NaN if the target is circumpolar.
+		if (q < -1.0 || q > 1.0)
+			return Double.NaN;
 		
 		double sda = Math.acos(q);
 		
