@@ -224,12 +224,12 @@ public class RiseSetTest {
 		double riseTime = 0.0, setTime;
 		
 		do {
-			riseTime = findPreviousRiseTime(ap, place, transitTime);
+			riseTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.RISING);
 			
 			if (riseTime >= jdstart && riseTime < jdfinish)
 				events.add(new RiseSetEvent(RiseSetEvent.RISING, riseTime));
 			
-			setTime = findNextSetTime(ap, place, transitTime);
+			setTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.SETTING);
 			
 			if (setTime >= jdstart && setTime <= jdfinish)
 				events.add(new RiseSetEvent(RiseSetEvent.SETTING, setTime));
@@ -263,7 +263,7 @@ public class RiseSetTest {
 		return t;
 	}
 	
-	private double findPreviousRiseTime(ApparentPlace ap, Place place, double transitTime) throws JPLEphemerisException {
+	private double findRiseSetTime(ApparentPlace ap, Place place, double transitTime, int type) throws JPLEphemerisException {
 		ap.calculateApparentPlace(transitTime);
 		
 		double dec = ap.getDeclinationOfDate();
@@ -283,36 +283,9 @@ public class RiseSetTest {
 		
 		double dt = sda/TWOPI;
 		
-		double riseTime = transitTime - dt;
-		
-		return riseTime;
+		return transitTime + (type == RiseSetEvent.RISING ? -dt : dt);
 	}
-	
-	private double findNextSetTime(ApparentPlace ap, Place place, double transitTime) throws JPLEphemerisException {
-		ap.calculateApparentPlace(transitTime);
 		
-		double dec = ap.getDeclinationOfDate();
-		
-		int body = ap.getTarget().getBodyCode();
-		
-		double targetAltitude = HORIZONTAL_REFRACTION;
-		
-		if (body == JPLEphemeris.SUN)
-			targetAltitude -= SOLAR_SEMIDIAMETER;
-		
-		double phi = place.getLatitude();
-		
-		double q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
-		
-		double sda = Math.acos(q);
-		
-		double dt = sda/TWOPI;
-		
-		double setTime = transitTime + dt;
-		
-		return setTime;
-	}
-	
 	// Reduce an angle to the range (-PI, PI]
 	private double reduceAngle(double x) {
 		while (x > Math.PI)
