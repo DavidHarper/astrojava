@@ -166,8 +166,11 @@ public class RiseSetTest {
 					RiseSetEvent.RISE_SET, RiseSetEvent.UPPER_LIMB);
 		
 		if (rse != null && rse.length > 0) {
-			for (RiseSetEvent e : rse)
-				System.out.println(e);
+			for (RiseSetEvent e : rse) {
+				AstronomicalDate ad = new AstronomicalDate(e.getTime());
+				
+				System.out.printf("%04d-%02d-%02d %02d:%02d %s\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), e.getEventAsString());
+			}
 		}
 	}
 
