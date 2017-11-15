@@ -25,16 +25,36 @@
 package com.obliquity.astronomy.almanac;
 
 public class Place {
+	public static final double FLATTENING = 1.0/298.25;
+	
 	protected double latitude;
 	protected double longitude;
 	protected double height;
 	protected double timezone;
+	
+	protected double geocentricLatitude;
+	protected double geocentricDistance;
 	
 	public Place(double latitude, double longitude, double height, double timezone) {
 		this.latitude = latitude;
 		this.longitude = longitude;
 		this.height = height;
 		this.timezone = timezone;
+		
+		double sphi = Math.sin(latitude);
+		double cphi = Math.cos(latitude);
+		
+		double q = Math.pow(1.0 - FLATTENING, 2.0);
+		
+		double C = 1.0/Math.sqrt(cphi * cphi + q * sphi * sphi);
+		double S = q * C;
+		
+		double y = S * sphi;
+		double x = C * cphi;
+		
+		geocentricLatitude = Math.atan2(y, x);
+		
+		geocentricDistance = Math.sqrt(x * x + y * y);
 	}
 	
 	public double getLatitude() {
@@ -51,5 +71,13 @@ public class Place {
 	
 	public double getTimeZone() {
 		return timezone;
+	}
+	
+	public double getGeocentricLatitude() {
+		return geocentricLatitude;
+	}
+	
+	public double getGeocentricDistance() {
+		return geocentricDistance;
 	}
 }
