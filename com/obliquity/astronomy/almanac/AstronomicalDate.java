@@ -135,6 +135,76 @@ public class AstronomicalDate {
 		return second;
 	}
 	
+	public boolean roundToNearestSecond() {
+		if (second < 30.0)
+			return false;
+		
+		second = 0.0;
+		
+		// Increment the minute figure and cascade any overflows to higher components if necessary.
+		
+		minute++;
+		
+		if (minute > 59) {
+			minute -= 60;
+			
+			hour++;
+			
+			if (hour > 23) {
+				hour -= 24;
+				
+				day++;
+				
+				int maxday = getLengthOfMonth();
+				
+				if (day > maxday) {
+					day -= maxday;
+					
+					month++;
+					
+					if (month > 12) {
+						month -= 12;
+						
+						year++;
+					}
+				}
+			}
+		}
+		return true;
+	}
+	
+	private int getLengthOfMonth() {
+		  final int ML[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+		  
+		  int ml = ML[month];
+		  
+		  if (isLeapYear() && (month == 2))
+			  ml++;
+		  
+		  return ml;
+	}
+	
+	private boolean isLeapYear() {
+	  /* is it divisible by 4? */
+	  if ((year % 4) != 0)
+		  return false;
+
+	  /* Is it a century year? */
+	  if ((year % 100) != 0)
+		  return true;
+
+	  /* Is it before 1752? */
+	  if (year < 1752)
+		  return true;
+
+	  /* Is it divisible by 400? */
+	  if ((year % 400) == 0)
+		  return true;
+
+	  /* We're left with centurial years after 1752 that don't divide by 400. */
+	  return false;
+	}
+
 	public boolean equals(AstronomicalDate that) {
 		return this.year == that.year && this.month == that.month && this.day == that.day &&
 				this.hour == that.hour && this.minute == that.minute && Math.abs(this.second - that.second) < 0.01;
