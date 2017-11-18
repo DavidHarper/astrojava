@@ -25,6 +25,7 @@
 package com.obliquity.astronomy.almanac.test;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -220,16 +221,24 @@ public class RiseSetTest {
 			}
 		}
 		
-		debug("Approximate time of first transit is " + transitTime);
+		debug("Approximate time of first transit is " + dateToString(transitTime));
 		
-		transitTime = findNearestTransit(ap, place, transitTime);
+		transitTime = findNearestUpperTransit(ap, place, transitTime);
 		
-		debug("Improved time of first transit is " + transitTime);
+		debug("Improved time of first transit is " + dateToString(transitTime));
 		
 		double riseTime = 0.0, setTime;
 		
 		do {
-			debug("Transit time: " + transitTime);
+			debug("Transit time: " + dateToString(transitTime));
+			
+			double previousLowerTransit = findNearestLowerTransit(ap, place, transitTime - 0.5);
+			
+			debug("  Previous lower transit: " + dateToString(previousLowerTransit));
+			
+			double nextLowerTransit = findNearestLowerTransit(ap, place, transitTime + 0.5);
+			
+			debug("  Next lower transit: " + dateToString(nextLowerTransit));
 			
 			riseTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.RISING);
 			
@@ -246,7 +255,7 @@ public class RiseSetTest {
 			if (!Double.isNaN(setTime) && setTime >= jdstart && setTime <= jdfinish)
 				events.add(new RiseSetEvent(RiseSetEvent.SETTING, setTime));
 			
-			transitTime = findNearestTransit(ap, place, transitTime + 1.0);
+			transitTime = findNearestUpperTransit(ap, place, transitTime + 1.0);
 		} while (riseTime < jdfinish);
 		
 		RiseSetEvent[] rse = new RiseSetEvent[events.size()];
@@ -254,7 +263,7 @@ public class RiseSetTest {
 		return events.toArray(rse);
 	}
 	
-	private double findNearestTransit(ApparentPlace ap, Place place, double t0) throws JPLEphemerisException {
+	private double findNearestUpperTransit(ApparentPlace ap, Place place, double t0) throws JPLEphemerisException {
 		double dt = 0.0;
 		double t = t0;
 		
@@ -275,6 +284,27 @@ public class RiseSetTest {
 		return t;
 	}
 	
+	private double findNearestLowerTransit(ApparentPlace ap, Place place, double t0) throws JPLEphemerisException {
+		double dt = 0.0;
+		double t = t0;
+		
+		do {
+			ap.calculateApparentPlace(t);
+			
+			double ra = ap.getRightAscensionOfDate();
+			
+			double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(t);
+			
+			double ha = reduceAngle(gmst - ra + Math.PI + place.getLongitude());
+			
+			dt = -ha / TWOPI;
+			
+			t += dt;
+		} while (Math.abs(dt) > EPSILON);
+		
+		return t;
+	}
+
 	private double findRiseSetTime(ApparentPlace ap, Place place, double transitTime, int type) throws JPLEphemerisException {
 		ap.calculateApparentPlace(transitTime);
 		
@@ -334,6 +364,16 @@ public class RiseSetTest {
 			System.err.print("DEBUG: ");
 			System.err.println(str);
 		}
+	}
+	
+	private final DecimalFormat dfmt1 = new DecimalFormat("0000");
+	private final DecimalFormat dfmt2 = new DecimalFormat("00");
+	
+	private String dateToString(double t) {
+		AstronomicalDate ad = new AstronomicalDate(t);
+		ad.roundToNearestSecond();
+		return dfmt1.format(ad.getYear()) + "-" + dfmt2.format(ad.getMonth()) + "-" + dfmt2.format(ad.getDay()) 
+				+ " " + dfmt2.format(ad.getHour()) + ":" + dfmt2.format(ad.getMinute());
 	}
 
 	private static int parseBody(String bodyname) {
