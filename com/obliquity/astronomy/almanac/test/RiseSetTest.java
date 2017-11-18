@@ -229,6 +229,8 @@ public class RiseSetTest {
 		double riseTime = 0.0, setTime;
 		
 		do {
+			debug("Transit time: " + transitTime);
+			
 			riseTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.RISING);
 			
 			if (!Double.isNaN(riseTime) && riseTime >= jdstart && riseTime < jdfinish)
@@ -288,6 +290,22 @@ public class RiseSetTest {
 		double phi = place.getLatitude();
 		
 		double q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
+		
+		debug("  At upper transit: dec = " + dec + " ; q = " + q);
+		
+		// Re-calculate declination and semi-diurnal arc at previous.next lower transit if it appears
+		// to be circumpolar from the declination at upper transit.
+		if (q < -1.0 || q > 1.0) {
+			double lowerTransitTime = transitTime + (type == RiseSetEvent.RISING ? -0.5 : 0.5);
+			
+			ap.calculateApparentPlace(lowerTransitTime);
+			
+			dec = ap.getDeclinationOfDate();
+			
+			q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
+			
+			debug("  At " + (type == RiseSetEvent.RISING ? "previous" : "next") + " lower transit, dec = " + dec + " ; q = " + q);
+		}
 		
 		// Return NaN if the target is circumpolar.
 		if (q < -1.0 || q > 1.0)
