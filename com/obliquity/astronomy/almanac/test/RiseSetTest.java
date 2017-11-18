@@ -169,6 +169,8 @@ public class RiseSetTest {
 			for (RiseSetEvent e : rse) {
 				AstronomicalDate ad = new AstronomicalDate(e.getTime());
 				
+				ad.roundToNearestSecond();
+				
 				System.out.printf("%04d-%02d-%02d %02d:%02d %s\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), e.getEventAsString());
 			}
 		}
