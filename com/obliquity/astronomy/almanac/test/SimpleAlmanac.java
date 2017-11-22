@@ -60,7 +60,7 @@ public class SimpleAlmanac {
 			"yyyy-MM-dd HH:mm:ss");
 
 	private ApparentPlace apTarget, apSun;
-	private IAUEarthRotationModel erm = new IAUEarthRotationModel();
+	private IAUEarthRotationModel erm = null;
 	private Matrix precessJ2000toB1875 = null;
 
 	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat(
@@ -76,6 +76,8 @@ public class SimpleAlmanac {
 		this.apTarget = apTarget;
 		this.apSun = apSun;
 		this.targetEpoch = targetEpoch;
+		
+		erm = (IAUEarthRotationModel)apTarget.getEarthRotationModel();
 
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 
@@ -196,8 +198,7 @@ public class SimpleAlmanac {
 		else
 			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
-		EarthRotationModel erm = targetEpoch == OF_DATE
-				? new IAUEarthRotationModel() : null;
+		EarthRotationModel erm = new IAUEarthRotationModel();
 
 		ApparentPlace apTarget = new ApparentPlace(earth, planet, sun, erm);
 
