@@ -701,7 +701,9 @@ public class SimpleAlmanac {
 				"\tPhase angle",
 				"\tIlluminated fraction",
 				"\tApparent magnitude",
-				"\tApparent diameter of disk"
+				"\tApparent diameter of disk",
+				"\tEcliptic longitude (in same reference frame as RA and Dec)",
+				"\tEcliptic latitude (in same reference frame as RA and Dec)"
 		};
 		
 		for (String line : lines)
