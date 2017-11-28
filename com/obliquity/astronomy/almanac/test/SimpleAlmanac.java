@@ -319,6 +319,11 @@ public class SimpleAlmanac {
 			epochName = "B1875";
 			break;
 		}
+		
+		// Required later for conversion to ecliptic longitude and latitude
+		double xa = cos(ra) * cos(dec);
+		double ya = sin(ra) * cos(dec);
+		double za = sin(dec);
 
 		ra *= 12.0 / Math.PI;
 		dec *= 180.0 / Math.PI;
@@ -401,6 +406,29 @@ public class SimpleAlmanac {
 			double semiDiameter = calculateSemiDiameter(dEarthPlanet);
 
 			ps.printf("  %5.2f", 2.0 * semiDiameter);
+			
+			if (targetEpoch == OF_DATE || targetEpoch == J2000) {
+				double obliquity = (targetEpoch == J2000) ? erm.meanObliquity(2451545.0) : erm.meanObliquity(t);
+				
+				double ce = cos(obliquity);
+				double se = sin(obliquity);
+				
+				double xe = xa;
+				double ye = ce * ya + se * za;
+				double ze = -se * ya + ce * za;
+				
+				double lambda = atan2(ye, xe);
+				double beta = asin(ze);
+				
+				lambda *= 180.0/PI;
+				
+				if (lambda < 0.0)
+					lambda += 360.0;
+				
+				beta *= 180.0/PI;
+				
+				ps.printf("  %6.2f  %6.2f", lambda, beta);
+			}
 		}
 
 		ps.println();
