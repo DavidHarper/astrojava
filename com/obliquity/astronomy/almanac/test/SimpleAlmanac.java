@@ -427,7 +427,7 @@ public class SimpleAlmanac {
 				
 				beta *= 180.0/PI;
 				
-				ps.printf("  %6.2f  %6.2f", lambda, beta);
+				ps.printf("  %8.4f  %8.4f", lambda, beta);
 			}
 		}
 
