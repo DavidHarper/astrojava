@@ -762,6 +762,7 @@ public class SimpleAlmanac {
 				"\t-j2000\tCalculate position for epoch J2000",
 				"\t-b1875\tCalculate position for epoch B1875",
 				"\t-ofdate\tCalculate position for epoch of date (this is the default)",
+				"\t-elongationdeltas\tDisplay change in elongation between output lines (prefixed with #)",
 				"",
 				"OUTPUT COLUMNS (prefixed by column number)",
 				"1\tJulian Day Number",
