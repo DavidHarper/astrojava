@@ -47,6 +47,19 @@ import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.Vector;
 
 public class SimpleAlmanac {
+	private class AlmanacData {
+		public double julianDate = Double.NaN;
+		public Date date = null;
+		public double rightAscension= Double.NaN, declination = Double.NaN;
+		public int epoch = -1;
+		public double geometricDistance = Double.NaN, lightPathDistance = Double.NaN;
+		public String constellation = null;
+		public double elongation = Double.NaN, eclipticElongation = Double.NaN;
+		public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
+		public double magnitude = Double.NaN, semiDiameter = Double.NaN;
+		public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
+	};
+	
 	public static final int OF_DATE = 1;
 	public static final int J2000 = 2;
 	public static final int B1875 = 3;
@@ -70,6 +83,8 @@ public class SimpleAlmanac {
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 
 	private static final double TWO_PI = 2.0 * Math.PI;
+	
+	private boolean elongationDeltas = false;
 
 	public SimpleAlmanac(ApparentPlace apTarget, ApparentPlace apSun,
 			int targetEpoch) {
@@ -87,6 +102,10 @@ public class SimpleAlmanac {
 		precessJ2000toB1875 = new Matrix();
 		erm.precessionMatrix(epochJ2000, epochB1875, precessJ2000toB1875);
 	}
+	
+	public void setElongationDeltas(boolean elongationDeltas) {
+		this.elongationDeltas = elongationDeltas;
+	}
 
 	public static void main(String args[]) {
 		datefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -97,6 +116,7 @@ public class SimpleAlmanac {
 		String enddate = null;
 		String stepsize = null;
 		int targetEpoch = OF_DATE;
+		boolean elongationDeltas = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -122,6 +142,9 @@ public class SimpleAlmanac {
 
 			if (args[i].equalsIgnoreCase("-ofdate"))
 				targetEpoch = OF_DATE;
+
+			if (args[i].equalsIgnoreCase("-elongationdeltas"))
+				elongationDeltas = true;
 		}
 
 		if (filename == null || bodyname == null || startdate == null
@@ -206,6 +229,8 @@ public class SimpleAlmanac {
 				: new ApparentPlace(earth, sun, sun, erm));
 
 		SimpleAlmanac almanac = new SimpleAlmanac(apTarget, apSun, targetEpoch);
+		
+		almanac.setElongationDeltas(elongationDeltas);
 
 		almanac.run(jdstart, jdfinish, jdstep);
 	}
@@ -246,13 +271,27 @@ public class SimpleAlmanac {
 
 	public void run(double jdstart, double jdfinish, double jdstep) {
 		try {
+			AlmanacData lastData = null;
+			
 			for (double t = jdstart; t <= jdfinish; t += jdstep) {
-				displayApparentPlace(t, System.out);
+				AlmanacData data = calculateAlmanacData(t);
+				
+				if (elongationDeltas && lastData != null)
+					displayElongationDelta(lastData, data, System.out);
+				
+				lastData = data;
+				
+				displayApparentPlace(data, System.out);
 			}
 		} catch (JPLEphemerisException jplee) {
 			jplee.printStackTrace();
 		}
-
+	}
+	
+	private void displayElongationDelta(AlmanacData lastData, AlmanacData thisData, PrintStream ps) {
+		double delta = thisData.elongation - lastData.elongation;
+		
+		ps.printf("#%99s   %11.7f\n", " ", delta);
 	}
 
 	private void printAngle(double x, DecimalFormat formatDegrees,
@@ -280,12 +319,13 @@ public class SimpleAlmanac {
 				+ formatSeconds.format(x));
 	}
 
-	private void displayApparentPlace(double t, PrintStream ps)
+	private AlmanacData calculateAlmanacData(double t)
 			throws JPLEphemerisException {
+		AlmanacData data = new AlmanacData();
+		
 		apTarget.calculateApparentPlace(t);
 
 		double ra = 0.0, dec = 0.0, ra1875, dec1875;
-		String epochName = null;
 
 		Vector dc = (Vector) apTarget.getDirectionCosinesJ2000().clone();
 
@@ -304,21 +344,20 @@ public class SimpleAlmanac {
 		case OF_DATE:
 			ra = apTarget.getRightAscensionOfDate();
 			dec = apTarget.getDeclinationOfDate();
-			epochName = "OF_DATE";
 			break;
 
 		case J2000:
 			ra = apTarget.getRightAscensionJ2000();
 			dec = apTarget.getDeclinationJ2000();
-			epochName = "J2000";
 			break;
 
 		case B1875:
 			ra = ra1875;
 			dec = dec1875;
-			epochName = "B1875";
 			break;
 		}
+		
+		data.julianDate = t;
 		
 		// Required later for conversion to ecliptic longitude and latitude
 		double xa = cos(ra) * cos(dec);
@@ -330,40 +369,22 @@ public class SimpleAlmanac {
 
 		if (ra < 0.0)
 			ra += 24.0;
-
-		ps.print(dfmtb.format(t));
-
-		ps.print("  ");
+		
+		data.rightAscension = ra;
+		data.declination = dec;
+		
+		data.epoch = targetEpoch;
+		
+		data.geometricDistance = apTarget.getGeometricDistance();
+		data.lightPathDistance = apTarget.getLightPathDistance();
 
 		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
 
 		long ticks = (long) dticks;
 
-		Date date = new Date(ticks);
-
-		ps.print("  " + datefmt.format(date));
-
-		ps.print("  ");
-
-		printAngle(ra, ifmta, ifmta, dfmta, ps, false);
-
-		ps.print("  ");
-
-		printAngle(dec, ifmta, ifmta, dfmtb, ps, true);
-
-		ps.print("  ");
-
-		ps.format("%10.7f", apTarget.getGeometricDistance());
-
-		ps.print("  ");
-
-		ps.format("%10.7f", apTarget.getLightPathDistance());
-
-		String constellation = ConstellationFinder.getZone(ra1875, dec1875);
-
-		ps.print("  " + constellation);
-
-		ps.print("  " + epochName);
+		data.date = new Date(ticks);
+			
+		data.constellation = ConstellationFinder.getZone(ra1875, dec1875);
 
 		if (targetIsPlanet()) {
 			apSun.calculateApparentPlace(t);
@@ -374,39 +395,31 @@ public class SimpleAlmanac {
 			double raSun = apSun.getRightAscensionJ2000();
 			double decSun = apSun.getDeclinationJ2000();
 
-			double elongation = calculateElongation(ra, dec, raSun, decSun);
-
-			ps.printf("  %7.2f", elongation * 180.0 / PI);
+			data.elongation = 180.0/PI * calculateElongation(ra, dec, raSun, decSun);
 			
-			elongation = calculateEclipticElongation(ra, dec, raSun, decSun, t);
-
-			ps.printf("  %7.2f", elongation * 180.0 / PI);
+			double eclipticElongation = calculateEclipticElongation(ra, dec, raSun, decSun, t);
+			
+			data.eclipticElongation = 180.0/PI * eclipticElongation;
 
 			double dEarthSun = apSun.getGeometricDistance();
 
 			double dEarthPlanet = apTarget.getGeometricDistance();
 
 			double dPlanetSun = calculatePlanetSunDistance(dEarthSun,
-					dEarthPlanet, elongation);
+					dEarthPlanet, eclipticElongation);
 
 			double phaseAngle = calculatePhaseAngle(dEarthSun, dEarthPlanet,
 					dPlanetSun);
 
-			ps.printf("  %6.2f", phaseAngle * 180.0 / PI);
+			data.phaseAngle = phaseAngle * 180.0 / PI;
 
-			double phase = 0.5 * (1.0 + cos(phaseAngle));
+			data.illuminatedFraction = 0.5 * (1.0 + cos(phaseAngle));
 
-			ps.printf("  %5.3f", phase);
-
-			double magnitude = calculateMagnitude(dEarthPlanet, dPlanetSun,
+			data.magnitude = calculateMagnitude(dEarthPlanet, dPlanetSun,
 					phaseAngle, t);
 
-			ps.printf("  %5.2f", magnitude);
+			data.semiDiameter = calculateSemiDiameter(dEarthPlanet);
 
-			double semiDiameter = calculateSemiDiameter(dEarthPlanet);
-
-			ps.printf("  %5.2f", 2.0 * semiDiameter);
-			
 			if (targetEpoch == OF_DATE || targetEpoch == J2000) {
 				double obliquity = (targetEpoch == J2000) ? erm.meanObliquity(2451545.0) : erm.meanObliquity(t);
 				
@@ -425,9 +438,73 @@ public class SimpleAlmanac {
 				if (lambda < 0.0)
 					lambda += 360.0;
 				
-				beta *= 180.0/PI;
+				data.eclipticLongitude = lambda;
 				
-				ps.printf("  %8.4f  %8.4f", lambda, beta);
+				data.eclipticLatitude = beta * 180.0/PI;
+			}
+		}
+
+		return data;
+	}
+
+	private void displayApparentPlace(AlmanacData data, PrintStream ps) {
+		ps.print(dfmtb.format(data.julianDate));
+
+		ps.print("  ");
+
+		ps.print("  " + datefmt.format(data.date));
+
+		ps.print("  ");
+
+		printAngle(data.rightAscension, ifmta, ifmta, dfmta, ps, false);
+
+		ps.print("  ");
+
+		printAngle(data.declination, ifmta, ifmta, dfmtb, ps, true);
+
+		ps.print("  ");
+
+		ps.format("%10.7f", data.geometricDistance);
+
+		ps.print("  ");
+
+		ps.format("%10.7f", data.lightPathDistance);
+
+		ps.print("  " + data.constellation);
+
+		String epochName = null;
+		
+		switch (data.epoch) {
+		case OF_DATE:
+			epochName = "OF_DATE";
+			break;
+
+		case J2000:
+			epochName = "J2000";
+			break;
+
+		case B1875:
+			epochName = "B1875";
+			break;
+		}
+		
+		ps.print("  " + epochName);
+
+		if (targetIsPlanet()) {
+			ps.printf("  %7.2f", data.elongation);
+
+			ps.printf("  %7.2f", data.eclipticElongation);
+
+			ps.printf("  %6.2f", data.phaseAngle);
+
+			ps.printf("  %5.3f", data.illuminatedFraction);
+
+			ps.printf("  %5.2f", data.magnitude);
+
+			ps.printf("  %5.2f", 2.0 * data.semiDiameter);
+			
+			if (data.epoch == OF_DATE || data.epoch == J2000) {
+				ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 			}
 		}
 
