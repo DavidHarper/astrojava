@@ -448,7 +448,7 @@ public class SimpleAlmanac {
 	}
 
 	private void displayApparentPlace(AlmanacData data, PrintStream ps) {
-		ps.print(dfmtb.format(data.julianDate));
+		ps.format("%13.5f", data.julianDate);
 
 		ps.print("  ");
 
