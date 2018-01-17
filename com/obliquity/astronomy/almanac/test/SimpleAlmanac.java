@@ -636,15 +636,15 @@ public class SimpleAlmanac {
 	}
 	
 	private double getSaturnRingPlaneAscendingNode(double t) {
-		double tau = (t - 2415020.0) / 36525.0;
+		double tau = (t - 2451545.0) / 36525.0;
 
-		return (168.11780 + 1.39352 * tau + 0.00041 * tau * tau) * PI/180.0;		
+		return (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;		
 	}
 	
 	private double getSaturnRingPlaneInclination(double t) {
-		double tau = (t - 2415020.0) / 36525.0;
-
-		return (28.07443 - 0.01302 * tau) * PI/180.0;
+		double tau = (t - 2451545.0) / 36525.0;
+		
+		return (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
 	}
 	
 	private Vector getSaturnPoleVector(double t) {
