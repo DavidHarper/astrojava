@@ -58,6 +58,7 @@ public class SimpleAlmanac {
 		public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
 		public double magnitude = Double.NaN, semiDiameter = Double.NaN;
 		public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
+		public double saturnEarthRingLatitude = Double.NaN;
 	};
 	
 	public static final int OF_DATE = 1;
@@ -456,6 +457,16 @@ public class SimpleAlmanac {
 			data.eclipticLongitude = lambda;
 				
 			data.eclipticLatitude = beta * 180.0/PI;
+			
+			if (targetIsSaturn()) {
+				Vector ringPole = getSaturnPoleVector(t);
+				
+				Vector dcJ2000 = apTarget.getDirectionCosinesJ2000();
+				
+				double q = -ringPole.scalarProduct(dcJ2000);
+				
+				data.saturnEarthRingLatitude = 90.0 - acos(q) * 180.0/PI;
+			}
 		}
 
 		return data;
@@ -518,6 +529,9 @@ public class SimpleAlmanac {
 			ps.printf("  %5.2f", 2.0 * data.semiDiameter);
 			
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
+			
+			if (!Double.isNaN(data.saturnEarthRingLatitude))
+				ps.printf("  %5.2f", data.saturnEarthRingLatitude);
 		}
 
 		ps.println();
@@ -620,6 +634,34 @@ public class SimpleAlmanac {
 					"Cannot calculate a magnitude for the target body.");
 		}
 	}
+	
+	private double getSaturnRingPlaneAscendingNode(double t) {
+		double tau = (t - 2415020.0) / 36525.0;
+
+		return (168.11780 + 1.39352 * tau + 0.00041 * tau * tau) * PI/180.0;		
+	}
+	
+	private double getSaturnRingPlaneInclination(double t) {
+		double tau = (t - 2415020.0) / 36525.0;
+
+		return (28.07443 - 0.01302 * tau) * PI/180.0;
+	}
+	
+	private Vector getSaturnPoleVector(double t) {
+		double poleLongitude = getSaturnRingPlaneAscendingNode(t) - 0.5 * PI;
+		double poleLatitude = 0.5 * PI - getSaturnRingPlaneInclination(t);
+		
+		double obliquity = erm.meanObliquity(t);
+		
+		double xe = cos(poleLongitude) * cos(poleLatitude);
+		double ye = sin(poleLongitude) * cos(poleLatitude);
+		double ze = sin(poleLatitude);
+		
+		double ce = cos(obliquity);
+		double se = sin(obliquity);
+		
+		return new Vector(xe, ce * ye - se * ze, se* ye + ce * ze);
+	}
 
 	private double saturnRingCorrection(double t) throws JPLEphemerisException {
 		final double R = PI / 180.0;
@@ -632,12 +674,13 @@ public class SimpleAlmanac {
 		double hlong = eclipticCoordinates[0];
 		double hlat = eclipticCoordinates[1];
 
+		// Ring orientation angles
+		double node = getSaturnRingPlaneAscendingNode(t);
+		double incl = getSaturnRingPlaneInclination(t);
+
 		// Julian centuries since 1900
 		double tau = (t - 2415020.0) / 36525.0;
 
-		// Ring orientation angles
-		double node = (168.11780 + 1.39352 * tau + 0.00041 * tau * tau) * R;
-		double incl = (28.07443 - 0.01302 * tau) * R;
 		double nn = (126.35863 + 3.99712 * tau + 0.23542 * tau * tau) * R;
 		double jj = (6.91086 - 0.44892 * tau + 0.01291 * tau * tau) * R;
 		double omega = (42.92442 - 2.73981 * tau - 0.23517 * tau * tau) * R;
@@ -760,6 +803,10 @@ public class SimpleAlmanac {
 		default:
 			return false;
 		}
+	}
+	
+	private boolean targetIsSaturn() {
+		return apTarget.getTarget().getBodyCode() == JPLEphemeris.SATURN;
 	}
 
 	public static void showUsage() {
