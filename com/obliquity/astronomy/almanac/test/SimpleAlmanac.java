@@ -419,29 +419,43 @@ public class SimpleAlmanac {
 					phaseAngle, t);
 
 			data.semiDiameter = calculateSemiDiameter(dEarthPlanet);
-
-			if (targetEpoch == OF_DATE || targetEpoch == J2000) {
-				double obliquity = (targetEpoch == J2000) ? erm.meanObliquity(2451545.0) : erm.meanObliquity(t);
+			
+			double epochAsJD = Double.NaN;
+			
+			switch (targetEpoch) {
+			case J2000:
+				epochAsJD = erm.JulianEpoch(2000.0);
+				break;
 				
-				double ce = cos(obliquity);
-				double se = sin(obliquity);
+			case B1875:
+				epochAsJD = erm.BesselianEpoch(1875.0);
+				break;
 				
-				double xe = xa;
-				double ye = ce * ya + se * za;
-				double ze = -se * ya + ce * za;
-				
-				double lambda = atan2(ye, xe);
-				double beta = asin(ze);
-				
-				lambda *= 180.0/PI;
-				
-				if (lambda < 0.0)
-					lambda += 360.0;
-				
-				data.eclipticLongitude = lambda;
-				
-				data.eclipticLatitude = beta * 180.0/PI;
+			default:
+				epochAsJD = t;
+				break;
 			}
+
+			double obliquity = erm.meanObliquity(epochAsJD);
+				
+			double ce = cos(obliquity);
+			double se = sin(obliquity);
+				
+			double xe = xa;
+			double ye = ce * ya + se * za;
+			double ze = -se * ya + ce * za;
+				
+			double lambda = atan2(ye, xe);
+			double beta = asin(ze);
+				
+			lambda *= 180.0/PI;
+				
+			if (lambda < 0.0)
+				lambda += 360.0;
+				
+			data.eclipticLongitude = lambda;
+				
+			data.eclipticLatitude = beta * 180.0/PI;
 		}
 
 		return data;
@@ -476,7 +490,7 @@ public class SimpleAlmanac {
 		
 		switch (data.epoch) {
 		case OF_DATE:
-			epochName = "OF_DATE";
+			epochName = " DATE";
 			break;
 
 		case J2000:
@@ -503,9 +517,7 @@ public class SimpleAlmanac {
 
 			ps.printf("  %5.2f", 2.0 * data.semiDiameter);
 			
-			if (data.epoch == OF_DATE || data.epoch == J2000) {
-				ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
-			}
+			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 		}
 
 		ps.println();
