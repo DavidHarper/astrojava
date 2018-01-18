@@ -47,6 +47,10 @@ import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.Vector;
 
 public class SimpleAlmanac {
+	private class SaturnRingAngles {
+		public double B = Double.NaN, P = Double.NaN, U = Double.NaN;
+	};
+	
 	private class AlmanacData {
 		public double julianDate = Double.NaN;
 		public Date date = null;
@@ -58,7 +62,7 @@ public class SimpleAlmanac {
 		public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
 		public double magnitude = Double.NaN, semiDiameter = Double.NaN;
 		public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
-		public double saturnEarthRingLatitude = Double.NaN;
+		public SaturnRingAngles saturnRingAngles = null;
 	};
 	
 	public static final int OF_DATE = 1;
@@ -458,15 +462,8 @@ public class SimpleAlmanac {
 				
 			data.eclipticLatitude = beta * 180.0/PI;
 			
-			if (targetIsSaturn()) {
-				Vector ringPole = getSaturnPoleVector(t);
-				
-				Vector dcJ2000 = apTarget.getDirectionCosinesJ2000();
-				
-				double q = -ringPole.scalarProduct(dcJ2000);
-				
-				data.saturnEarthRingLatitude = 90.0 - acos(q) * 180.0/PI;
-			}
+			if (targetIsSaturn())
+				data.saturnRingAngles = calculateSaturnRingAngles(t);
 		}
 
 		return data;
@@ -530,8 +527,8 @@ public class SimpleAlmanac {
 			
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 			
-			if (!Double.isNaN(data.saturnEarthRingLatitude))
-				ps.printf("  %5.2f", data.saturnEarthRingLatitude);
+			if (data.saturnRingAngles != null)
+				ps.printf("  %5.2f", data.saturnRingAngles.B);
 		}
 
 		ps.println();
@@ -634,33 +631,37 @@ public class SimpleAlmanac {
 					"Cannot calculate a magnitude for the target body.");
 		}
 	}
-	
-	private double getSaturnRingPlaneAscendingNode(double t) {
-		double tau = (t - 2451545.0) / 36525.0;
-
-		return (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;		
-	}
-	
-	private double getSaturnRingPlaneInclination(double t) {
-		double tau = (t - 2451545.0) / 36525.0;
+			
+	private SaturnRingAngles calculateSaturnRingAngles(double t) {
+		double tau = (t = 2451545.0)/36525.0;
 		
-		return (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
-	}
-	
-	private Vector getSaturnPoleVector(double t) {
-		double poleLongitude = getSaturnRingPlaneAscendingNode(t) - 0.5 * PI;
-		double poleLatitude = 0.5 * PI - getSaturnRingPlaneInclination(t);
+		// Saturn pole coordinates from Davies, M.E. et al. (1989) Celes. Mech. 46, 187
+		double raSaturnPole = (40.58 - 0.036 * tau) * PI/180.0;
+		double decSaturnPole = (83.54 - 0.004 * tau) * PI/180.0;
 		
-		double obliquity = erm.meanObliquity(t);
+		double J = 0.5 * PI - decSaturnPole;
+		double N = raSaturnPole + 0.5 * PI;
 		
-		double xe = cos(poleLongitude) * cos(poleLatitude);
-		double ye = sin(poleLongitude) * cos(poleLatitude);
-		double ze = sin(poleLatitude);
+		double alpha = apTarget.getRightAscensionJ2000();
+		double delta = apTarget.getDeclinationJ2000();
 		
-		double ce = cos(obliquity);
-		double se = sin(obliquity);
+		double phi = alpha - N;
 		
-		return new Vector(xe, ce * ye - se * ze, se* ye + ce * ze);
+		double p1 = cos(J) * cos(delta) * sin(phi) + sin(J) * sin(delta);
+		double p2 = cos(delta) * cos(phi);
+		double p3 = sin(J) * cos(delta) * sin(phi) - cos(J) * sin(delta);
+		double p4 = -sin(J) * cos(phi);
+		double p5 = sin(J) * sin(delta) * sin(phi) + cos(J) * cos(delta);
+		
+		SaturnRingAngles sra = new SaturnRingAngles();
+		
+		sra.B = asin(p3) * 180.0/PI;
+		
+		sra.U = atan2(p1, p2) * 180.0/PI;
+		
+		sra.P = atan2(p4, p5) * 180.0/PI;
+		
+		return sra;
 	}
 
 	private double saturnRingCorrection(double t) throws JPLEphemerisException {
@@ -674,12 +675,12 @@ public class SimpleAlmanac {
 		double hlong = eclipticCoordinates[0];
 		double hlat = eclipticCoordinates[1];
 
-		// Ring orientation angles
-		double node = getSaturnRingPlaneAscendingNode(t);
-		double incl = getSaturnRingPlaneInclination(t);
-
 		// Julian centuries since 1900
 		double tau = (t - 2415020.0) / 36525.0;
+
+		// Ring orientation angles
+		double node = (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;
+		double incl = (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
 
 		double nn = (126.35863 + 3.99712 * tau + 0.23542 * tau * tau) * R;
 		double jj = (6.91086 - 0.44892 * tau + 0.01291 * tau * tau) * R;
