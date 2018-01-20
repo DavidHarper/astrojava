@@ -633,7 +633,7 @@ public class SimpleAlmanac {
 	}
 			
 	private SaturnRingAngles calculateSaturnRingAngles(double t) {
-		double tau = (t = 2451545.0)/36525.0;
+		double tau = (t - 2451545.0)/36525.0;
 		
 		// Saturn pole coordinates from Davies, M.E. et al. (1989) Celes. Mech. 46, 187
 		double raSaturnPole = (40.58 - 0.036 * tau) * PI/180.0;
