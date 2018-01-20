@@ -841,7 +841,8 @@ public class SimpleAlmanac {
 				"19\tApparent magnitude",
 				"20\tApparent diameter of disk",
 				"21\tEcliptic longitude (in same reference frame as RA and Dec)",
-				"22\tEcliptic latitude (in same reference frame as RA and Dec)"
+				"22\tEcliptic latitude (in same reference frame as RA and Dec)",
+				"23\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane"
 		};
 		
 		for (String line : lines)
