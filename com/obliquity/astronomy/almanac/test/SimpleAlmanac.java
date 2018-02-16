@@ -236,8 +236,10 @@ public class SimpleAlmanac {
 		SimpleAlmanac almanac = new SimpleAlmanac(apTarget, apSun, targetEpoch);
 		
 		almanac.setElongationDeltas(elongationDeltas);
+		
+		PrintStream ps = Boolean.getBoolean("silent") ? null : System.out;
 
-		almanac.run(jdstart, jdfinish, jdstep);
+		almanac.run(jdstart, jdfinish, jdstep, ps);
 	}
 
 	private static int parseBody(String bodyname) {
@@ -274,7 +276,7 @@ public class SimpleAlmanac {
 		return -1;
 	}
 
-	public void run(double jdstart, double jdfinish, double jdstep) {
+	public void run(double jdstart, double jdfinish, double jdstep, PrintStream ps) {
 		try {
 			AlmanacData lastData = null;
 			
@@ -282,11 +284,11 @@ public class SimpleAlmanac {
 				AlmanacData data = calculateAlmanacData(t);
 				
 				if (elongationDeltas && lastData != null)
-					displayElongationDelta(lastData, data, System.out);
+					displayElongationDelta(lastData, data, ps);
 				
 				lastData = data;
 				
-				displayApparentPlace(data, System.out);
+				displayApparentPlace(data, ps);
 			}
 		} catch (JPLEphemerisException jplee) {
 			jplee.printStackTrace();
@@ -294,6 +296,9 @@ public class SimpleAlmanac {
 	}
 	
 	private void displayElongationDelta(AlmanacData lastData, AlmanacData thisData, PrintStream ps) {
+		if (ps == null)
+			return;
+		
 		double delta = thisData.elongation - lastData.elongation;
 		
 		ps.printf("#%99s   %11.7f\n", " ", delta);
@@ -470,6 +475,9 @@ public class SimpleAlmanac {
 	}
 
 	private void displayApparentPlace(AlmanacData data, PrintStream ps) {
+		if (ps == null)
+			return;
+		
 		ps.format("%13.5f", data.julianDate);
 
 		ps.print("  ");
