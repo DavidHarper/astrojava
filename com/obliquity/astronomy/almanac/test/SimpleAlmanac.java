@@ -90,6 +90,9 @@ public class SimpleAlmanac {
 	private static final double TWO_PI = 2.0 * Math.PI;
 	
 	private boolean elongationDeltas = false;
+	
+	private static final double MOON_RADIUS = 1738.0;
+	private double AU;
 
 	public SimpleAlmanac(ApparentPlace apTarget, ApparentPlace apSun,
 			int targetEpoch) {
@@ -106,6 +109,8 @@ public class SimpleAlmanac {
 		double epochB1875 = erm.BesselianEpoch(1875.0);
 		precessJ2000toB1875 = new Matrix();
 		erm.precessionMatrix(epochJ2000, epochB1875, precessJ2000toB1875);
+		
+		AU = apTarget.getTarget().getEphemeris().getAU();
 	}
 	
 	public void setElongationDeltas(boolean elongationDeltas) {
@@ -633,6 +638,9 @@ public class SimpleAlmanac {
 
 		case JPLEphemeris.PLUTO:
 			return -1.0 + distanceModulus;
+			
+		case JPLEphemeris.MOON:
+			return 0.0;
 
 		default:
 			throw new IllegalStateException(
@@ -787,6 +795,10 @@ public class SimpleAlmanac {
 
 		case JPLEphemeris.PLUTO:
 			return 1.64 / d;
+			
+		case JPLEphemeris.MOON:
+			d *= AU;
+			return 3600.0 * (180.0/Math.PI) * Math.asin(MOON_RADIUS/d);
 
 		default:
 			throw new IllegalStateException(
@@ -807,6 +819,7 @@ public class SimpleAlmanac {
 		case JPLEphemeris.URANUS:
 		case JPLEphemeris.NEPTUNE:
 		case JPLEphemeris.PLUTO:
+		case JPLEphemeris.MOON:
 			return true;
 
 		default:
@@ -841,12 +854,12 @@ public class SimpleAlmanac {
 				"12\tLight-path distance",
 				"13\tConstellation",
 				"14\tEpoch of Right Ascension and Declination",
-				"[For planets only]",
+				"[For Moon and planets]",
 				"15\tElongation",
 				"16\tElongation in ecliptic longitude",
 				"17\tPhase angle",
 				"18\tIlluminated fraction",
-				"19\tApparent magnitude",
+				"19\tApparent magnitude (zero for Moon)",
 				"20\tApparent diameter of disk",
 				"21\tEcliptic longitude (in same reference frame as RA and Dec)",
 				"22\tEcliptic latitude (in same reference frame as RA and Dec)",
