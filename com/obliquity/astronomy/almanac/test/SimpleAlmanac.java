@@ -56,7 +56,7 @@ public class SimpleAlmanac {
 		public Date date = null;
 		public double rightAscension= Double.NaN, declination = Double.NaN;
 		public int epoch = -1;
-		public double geometricDistance = Double.NaN, lightPathDistance = Double.NaN;
+		public double geometricDistance = Double.NaN, lightPathDistance = Double.NaN, heliocentricDistance = Double.NaN;
 		public String constellation = null;
 		public double elongation = Double.NaN, eclipticElongation = Double.NaN;
 		public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
@@ -392,6 +392,7 @@ public class SimpleAlmanac {
 		
 		data.geometricDistance = apTarget.getGeometricDistance();
 		data.lightPathDistance = apTarget.getLightPathDistance();
+		data.heliocentricDistance = apTarget.getHeliocentricDistance();
 
 		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
 
@@ -504,6 +505,10 @@ public class SimpleAlmanac {
 		ps.print("  ");
 
 		ps.format("%10.7f", data.lightPathDistance);
+
+		ps.print("  ");
+
+		ps.format("%10.7f", data.heliocentricDistance);
 
 		ps.print("  " + data.constellation);
 
@@ -852,18 +857,19 @@ public class SimpleAlmanac {
 				"7-10\tDeclination",
 				"11\tGeometric distance",
 				"12\tLight-path distance",
-				"13\tConstellation",
-				"14\tEpoch of Right Ascension and Declination",
+				"13\tHeliocentric distance",
+				"14\tConstellation",
+				"15\tEpoch of Right Ascension and Declination",
 				"[For Moon and planets]",
-				"15\tElongation",
-				"16\tElongation in ecliptic longitude",
-				"17\tPhase angle",
-				"18\tIlluminated fraction",
-				"19\tApparent magnitude (zero for Moon)",
-				"20\tApparent diameter of disk",
-				"21\tEcliptic longitude (in same reference frame as RA and Dec)",
-				"22\tEcliptic latitude (in same reference frame as RA and Dec)",
-				"23\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane"
+				"16\tElongation",
+				"17\tElongation in ecliptic longitude",
+				"18\tPhase angle",
+				"19\tIlluminated fraction",
+				"20\tApparent magnitude (zero for Moon)",
+				"21\tApparent diameter of disk",
+				"22\tEcliptic longitude (in same reference frame as RA and Dec)",
+				"23\tEcliptic latitude (in same reference frame as RA and Dec)",
+				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane"
 		};
 		
 		for (String line : lines)
