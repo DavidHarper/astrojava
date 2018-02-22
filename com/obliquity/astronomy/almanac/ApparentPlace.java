@@ -32,6 +32,7 @@ public class ApparentPlace {
 
 	protected double pl = 0.0;
 	protected double gd = 0.0;
+	protected double hd = 0.0;
 
 	protected Vector dcOfDate = null;
 	protected double raOfDate;
@@ -84,6 +85,13 @@ public class ApparentPlace {
 	public double getGeometricDistance() throws IllegalStateException {
 		if (isValid)
 			return gd;
+		else
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
+	}
+
+	public double getHeliocentricDistance() throws IllegalStateException {
+		if (isValid)
+			return hd;
 		else
 			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
@@ -174,6 +182,8 @@ public class ApparentPlace {
 			Q.subtract(SB);
 
 			double QQ = Q.magnitude();
+			
+			hd = QQ;
 
 			if (tau == 0.0)
 				gd = PP;
