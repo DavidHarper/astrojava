@@ -266,27 +266,62 @@ public class ConjunctionFinder {
 		double dt = 1.0;
 		
 		for (double t = jdstart; t <= jdfinish; t += dt) {
-			apTarget1.calculateApparentPlace(t);
-			
-			apTarget2.calculateApparentPlace(t);
-			
-			double ra1 = apTarget1.getRightAscensionOfDate();
-			
-			double ra2 = apTarget2.getRightAscensionOfDate();
-			
-			double dRA = reduceAngle(ra2 - ra1);
+			double dRA = calculateDifferenceInRightAscension(t);
 			
 			if (!first) {
 				if (changeOfSign(lastDRA, dRA)) {
 					double tLast = t - dt;
 					
-					ps.println("Sign change between " + tLast + "(" + julianDateToCalendarDate(tLast) + ") and " + t + 
+					debug("Sign change between " + tLast + "(" + julianDateToCalendarDate(tLast) + ") and " + t + 
 							" (" + julianDateToCalendarDate(t) + ") : " + lastDRA + " vs " + dRA);
+					
+					double tExact = findExactInstant(tLast, t);
 				}
 			}
 			
 			lastDRA = dRA;
 			first = false;
+		}
+	}
+	
+	private double calculateDifferenceInRightAscension(double t) throws JPLEphemerisException {
+		apTarget1.calculateApparentPlace(t);
+		
+		apTarget2.calculateApparentPlace(t);
+		
+		double ra1 = apTarget1.getRightAscensionOfDate();
+		
+		double ra2 = apTarget2.getRightAscensionOfDate();
+		
+		return reduceAngle(ra2 - ra1);	
+	}
+	
+	// Limit of difference in RA for convergence
+	private final double EPSILON = 0.1 * (Math.PI/180.0)/3600.0;
+	
+	private double findExactInstant(double t1, double t2) throws JPLEphemerisException {
+		while (true) {
+			double dRA1 = calculateDifferenceInRightAscension(t1);
+	
+			double dRA2 = calculateDifferenceInRightAscension(t2);
+		
+			double dRAchange = dRA2 - dRA1;
+		
+			double dRArate = dRAchange/(t2 - t1);
+		
+			double tNew = t1 - dRA1/dRArate;
+		
+			double dRA3 = calculateDifferenceInRightAscension(tNew);
+		
+			debug("\tImproved t = " + tNew + " (" + julianDateToCalendarDate(tNew) + ") => " + dRA3);
+
+			if (Math.abs(dRA3) < EPSILON)
+				return tNew;
+			
+			if (changeOfSign(dRA1, dRA3))
+				t2 = tNew;
+			else
+				t1 = tNew;
 		}
 	}
 	
@@ -302,5 +337,9 @@ public class ConjunctionFinder {
 			return false;
 		
 		return true;
+	}
+	
+	private void debug(String message) {
+		System.err.println(message);
 	}
 }
