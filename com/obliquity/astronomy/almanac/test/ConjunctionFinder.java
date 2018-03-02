@@ -24,6 +24,11 @@
 
 package com.obliquity.astronomy.almanac.test;
 
+import static java.lang.Math.atan2;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
+import static java.lang.Math.asin;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
@@ -43,6 +48,15 @@ import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 
 public class ConjunctionFinder {
+	private class EclipticCoordinates {
+		public double longitude, latitude;
+		
+		public EclipticCoordinates(double longitude, double latitude) {
+			this.longitude = longitude;
+			this.latitude = latitude;
+		}
+	};
+	
 	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat(
 			"yyyy-MM-dd");
 
@@ -54,10 +68,13 @@ public class ConjunctionFinder {
 	private static final DecimalFormat dfmt = new DecimalFormat("+0.000;-0.000");
 	
 	private ApparentPlace apTarget1 = null, apTarget2 = null;
+	
+	private EarthRotationModel erm = null;
 
 	public ConjunctionFinder(ApparentPlace apTarget1, ApparentPlace apTarget2) {
 		this.apTarget1 = apTarget1;
 		this.apTarget2 = apTarget2;
+		this.erm = apTarget1.getEarthRotationModel();
 	}
 
 	public static void main(String args[]) {
@@ -69,6 +86,7 @@ public class ConjunctionFinder {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		boolean inLongitude = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -88,6 +106,9 @@ public class ConjunctionFinder {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-longitude"))
+				inLongitude = true;
 		}
 
 		if (filename == null || body1name == null || body2name == null || startdate == null
@@ -192,7 +213,7 @@ public class ConjunctionFinder {
 		ConjunctionFinder finder = new ConjunctionFinder(apTarget1, apTarget2);
 		
 		try {
-			finder.run(jdstart, jdfinish, jdstep, System.out);
+			finder.run(jdstart, jdfinish, jdstep, inLongitude, System.out);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -205,6 +226,9 @@ public class ConjunctionFinder {
 				"\t-body2\t\tName of body 2",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
+				"",
+				"OPTIONAL PARAMETERS",
+				"\t-longitude\tUse ecliptic longitude in place of Right Ascension"
 		};
 		
 		for (String line : lines)
@@ -268,41 +292,80 @@ public class ConjunctionFinder {
 		return datefmt.format(date);
 	}
 
-	private void run(double jdstart, double jdfinish, double dt, PrintStream ps) throws JPLEphemerisException {
-		double lastDRA = Double.NaN;
+	private void run(double jdstart, double jdfinish, double dt, boolean inLongitude,
+			PrintStream ps) throws JPLEphemerisException {
+		double lastDX = Double.NaN;
 		boolean first = true;
 		
 		for (double t = jdstart; t <= jdfinish; t += dt) {
-			double dRA = calculateDifferenceInRightAscension(t);
+			double dX = inLongitude ? calculateDifferenceInLongitude(t) : calculateDifferenceInRightAscension(t);
 			
 			if (!first) {
-				if (changeOfSign(lastDRA, dRA)) {
+				if (changeOfSign(lastDX, dX)) {
 					double tLast = t - dt;
 					
 					debug("Sign change between " + tLast + "(" + julianDateToCalendarDate(tLast) + ") and " + t + 
-							" (" + julianDateToCalendarDate(t) + ") : " + lastDRA + " vs " + dRA);
+							" (" + julianDateToCalendarDate(t) + ") : " + lastDX + " vs " + dX);
 					
-					double tExact = findExactInstant(tLast, t);
+					double tExact = findExactInstant(tLast, t, inLongitude);
 					
 					apTarget1.calculateApparentPlace(tExact);
 					
 					apTarget2.calculateApparentPlace(tExact);
 					
-					double dec1 = apTarget1.getDeclinationOfDate();
+					double dY = Double.NaN;
 					
-					double dec2 = apTarget2.getDeclinationOfDate();
+					if (inLongitude) {
+						apTarget1.calculateApparentPlace(t);
+						
+						apTarget2.calculateApparentPlace(t);
+						
+						double ra1 = apTarget1.getRightAscensionOfDate();
+						
+						double dec1 = apTarget1.getDeclinationOfDate();
+						
+						EclipticCoordinates ec1 = calculateEclipticCoordinates(ra1, dec1, t);
+						
+						double ra2 = apTarget2.getRightAscensionOfDate();
+						
+						double dec2 = apTarget2.getDeclinationOfDate();
+						
+						EclipticCoordinates ec2 = calculateEclipticCoordinates(ra2, dec2, t);
+
+						dY = ec2.latitude - ec1.latitude;
+					} else {
+						double dec1 = apTarget1.getDeclinationOfDate();
+					
+						double dec2 = apTarget2.getDeclinationOfDate();
+						
+						dY = dec2 - dec1;
+					}
 				
-					double dDec = (180.0/Math.PI) * (dec2 - dec1);
+					dY *= (180.0/Math.PI) ;
 					
-					ps.println(julianDateToCalendarDate(tExact) + " " + dfmt.format(dDec));
+					ps.println(julianDateToCalendarDate(tExact) + " " + dfmt.format(dY));
 				}
 			}
 			
-			lastDRA = dRA;
+			lastDX = dX;
 			first = false;
 		}
 	}
 	
+	private EclipticCoordinates calculateEclipticCoordinates(double ra, double dec, double t) {
+		double xa = cos(ra) * cos(dec);
+		double ya = sin(ra) * cos(dec);
+		double za = sin(dec);
+		
+		double obliquity = erm.meanObliquity(t);
+		
+		double xe = xa;
+		double ye = ya * cos(obliquity) + za * sin(obliquity);
+		double ze = -ya * sin(obliquity) + za * cos(obliquity);
+		
+		return new EclipticCoordinates(atan2(ye, xe), asin(ze));
+	}
+
 	private double calculateDifferenceInRightAscension(double t) throws JPLEphemerisException {
 		apTarget1.calculateApparentPlace(t);
 		
@@ -315,29 +378,49 @@ public class ConjunctionFinder {
 		return reduceAngle(ra2 - ra1);	
 	}
 	
+	private double calculateDifferenceInLongitude(double t) throws JPLEphemerisException {
+		apTarget1.calculateApparentPlace(t);
+		
+		apTarget2.calculateApparentPlace(t);
+		
+		double ra1 = apTarget1.getRightAscensionOfDate();
+		
+		double dec1 = apTarget1.getDeclinationOfDate();
+		
+		EclipticCoordinates ec1 = calculateEclipticCoordinates(ra1, dec1, t);
+		
+		double ra2 = apTarget2.getRightAscensionOfDate();
+		
+		double dec2 = apTarget2.getDeclinationOfDate();
+		
+		EclipticCoordinates ec2 = calculateEclipticCoordinates(ra2, dec2, t);
+		
+		return reduceAngle(ec2.longitude - ec1.longitude);	
+	}
+	
 	// Limit of difference in RA for convergence
 	private final double EPSILON = 0.1 * (Math.PI/180.0)/3600.0;
 	
-	private double findExactInstant(double t1, double t2) throws JPLEphemerisException {
+	private double findExactInstant(double t1, double t2, boolean inLongitude) throws JPLEphemerisException {
 		while (true) {
-			double dRA1 = calculateDifferenceInRightAscension(t1);
+			double dX1 = inLongitude ? calculateDifferenceInLongitude(t1) : calculateDifferenceInRightAscension(t1);
 	
-			double dRA2 = calculateDifferenceInRightAscension(t2);
+			double dX2 = inLongitude ? calculateDifferenceInLongitude(t2) : calculateDifferenceInRightAscension(t2);
 		
-			double dRAchange = dRA2 - dRA1;
+			double dXchange = dX2 - dX1;
 		
-			double dRArate = dRAchange/(t2 - t1);
+			double dXrate = dXchange/(t2 - t1);
 		
-			double tNew = t1 - dRA1/dRArate;
+			double tNew = t1 - dX1/dXrate;
 		
-			double dRA3 = calculateDifferenceInRightAscension(tNew);
+			double dX3 = inLongitude ? calculateDifferenceInLongitude(tNew) : calculateDifferenceInRightAscension(tNew);
 		
-			debug("\tImproved t = " + tNew + " (" + julianDateToCalendarDate(tNew) + ") => " + dRA3);
+			debug("\tImproved t = " + tNew + " (" + julianDateToCalendarDate(tNew) + ") => " + dX3);
 
-			if (Math.abs(dRA3) < EPSILON)
+			if (Math.abs(dX3) < EPSILON)
 				return tNew;
 			
-			if (changeOfSign(dRA1, dRA3))
+			if (changeOfSign(dX1, dX3))
 				t2 = tNew;
 			else
 				t1 = tNew;
