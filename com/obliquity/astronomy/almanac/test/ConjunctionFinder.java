@@ -26,6 +26,7 @@ package com.obliquity.astronomy.almanac.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -49,6 +50,8 @@ public class ConjunctionFinder {
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 
 	private static final double TWO_PI = 2.0 * Math.PI;
+
+	private static final DecimalFormat dfmt = new DecimalFormat("+0.000;-0.000");
 	
 	private ApparentPlace apTarget1 = null, apTarget2 = null;
 
@@ -65,6 +68,7 @@ public class ConjunctionFinder {
 		String body2name = null;
 		String startdate = null;
 		String enddate = null;
+		String stepsize = null;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -81,6 +85,9 @@ public class ConjunctionFinder {
 
 			if (args[i].equalsIgnoreCase("-enddate"))
 				enddate = args[++i];
+
+			if (args[i].equalsIgnoreCase("-step"))
+				stepsize = args[++i];
 		}
 
 		if (filename == null || body1name == null || body2name == null || startdate == null
@@ -134,6 +141,8 @@ public class ConjunctionFinder {
 		double jdfinish = UNIX_EPOCH_AS_JD
 				+ ((double) date.getTime()) / MILLISECONDS_PER_DAY;
 
+		double jdstep = (stepsize == null) ? 1.0 : Double.parseDouble(stepsize);
+
 		JPLEphemeris ephemeris = null;
 
 		try {
@@ -183,7 +192,7 @@ public class ConjunctionFinder {
 		ConjunctionFinder finder = new ConjunctionFinder(apTarget1, apTarget2);
 		
 		try {
-			finder.run(jdstart, jdfinish, System.out);
+			finder.run(jdstart, jdfinish, jdstep, System.out);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -259,11 +268,9 @@ public class ConjunctionFinder {
 		return datefmt.format(date);
 	}
 
-	private void run(double jdstart, double jdfinish, PrintStream ps) throws JPLEphemerisException {
+	private void run(double jdstart, double jdfinish, double dt, PrintStream ps) throws JPLEphemerisException {
 		double lastDRA = Double.NaN;
 		boolean first = true;
-		
-		double dt = 1.0;
 		
 		for (double t = jdstart; t <= jdfinish; t += dt) {
 			double dRA = calculateDifferenceInRightAscension(t);
@@ -276,6 +283,18 @@ public class ConjunctionFinder {
 							" (" + julianDateToCalendarDate(t) + ") : " + lastDRA + " vs " + dRA);
 					
 					double tExact = findExactInstant(tLast, t);
+					
+					apTarget1.calculateApparentPlace(tExact);
+					
+					apTarget2.calculateApparentPlace(tExact);
+					
+					double dec1 = apTarget1.getDeclinationOfDate();
+					
+					double dec2 = apTarget2.getDeclinationOfDate();
+				
+					double dDec = (180.0/Math.PI) * (dec2 - dec1);
+					
+					ps.println(julianDateToCalendarDate(tExact) + " " + dfmt.format(dDec));
 				}
 			}
 			
@@ -340,6 +359,7 @@ public class ConjunctionFinder {
 	}
 	
 	private void debug(String message) {
-		System.err.println(message);
+		if (Boolean.getBoolean("debug"))
+			System.err.println(message);
 	}
 }
