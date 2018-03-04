@@ -65,15 +65,17 @@ public class ConjunctionFinder {
 
 	private static final double TWO_PI = 2.0 * Math.PI;
 
-	private static final DecimalFormat dfmt = new DecimalFormat("+0.000;-0.000");
+	private static final DecimalFormat dfmt1 = new DecimalFormat("+0.000;-0.000");
+	private static final DecimalFormat dfmt2 = new DecimalFormat("+0.0;-0.0");
 	
-	private ApparentPlace apTarget1 = null, apTarget2 = null;
+	private ApparentPlace apTarget1 = null, apTarget2 = null, apSun = null;
 	
 	private EarthRotationModel erm = null;
 
-	public ConjunctionFinder(ApparentPlace apTarget1, ApparentPlace apTarget2) {
+	public ConjunctionFinder(ApparentPlace apTarget1, ApparentPlace apTarget2, ApparentPlace apSun) {
 		this.apTarget1 = apTarget1;
 		this.apTarget2 = apTarget2;
+		this.apSun = apSun;
 		this.erm = apTarget1.getEarthRotationModel();
 	}
 
@@ -209,8 +211,17 @@ public class ConjunctionFinder {
 		ApparentPlace apTarget1 = new ApparentPlace(earth, planet1, sun, erm);
 
 		ApparentPlace apTarget2 = new ApparentPlace(earth, planet2, sun, erm);
+		
+		ApparentPlace apSun = null;
+		
+		if (kBody1 == JPLEphemeris.SUN)
+			apSun = apTarget1;
+		else if (kBody2 == JPLEphemeris.SUN)
+			apSun = apTarget2;
+		else
+			apSun = new ApparentPlace(earth, sun, sun, erm);
 
-		ConjunctionFinder finder = new ConjunctionFinder(apTarget1, apTarget2);
+		ConjunctionFinder finder = new ConjunctionFinder(apTarget1, apTarget2, apSun);
 		
 		try {
 			finder.run(jdstart, jdfinish, jdstep, inLongitude, System.out);
@@ -313,37 +324,31 @@ public class ConjunctionFinder {
 					
 					apTarget2.calculateApparentPlace(tExact);
 					
-					double dY = Double.NaN;
+					double ra1 = apTarget1.getRightAscensionOfDate();
 					
-					if (inLongitude) {
-						apTarget1.calculateApparentPlace(t);
-						
-						apTarget2.calculateApparentPlace(t);
-						
-						double ra1 = apTarget1.getRightAscensionOfDate();
-						
-						double dec1 = apTarget1.getDeclinationOfDate();
-						
-						EclipticCoordinates ec1 = calculateEclipticCoordinates(ra1, dec1, t);
-						
-						double ra2 = apTarget2.getRightAscensionOfDate();
-						
-						double dec2 = apTarget2.getDeclinationOfDate();
-						
-						EclipticCoordinates ec2 = calculateEclipticCoordinates(ra2, dec2, t);
+					double dec1 = apTarget1.getDeclinationOfDate();
+					
+					EclipticCoordinates ec1 = calculateEclipticCoordinates(ra1, dec1, tExact);
+					
+					double ra2 = apTarget2.getRightAscensionOfDate();
+					
+					double dec2 = apTarget2.getDeclinationOfDate();
+					
+					EclipticCoordinates ec2 = calculateEclipticCoordinates(ra2, dec2, tExact);
+					
+					double dY = (inLongitude ? ec2.latitude - ec1.latitude : dec2 - dec1) * 180.0/Math.PI;
 
-						dY = ec2.latitude - ec1.latitude;
-					} else {
-						double dec1 = apTarget1.getDeclinationOfDate();
+					apSun.calculateApparentPlace(tExact);
 					
-						double dec2 = apTarget2.getDeclinationOfDate();
-						
-						dY = dec2 - dec1;
-					}
-				
-					dY *= (180.0/Math.PI) ;
+					double raSun = apSun.getRightAscensionOfDate();
 					
-					ps.println(julianDateToCalendarDate(tExact) + " " + dfmt.format(dY));
+					double decSun = apSun.getDeclinationOfDate();
+					
+					EclipticCoordinates ecSun = calculateEclipticCoordinates(raSun, decSun, tExact);
+					
+					double dLambda = reduceAngle(ec1.longitude - ecSun.longitude) * 180.0/Math.PI;
+									
+					ps.println(julianDateToCalendarDate(tExact) + " " + dfmt1.format(dY) + " " + dfmt2.format(dLambda));
 				}
 			}
 			
