@@ -92,6 +92,8 @@ public class SimpleAlmanac {
 	private boolean elongationDeltas = false;
 	
 	private static final double MOON_RADIUS = 1738.0;
+	private static final double SUN_RADIUS = 696000.0;
+	
 	private double AU;
 
 	public SimpleAlmanac(ApparentPlace apTarget, ApparentPlace apSun,
@@ -402,6 +404,10 @@ public class SimpleAlmanac {
 			
 		data.constellation = ConstellationFinder.getZone(ra1875, dec1875);
 
+		double dEarthPlanet = apTarget.getGeometricDistance();
+
+		data.semiDiameter = calculateSemiDiameter(dEarthPlanet);
+
 		if (targetIsPlanet()) {
 			apSun.calculateApparentPlace(t);
 
@@ -419,8 +425,6 @@ public class SimpleAlmanac {
 
 			double dEarthSun = apSun.getGeometricDistance();
 
-			double dEarthPlanet = apTarget.getGeometricDistance();
-
 			double dPlanetSun = calculatePlanetSunDistance(dEarthSun,
 					dEarthPlanet, eclipticElongation);
 
@@ -433,8 +437,6 @@ public class SimpleAlmanac {
 
 			data.magnitude = calculateMagnitude(dEarthPlanet, dPlanetSun,
 					phaseAngle, t);
-
-			data.semiDiameter = calculateSemiDiameter(dEarthPlanet);
 			
 			double epochAsJD = Double.NaN;
 			
@@ -530,6 +532,8 @@ public class SimpleAlmanac {
 		
 		ps.print("  " + epochName);
 
+		ps.printf("  %5.2f", 2.0 * data.semiDiameter);
+
 		if (targetIsPlanet()) {
 			ps.printf("  %7.2f", data.elongation);
 
@@ -540,8 +544,6 @@ public class SimpleAlmanac {
 			ps.printf("  %5.3f", data.illuminatedFraction);
 
 			ps.printf("  %5.2f", data.magnitude);
-
-			ps.printf("  %5.2f", 2.0 * data.semiDiameter);
 			
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 			
@@ -643,9 +645,6 @@ public class SimpleAlmanac {
 
 		case JPLEphemeris.PLUTO:
 			return -1.0 + distanceModulus;
-			
-		case JPLEphemeris.MOON:
-			return 0.0;
 
 		default:
 			throw new IllegalStateException(
@@ -804,6 +803,10 @@ public class SimpleAlmanac {
 		case JPLEphemeris.MOON:
 			d *= AU;
 			return 3600.0 * (180.0/Math.PI) * Math.asin(MOON_RADIUS/d);
+			
+		case JPLEphemeris.SUN:
+			d *= AU;
+			return 3600.0 * (180.0/Math.PI) * Math.asin(SUN_RADIUS/d);
 
 		default:
 			throw new IllegalStateException(
@@ -860,13 +863,13 @@ public class SimpleAlmanac {
 				"13\tHeliocentric distance",
 				"14\tConstellation",
 				"15\tEpoch of Right Ascension and Declination",
+				"16\tApparent diameter of disk",
 				"[For Moon and planets]",
-				"16\tElongation",
-				"17\tElongation in ecliptic longitude",
-				"18\tPhase angle",
-				"19\tIlluminated fraction",
-				"20\tApparent magnitude (zero for Moon)",
-				"21\tApparent diameter of disk",
+				"17\tElongation",
+				"18\tElongation in ecliptic longitude",
+				"19\tPhase angle",
+				"20\tIlluminated fraction",
+				"21\tApparent magnitude (zero for Moon)",
 				"22\tEcliptic longitude (in same reference frame as RA and Dec)",
 				"23\tEcliptic latitude (in same reference frame as RA and Dec)",
 				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane"
