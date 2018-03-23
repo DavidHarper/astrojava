@@ -10,4 +10,9 @@ then
   exit 1
 fi
 
-java ${JAVA_OPTS} -jar ${JAR_FILE} "$@"
+if [ ! -z "${EPHEMERIS_FILE}" -a -f "${EPHEMERIS_FILE}" ]
+then
+  EPHEMERIS_OPTS="-ephemeris ${EPHEMERIS_FILE}"
+fi
+
+java ${JAVA_OPTS} -jar ${JAR_FILE} ${EPHEMERIS_OPTS} "$@"
