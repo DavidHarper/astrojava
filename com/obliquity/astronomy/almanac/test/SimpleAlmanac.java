@@ -126,6 +126,7 @@ public class SimpleAlmanac {
 
 	public static void main(String args[]) {
 		datefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
+		datetimefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
 
 		String filename = null;
 		String bodyname = null;
