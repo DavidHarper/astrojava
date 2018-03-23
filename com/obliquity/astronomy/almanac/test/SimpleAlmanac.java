@@ -84,6 +84,9 @@ public class SimpleAlmanac {
 	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat(
 			"yyyy-MM-dd");
 
+	private static final SimpleDateFormat datetimefmtIn = new SimpleDateFormat(
+			"yyyy-MM-dd/HH:mm");
+
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 
@@ -140,6 +143,9 @@ public class SimpleAlmanac {
 			if (args[i].equalsIgnoreCase("-startdate"))
 				startdate = args[++i];
 
+			if (args[i].equalsIgnoreCase("-date"))
+				startdate = args[++i];
+
 			if (args[i].equalsIgnoreCase("-enddate"))
 				enddate = args[++i];
 
@@ -159,8 +165,7 @@ public class SimpleAlmanac {
 				elongationDeltas = true;
 		}
 
-		if (filename == null || bodyname == null || startdate == null
-				|| enddate == null) {
+		if (filename == null || bodyname == null) {
 			showUsage();
 			System.exit(1);
 		}
@@ -174,26 +179,36 @@ public class SimpleAlmanac {
 
 		Date date = null;
 
-		try {
-			date = datefmtIn.parse(startdate);
-		} catch (ParseException e) {
-			System.err.println(
-					"Failed to parse \"" + startdate + "\" as an ISO date");
-			e.printStackTrace();
-			System.exit(1);
-		}
+		if (startdate != null) {
+			try {
+				date = datetimefmtIn.parse(startdate);
+			} catch (ParseException e) {
+				try {
+					date = datefmtIn.parse(startdate);
+				}
+				catch (ParseException e2) {
+					System.err.println(
+							"Failed to parse \"" + startdate + "\" as an ISO date");
+					e.printStackTrace();
+					System.exit(1);
+				}
+			}
+		} else
+			date = new Date();
 
 		double jdstart = UNIX_EPOCH_AS_JD
 				+ ((double) date.getTime()) / MILLISECONDS_PER_DAY;
 
-		try {
-			date = datefmtIn.parse(enddate);
-		} catch (ParseException e) {
-			System.err.println(
-					"Failed to parse \"" + enddate + "\" as an ISO date");
-			e.printStackTrace();
-			System.exit(1);
-		}
+		if (enddate != null) {
+			try {
+				date = datefmtIn.parse(enddate);
+			} catch (ParseException e) {
+				System.err.println(
+						"Failed to parse \"" + enddate + "\" as an ISO date");
+				e.printStackTrace();
+				System.exit(1);
+			}
+		} 
 
 		double jdfinish = UNIX_EPOCH_AS_JD
 				+ ((double) date.getTime()) / MILLISECONDS_PER_DAY;
@@ -843,10 +858,14 @@ public class SimpleAlmanac {
 		String[] lines = { "MANDATORY PARAMETERS",
 				"\t-ephemeris\tName of ephemeris file",
 				"\t-body\t\tName of body",
+				"",
+				"OPTIONAL PARAMETERS",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
 				"",
-				"OPTIONAL PARAMETERS",
+				"If no start date is specified, the current date and time are used.",
+				"If no end date is specified, it is set to equal the start date, and only one line of output is produced.",
+				"",
 				"\t-step\t\tStep size (days)",
 				"\t-j2000\tCalculate position for epoch J2000",
 				"\t-b1875\tCalculate position for epoch B1875",
