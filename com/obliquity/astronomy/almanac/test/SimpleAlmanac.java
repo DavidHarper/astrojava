@@ -31,6 +31,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.Math.*;
 
@@ -178,33 +180,25 @@ public class SimpleAlmanac {
 		}
 
 		Date date = null;
-
-		if (startdate != null) {
-			try {
-				date = datetimefmtIn.parse(startdate);
-			} catch (ParseException e) {
-				try {
-					date = datefmtIn.parse(startdate);
-				}
-				catch (ParseException e2) {
-					System.err.println(
-							"Failed to parse \"" + startdate + "\" as an ISO date");
-					e.printStackTrace();
-					System.exit(1);
-				}
-			}
-		} else
-			date = new Date();
+		
+		try {
+			date = parseDate(startdate);
+		} catch (ParseException e) {
+			System.err.println(
+					"Failed to parse -startdate value \"" + startdate + "\" as an ISO date");
+			e.printStackTrace();
+			System.exit(1);
+		}
 
 		double jdstart = UNIX_EPOCH_AS_JD
 				+ ((double) date.getTime()) / MILLISECONDS_PER_DAY;
 
 		if (enddate != null) {
 			try {
-				date = datefmtIn.parse(enddate);
+				date = parseDate(enddate);
 			} catch (ParseException e) {
 				System.err.println(
-						"Failed to parse \"" + enddate + "\" as an ISO date");
+						"Failed to parse -enddate value \"" + enddate + "\" as an ISO date");
 				e.printStackTrace();
 				System.exit(1);
 			}
@@ -215,7 +209,7 @@ public class SimpleAlmanac {
 
 		double jdstep = 0.0;
 
-		jdstep = (stepsize == null) ? 1.0 : Double.parseDouble(stepsize);
+		jdstep = (stepsize == null) ? 1.0 : parseStepSize(stepsize);
 
 		JPLEphemeris ephemeris = null;
 
@@ -262,6 +256,49 @@ public class SimpleAlmanac {
 		PrintStream ps = Boolean.getBoolean("silent") ? null : System.out;
 
 		almanac.run(jdstart, jdfinish, jdstep, ps);
+	}
+	
+	private static Date parseDate(String str) throws ParseException {
+		if (str != null) {
+			try {
+				return datetimefmtIn.parse(str);
+			} catch (ParseException e) {
+				return datefmtIn.parse(str);
+			}
+		} else
+			return new Date();		
+	}
+	
+	private static double parseStepSize(String str) {
+		Pattern pattern = Pattern.compile("(\\d+)([a-zA-Z]?)");
+		
+		Matcher matcher = pattern.matcher(str);
+		
+		if (matcher.matches()) {
+			double step = Double.parseDouble(matcher.group(1));
+			
+			String units = matcher.group(2);
+			
+			switch (units) {
+			case "s":
+			case "S":
+				step /= 86400.0;
+				break;
+				
+			case "m":
+			case "M":
+				step /= 1440.0;
+				break;
+				
+			case "h":
+			case "H":
+				step /= 24.0;
+				break;
+			}
+			
+			return step;
+		} else
+			return Double.NaN;
 	}
 
 	private static int parseBody(String bodyname) {
@@ -870,10 +907,13 @@ public class SimpleAlmanac {
 				"If no start date is specified, the current date and time are used.",
 				"If no end date is specified, it is set to equal the start date, and only one line of output is produced.",
 				"",
-				"Start date formats are YYYY-MM-DD or YYYY-MM-DD/hh:mm",
-				"End date format is YYYY-MM-DD",
+				"Valid date formats are YYYY-MM-DD or YYYY-MM-DD/hh:mm",
 				"",
-				"\t-step\t\tStep size (days)",
+				"\t-step\t\tStep size",
+				"",
+				"Valid step size formats are an integer or an integer followed by a single letter (d, h, m, s) to indicate",
+				"units.  If no units are specified, days are asssumed.",
+				"",
 				"\t-j2000\tCalculate position for epoch J2000",
 				"\t-b1875\tCalculate position for epoch B1875",
 				"\t-ofdate\tCalculate position for epoch of date (this is the default)",
