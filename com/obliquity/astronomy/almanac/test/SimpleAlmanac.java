@@ -450,8 +450,8 @@ public class SimpleAlmanac {
 
 			data.illuminatedFraction = 0.5 * (1.0 + cos(phaseAngle));
 
-			data.magnitude = calculateMagnitude(dEarthPlanet, dPlanetSun,
-					phaseAngle, t);
+			data.magnitude = targetIsNotMoon() ? calculateMagnitude(dEarthPlanet, dPlanetSun,
+					phaseAngle, t) : 0.0;
 			
 			double epochAsJD = Double.NaN;
 			
@@ -848,6 +848,10 @@ public class SimpleAlmanac {
 		default:
 			return false;
 		}
+	}
+	
+	private boolean targetIsNotMoon() {
+		return apTarget.getTarget().getBodyCode() != JPLEphemeris.MOON;
 	}
 	
 	private boolean targetIsSaturn() {
