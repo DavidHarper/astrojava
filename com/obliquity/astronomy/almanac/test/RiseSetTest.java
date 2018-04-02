@@ -37,6 +37,18 @@ public class RiseSetTest {
 	public static final double TWOPI = 2.0 * Math.PI;
 	
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
+
+	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat(
+			"yyyy-MM-dd");
+
+	private static final SimpleDateFormat datetimefmtIn = new SimpleDateFormat(
+			"yyyy-MM-dd/HH:mm");
+
+	static {
+		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
+		datefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
+		datetimefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
 	
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
@@ -46,14 +58,11 @@ public class RiseSetTest {
 	private static final double HORIZONTAL_REFRACTION = (-34.0 / 60.0) * Math.PI/180.0;
 	
 	private static final double SOLAR_SEMIDIAMETER = (16.0 / 60.0) * Math.PI/180.0;
-
+	
 	public static void main(String[] args) {
-		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
-
 		String filename = null;
 		String bodyname = null;
-		String startdate = null;
-		String enddate = null;
+		String date = null;
 		String longitude = null;
 		String latitude = null;
 
@@ -65,10 +74,7 @@ public class RiseSetTest {
 				bodyname = args[++i];
 
 			if (args[i].equalsIgnoreCase("-startdate"))
-				startdate = args[++i];
-
-			if (args[i].equalsIgnoreCase("-enddate"))
-				enddate = args[++i];
+				date = args[++i];
 
 			if (args[i].equalsIgnoreCase("-latitude"))
 				latitude = args[++i];
@@ -77,7 +83,7 @@ public class RiseSetTest {
 				longitude = args[++i];
 		}
 
-		if (filename == null || bodyname == null || startdate == null || enddate == null) {
+		if (filename == null || bodyname == null || date == null ) {
 			showUsage();
 			System.exit(1);
 		}
@@ -92,32 +98,19 @@ public class RiseSetTest {
 		Date startDate = null;
 		
 		try {
-			startDate = datefmt.parse(startdate);
-		} catch (ParseException e) {
-			System.err.println("Failed to parse start date \"" + startdate + "\" as an ISO date");
-			e.printStackTrace();
-			System.exit(1);
+			startDate = parseDate(date);
+		} catch (ParseException e1) {
+			e1.printStackTrace();
+			System.exit(1);;
 		}
 		
-		double jdstart = UNIX_EPOCH_AS_JD + ((double)startDate.getTime())/MILLISECONDS_PER_DAY;
-
-		Date endDate = null;
-		
-		try {
-			endDate = datefmt.parse(enddate);
-		} catch (ParseException e) {
-			System.err.println("Failed to parse end date \"" + enddate + "\" as an ISO date");
-			e.printStackTrace();
-			System.exit(1);
-		}
-		
-		double jdfinish = UNIX_EPOCH_AS_JD + ((double)endDate.getTime())/MILLISECONDS_PER_DAY;
+		double jd = UNIX_EPOCH_AS_JD + ((double)startDate.getTime())/MILLISECONDS_PER_DAY;
 
 		JPLEphemeris ephemeris = null;
 
 		try {
-			ephemeris = new JPLEphemeris(filename, jdstart - 1.0,
-					jdfinish + 1.0);
+			ephemeris = new JPLEphemeris(filename, jd - 1.0,
+					jd + 2.0);
 		} catch (JPLEphemerisException jee) {
 			jee.printStackTrace();
 			System.err.println("JPLEphemerisException ... " + jee);
@@ -156,196 +149,115 @@ public class RiseSetTest {
 		RiseSetTest rst = new RiseSetTest();
 		
 		try {
-			rst.run(ap, place, jdstart, jdfinish);
+			rst.run(ap, place, jd);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
 	}
-
-	public void run(ApparentPlace ap, Place place, double jdstart, double jdfinish) throws JPLEphemerisException {
-		RiseSetEvent rse[] = calculateRiseSetTime(ap, place, jdstart, jdfinish,
-					RiseSetEvent.RISE_SET, RiseSetEvent.UPPER_LIMB);
-		
-		if (rse != null && rse.length > 0) {
-			for (RiseSetEvent e : rse) {
-				AstronomicalDate ad = new AstronomicalDate(e.getTime());
-				
-				ad.roundToNearestSecond();
-				
-				System.out.printf("%04d-%02d-%02d %02d:%02d %s\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), e.getEventAsString());
+	
+	private static Date parseDate(String str) throws ParseException {
+		if (str != null) {
+			try {
+				return datetimefmtIn.parse(str);
+			} catch (ParseException e) {
+				return datefmtIn.parse(str);
 			}
-		}
+		} else
+			return new Date();		
 	}
 
-	private RiseSetEvent[] calculateRiseSetTime(ApparentPlace ap, Place place,
-			double jdstart, double jdfinish, int type, int limb) throws JPLEphemerisException {
-		MovingPoint observer = ap.getObserver();
-
-		if (!(observer instanceof EarthCentre)) 
-			throw new IllegalArgumentException("Observer is not EarthCentre");
+	public void run(ApparentPlace ap, Place place, double jd) throws JPLEphemerisException {
+		double[] transitTimes = calculateTransitTimes(ap, place, jd);
 		
-		// Calculate altitude and hour angle at the start of the interval
 		
-		ap.calculateApparentPlace(jdstart);
+	}
+	
+	private double[] calculateTransitTimes(ApparentPlace ap, Place place, double jdstart) throws JPLEphemerisException {
+		System.out.println("Entered calculateTransitTimes(ApparentPlace, Place, " + jdstart + ")");
+		
+		double deltaT = ap.getEarthRotationModel().deltaT(jdstart);
+		
+		System.out.println("\tDelta T = " + deltaT);
+		
+		ap.calculateApparentPlace(jdstart + deltaT);
 		
 		double ra = ap.getRightAscensionOfDate();
-		double dec = ap.getDeclinationOfDate();
 		
 		double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(jdstart);
 		
 		double ha = reduceAngle(gmst - ra + place.getLongitude());
-
-		double phi = place.getLatitude();
 		
-		double q = Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha);
+		System.out.println("\tHour angle at start of interval = " + toDegrees(ha));
 		
-		double a = Math.asin(q);
+		double[] transits = new double[3];
 		
-		debug("At initial time " + jdstart + ", hour angle = " + (180.0 * ha/Math.PI) + ", altitude = " + (180.0 * a/Math.PI));
+		double targetHA = ha < 0.0 ? 0.0 : Math.PI;
 		
-		java.util.Vector<RiseSetEvent> events = new java.util.Vector<RiseSetEvent>();
+		double meanSiderealRate = getMeanSiderealRate(ap.getTarget().getBodyCode());
 		
-		boolean startAtPreviousTransit = a > 0.0 && ha > 0.0;
+		double jd = jdstart;
 		
-		// Calculate approximate time of first transit
-		double transitTime = 0.0;
+		double dt = Double.NaN;
 		
-		if (startAtPreviousTransit) {
-			// ha > 0 by definition
-			transitTime = jdstart - ha / TWOPI;
-		} else {
-			if (ha > 0.0) {
-				transitTime = jdstart + (TWOPI - ha) / TWOPI;
-			} else {
-				transitTime = jdstart - ha / TWOPI;
-			}
+		int iTransits = 0;
+		
+		for (int i = 0; i < 3 && jd < jdstart + 1.0; i++) {
+			System.out.println("\tLooking for transit " + i + " with target HA = " + toDegrees(targetHA));
+			
+			do {
+				ap.calculateApparentPlace(jd + deltaT);
+				
+				ra = ap.getRightAscensionOfDate();
+				
+				gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(jd);
+				
+				ha = gmst - ra + place.getLongitude();
+				
+				double dha = reduceAngle(ha - targetHA);
+				
+				dt = -dha/meanSiderealRate;
+				
+				jd += dt;
+				
+				System.out.println("\t\tdha = " + dha + ", dt = " + dt);
+			} while (Math.abs(dt) > 0.00001);
+			
+			transits[i] = jd;
+			
+			System.out.println("\tTransit " + i + " is at " + jd);
+			
+			iTransits++;
+			
+			targetHA += Math.PI;
+			
+			jd += Math.PI/meanSiderealRate;
 		}
 		
-		debug("Approximate time of first transit is " + dateToString(transitTime));
+		System.out.println("\tFound " + iTransits + " transits");
 		
-		transitTime = findNearestUpperTransit(ap, place, transitTime);
+		double[] data = new double[iTransits];
 		
-		debug("Improved time of first transit is " + dateToString(transitTime));
+		for (int i = 0; i < iTransits; i++)
+			data[i] = transits[i];
 		
-		double riseTime = 0.0, setTime;
-		
-		do {
-			debug("Transit time: " + dateToString(transitTime));
-			
-			double previousLowerTransit = findNearestLowerTransit(ap, place, transitTime - 0.5);
-			
-			debug("  Previous lower transit: " + dateToString(previousLowerTransit));
-			
-			double nextLowerTransit = findNearestLowerTransit(ap, place, transitTime + 0.5);
-			
-			debug("  Next lower transit: " + dateToString(nextLowerTransit));
-			
-			riseTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.RISING);
-			
-			if (!Double.isNaN(riseTime) && riseTime >= jdstart && riseTime < jdfinish)
-				events.add(new RiseSetEvent(RiseSetEvent.RISING, riseTime));
-			
-			// If target is circumpolar, replace rising time with transit time - 12 hours
-			// for the end-of-loop test.
-			if (Double.isNaN(riseTime))
-				riseTime = transitTime - 0.5;
-			
-			setTime = findRiseSetTime(ap, place, transitTime, RiseSetEvent.SETTING);
-			
-			if (!Double.isNaN(setTime) && setTime >= jdstart && setTime <= jdfinish)
-				events.add(new RiseSetEvent(RiseSetEvent.SETTING, setTime));
-			
-			transitTime = findNearestUpperTransit(ap, place, transitTime + 1.0);
-		} while (riseTime < jdfinish);
-		
-		RiseSetEvent[] rse = new RiseSetEvent[events.size()];
-		
-		return events.toArray(rse);
+		return data;
 	}
 	
-	private double findNearestUpperTransit(ApparentPlace ap, Place place, double t0) throws JPLEphemerisException {
-		double dt = 0.0;
-		double t = t0;
-		
-		do {
-			ap.calculateApparentPlace(t);
-			
-			double ra = ap.getRightAscensionOfDate();
-			
-			double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(t);
-			
-			double ha = reduceAngle(gmst - ra + place.getLongitude());
-			
-			dt = -ha / TWOPI;
-			
-			t += dt;
-		} while (Math.abs(dt) > EPSILON);
-		
-		return t;
-	}
-	
-	private double findNearestLowerTransit(ApparentPlace ap, Place place, double t0) throws JPLEphemerisException {
-		double dt = 0.0;
-		double t = t0;
-		
-		do {
-			ap.calculateApparentPlace(t);
-			
-			double ra = ap.getRightAscensionOfDate();
-			
-			double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(t);
-			
-			double ha = reduceAngle(gmst - ra + Math.PI + place.getLongitude());
-			
-			dt = -ha / TWOPI;
-			
-			t += dt;
-		} while (Math.abs(dt) > EPSILON);
-		
-		return t;
-	}
-
-	private double findRiseSetTime(ApparentPlace ap, Place place, double transitTime, int type) throws JPLEphemerisException {
-		ap.calculateApparentPlace(transitTime);
-		
-		double dec = ap.getDeclinationOfDate();
-		
-		int body = ap.getTarget().getBodyCode();
-		
-		double targetAltitude = HORIZONTAL_REFRACTION;
-		
-		if (body == JPLEphemeris.SUN)
-			targetAltitude -= SOLAR_SEMIDIAMETER;
-		
-		double phi = place.getLatitude();
-		
-		double q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
-		
-		debug("  At upper transit: dec = " + dec + " ; q = " + q);
-		
-		// Re-calculate declination and semi-diurnal arc at previous.next lower transit if it appears
-		// to be circumpolar from the declination at upper transit.
-		if (q < -1.0 || q > 1.0) {
-			double lowerTransitTime = transitTime + (type == RiseSetEvent.RISING ? -0.5 : 0.5);
-			
-			ap.calculateApparentPlace(lowerTransitTime);
-			
-			dec = ap.getDeclinationOfDate();
-			
-			q = (Math.sin(targetAltitude) - Math.sin(dec) * Math.sin(phi)) / (Math.cos(dec) * Math.cos(phi));
-			
-			debug("  At " + (type == RiseSetEvent.RISING ? "previous" : "next") + " lower transit, dec = " + dec + " ; q = " + q);
+	private double getMeanSiderealRate(int iBody) {
+		switch (iBody) {
+			case JPLEphemeris.SUN:
+				return TWOPI;
+				
+			case JPLEphemeris.MOON:
+				return TWOPI * (1.0 - 1.0/27.322);
+				
+			default:
+				return TWOPI * 366.0/365.0;
 		}
-		
-		// Return NaN if the target is circumpolar.
-		if (q < -1.0 || q > 1.0)
-			return Double.NaN;
-		
-		double sda = Math.acos(q);
-		
-		double dt = sda/TWOPI;
-		
-		return transitTime + (type == RiseSetEvent.RISING ? -dt : dt);
+	}
+	
+	private double toDegrees(double x) {
+		return 180.0 * x/Math.PI;
 	}
 		
 	// Reduce an angle to the range (-PI, PI]
@@ -358,14 +270,7 @@ public class RiseSetTest {
 		
 		return x;
 	}
-	
-	private void debug(String str) {
-		if (Boolean.getBoolean("debug")) {
-			System.err.print("DEBUG: ");
-			System.err.println(str);
-		}
-	}
-	
+		
 	private final DecimalFormat dfmt1 = new DecimalFormat("0000");
 	private final DecimalFormat dfmt2 = new DecimalFormat("00");
 	
