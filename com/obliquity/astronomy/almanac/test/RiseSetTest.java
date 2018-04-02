@@ -201,7 +201,7 @@ public class RiseSetTest {
 		
 		int iTransits = 0;
 		
-		for (int i = 0; i < 3 && jd < jdstart + 1.0; i++) {
+		for (int i = 0; i < 3; i++) {
 			System.out.println("\tLooking for transit " + i + " with target HA = " + toDegrees(targetHA));
 			
 			do {
@@ -222,11 +222,13 @@ public class RiseSetTest {
 				System.out.println("\t\tdha = " + dha + ", dt = " + dt);
 			} while (Math.abs(dt) > 0.00001);
 			
-			transits[i] = jd;
+			if (jd < jdstart + 1.0) {
+				transits[i] = jd;
 			
-			System.out.println("\tTransit " + i + " is at " + jd);
+				System.out.println("\tTransit " + i + " is at " + jd);
 			
-			iTransits++;
+				iTransits++;
+			}
 			
 			targetHA += Math.PI;
 			
