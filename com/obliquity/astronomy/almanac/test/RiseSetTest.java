@@ -298,10 +298,9 @@ public class RiseSetTest {
 		
 		double jdLow = jd1;
 		double jdHigh = jd2;
-		int nIters = 0;
 		
 		// Use the method of false position (Regula Falsi) to find the root
-		do {
+		for (int nIters = 0; nIters < MAX_ITERS; nIters++) {
 			double altLow = calculateGeometricAltitude(ap, place, jdLow, rsType) - targetAltitude;
 			
 			double altHigh = calculateGeometricAltitude(ap, place, jdHigh, rsType) - targetAltitude;
@@ -327,11 +326,9 @@ public class RiseSetTest {
 				jdHigh = jdNew;
 			else
 				jdLow = jdNew;
-			
-			System.out.printf("\t\tInterval size: %.5f\n", Math.abs(jdHigh - jdLow));
-		} while (Math.abs(jdHigh - jdLow) > EPSILON_TIME && ++nIters < MAX_ITERS);
+		}
 		
-		return jdLow;
+		return Double.NaN;
 	}
 
 	private double getConstantPartOfTargetAltitude(int body, RiseSetType type) {
