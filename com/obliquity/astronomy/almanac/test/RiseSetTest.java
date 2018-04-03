@@ -215,7 +215,9 @@ public class RiseSetTest {
 		
 		TransitEvent[] transitEvents = calculateTransitTimes(ap, place, jd);
 		
-		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, rsType);
+		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
+
+		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, targetAltitude, rsType);
 		
 		int nEvents = altitudeEvents.length;
 		
@@ -231,27 +233,53 @@ public class RiseSetTest {
 			double jd2 = altitudeEvents[i+1].date;
 			double alt2 = altitudeEvents[i+1].altitude;
 			
-			if ((alt1 < 0.0 && alt2 > 0.0) || (alt1 > 0.0 && alt2 < 0.0)) {
+			if (hasOppositeSign(alt1, alt2)) {
 				System.out.println("\nThere is a sign change between event " + i + " and event " + (i+1));
 				
-				RiseSetEvent rsEvent = findRiseSetEvent(ap, place, jd1, jd2, rsType);
+				double jdEvent = findRiseSetEventTime(ap, place, jd1, jd2, targetAltitude, rsType);
+				
+				System.out.println("\nEvent: " + ((alt1 < 0.0) ? "RISE" : "SET") + " at " + dateToString(jdEvent));
 			}
 		}
 	}
 	
-	private RiseSetEvent findRiseSetEvent(ApparentPlace ap, Place place,
-			double jd1, double jd2, RiseSetType rsType) {
-		System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + ", " + rsType + ")");
+	private boolean hasOppositeSign(double x, double y) {
+		return (x < 0.0 && y > 0.0) || (x > 0.0 && y < 0.0);
+	}
+	
+	private double findRiseSetEventTime(ApparentPlace ap, Place place,
+			double jd1, double jd2, double targetAltitude, RiseSetType rsType) throws JPLEphemerisException {
+		System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + ", " + toDegrees(targetAltitude) +
+				", " + rsType + ")");
 		
 		double jdLow = jd1;
 		double jdHigh = jd2;
 		int nIters = 0;
 		
+		// Use the method of false position (Regula Falsi) to find the root
 		do {
+			double altLow = calculateGeometricAltitude(ap, place, jdLow, rsType) - targetAltitude;
 			
+			double altHigh = calculateGeometricAltitude(ap, place, jdHigh, rsType) - targetAltitude;
+			
+			System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.3f\n\t\tHigh: t = %.5f, altitude = %.3f\n",
+					nIters, jdLow, toDegrees(altLow), jdHigh, toDegrees(altHigh));
+			
+			double jdNew = (jdLow * altHigh - jdHigh * altLow)/(altHigh - altLow);
+			
+			double altNew = calculateGeometricAltitude(ap, place, jdNew, rsType) - targetAltitude;
+			
+			System.out.printf("\t\tNew:  t = %.5f, altitude = %.3f\n", jdNew, toDegrees(altNew));
+			
+			if (hasOppositeSign(altLow, altNew))
+				jdHigh = jdNew;
+			else
+				jdLow = jdNew;
+			
+			System.out.printf("\t\tInterval size: %.5f\n", Math.abs(jdHigh - jdLow));
 		} while (Math.abs(jdHigh - jdLow) > EPSILON && ++nIters < 10);
 		
-		return null;
+		return jdLow;
 	}
 
 	private double getConstantPartOfTargetAltitude(int body, RiseSetType type) {
@@ -359,12 +387,11 @@ public class RiseSetTest {
 		return data;
 	}
 	
-	private AltitudeEvent[] calculateAltitudeEvents(ApparentPlace ap, Place place, double jdstart, TransitEvent[] transitEvents, RiseSetType rsType)
+	private AltitudeEvent[] calculateAltitudeEvents(ApparentPlace ap, Place place, double jdstart, TransitEvent[] transitEvents, double targetAltitude, RiseSetType rsType)
 			throws JPLEphemerisException {
-		System.out.println("\nEntered calculateAltitudeEvents(ApparentPlace, Place, " + jdstart + ", TransitEvent[], " + rsType + ")");
-		
-		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
-		
+		System.out.println("\nEntered calculateAltitudeEvents(ApparentPlace, Place, " + jdstart + ", TransitEvent[], " + toDegrees(targetAltitude) + 
+				", " +  rsType + ")");
+			
 		System.out.println("\tConstant part of target altitude is " + toDegrees(targetAltitude));
 		
 		double jdfinish = jdstart + 1.0;
