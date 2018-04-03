@@ -302,10 +302,10 @@ public class RiseSetTest {
 				if (!quiet)
 					System.out.println("\nThere is a sign change between event " + i + " and event " + (i+1));
 				
-				boolean useBisection = Boolean.getBoolean("bisection");
+				double jdEvent = findRiseSetEventTimeByFalsePosition(ap, place, jd1, jd2, rsType);
 				
-				double jdEvent = useBisection ? findRiseSetEventTimeByBisection(ap, place, jd1, jd2, rsType):
-					findRiseSetEventTimeByFalsePosition(ap, place, jd1, jd2, rsType);
+				if(Double.isNaN(jdEvent))
+					jdEvent = findRiseSetEventTimeByBisection(ap, place, jd1, jd2, rsType);
 				
 				if (!Double.isNaN(jdEvent))
 					System.out.println(((alt1 < 0.0) ? "RISE " : "SET  ") + dateToString(jdEvent));
