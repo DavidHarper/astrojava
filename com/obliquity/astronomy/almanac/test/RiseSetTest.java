@@ -108,7 +108,8 @@ public class RiseSetTest {
 	public static void main(String[] args) {
 		String filename = null;
 		String bodyname = null;
-		String date = null;
+		String startdate = null;
+		String enddate = null;
 		String longitude = null;
 		String latitude = null;
 		String typename = null;
@@ -121,7 +122,10 @@ public class RiseSetTest {
 				bodyname = args[++i];
 
 			if (args[i].equalsIgnoreCase("-startdate"))
-				date = args[++i];
+				startdate = args[++i];
+
+			if (args[i].equalsIgnoreCase("-enddate"))
+				enddate = args[++i];
 
 			if (args[i].equalsIgnoreCase("-latitude"))
 				latitude = args[++i];
@@ -133,7 +137,7 @@ public class RiseSetTest {
 				typename = args[++i];
 		}
 
-		if (filename == null || bodyname == null || date == null ) {
+		if (filename == null || bodyname == null || startdate == null ) {
 			showUsage();
 			System.exit(1);
 		}
@@ -148,19 +152,35 @@ public class RiseSetTest {
 		Date startDate = null;
 		
 		try {
-			startDate = parseDate(date);
+			startDate = parseDate(startdate);
 		} catch (ParseException e1) {
 			e1.printStackTrace();
 			System.exit(1);;
 		}
 		
-		double jd = UNIX_EPOCH_AS_JD + ((double)startDate.getTime())/MILLISECONDS_PER_DAY;
+		double jdstart = UNIX_EPOCH_AS_JD + ((double)startDate.getTime())/MILLISECONDS_PER_DAY;
+		
+		double jdfinish = 0.0;
+		
+		if (enddate != null) {
+			Date endDate = null;
+			
+			try {
+				endDate = parseDate(enddate);
+			} catch (ParseException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			
+			jdfinish = UNIX_EPOCH_AS_JD + ((double)endDate.getTime())/MILLISECONDS_PER_DAY + 1.0;
+		} else
+			jdfinish = jdstart + 1.0;
 
 		JPLEphemeris ephemeris = null;
 
 		try {
-			ephemeris = new JPLEphemeris(filename, jd - 1.0,
-					jd + 2.0);
+			ephemeris = new JPLEphemeris(filename, jdstart - 1.0,
+					jdfinish + 1.0);
 		} catch (JPLEphemerisException jee) {
 			jee.printStackTrace();
 			System.err.println("JPLEphemerisException ... " + jee);
@@ -201,7 +221,8 @@ public class RiseSetTest {
 		RiseSetTest rst = new RiseSetTest();
 		
 		try {
-			rst.run(ap, place, jd, rsType);
+			for (double jd = jdstart; jd < jdfinish; jd += 1.0)
+				rst.run(ap, place, jd, rsType);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -283,7 +304,8 @@ public class RiseSetTest {
 				
 				double jdEvent = findRiseSetEventTime(ap, place, jd1, jd2, rsType);
 				
-				System.out.println(((alt1 < 0.0) ? "RISE " : "SET  ") + dateToString(jdEvent));
+				if (!Double.isNaN(jdEvent))
+					System.out.println(((alt1 < 0.0) ? "RISE " : "SET  ") + dateToString(jdEvent));
 			}
 		}
 	}
@@ -648,8 +670,8 @@ public class RiseSetTest {
 		System.err.println();
 		
 		System.err.println("OPTIONAL PARAMETERS");
-		System.err.println("\t-type\t\tType code (upper|lower|centre|civil|nautical|astronomical)");
-
+		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
+		System.err.println("\t-type\t\tType code (upper|lower|centre|civil|nautical|astronomical) [DEFAULT: upper]");
 	}
 
 }
