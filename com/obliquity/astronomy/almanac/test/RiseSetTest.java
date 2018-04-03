@@ -307,13 +307,7 @@ public class RiseSetTest {
 			
 			System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.5f\n\t\tHigh: t = %.5f, altitude = %.5f\n",
 					nIters, jdLow, toDegrees(altLow), jdHigh, toDegrees(altHigh));
-			
-			if (Math.abs(altLow) < EPSILON_ALTITUDE)
-				return jdLow;
-			
-			if (Math.abs(altHigh) < EPSILON_ALTITUDE)
-				return jdHigh;
-			
+
 			double jdNew = (jdLow * altHigh - jdHigh * altLow)/(altHigh - altLow);
 			
 			double altNew = calculateGeometricAltitude(ap, place, jdNew, rsType) - targetAltitude;
@@ -321,6 +315,9 @@ public class RiseSetTest {
 			boolean replaceHigh = hasOppositeSign(altLow, altNew);
 			
 			System.out.printf("\t\tNew:  t = %.5f, altitude = %.5f [replaces %s]\n", jdNew, toDegrees(altNew), replaceHigh ? "HIGH" : "LOW");
+		
+			if (Math.abs(altNew) < EPSILON_ALTITUDE)
+				return jdNew;
 			
 			if (replaceHigh)
 				jdHigh = jdNew;
