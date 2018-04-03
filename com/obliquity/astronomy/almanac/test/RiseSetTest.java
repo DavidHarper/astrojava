@@ -93,7 +93,11 @@ public class RiseSetTest {
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
-	private static final double EPSILON = 0.1/86400.0;
+	private static final double EPSILON_TIME = 0.1/86400.0;
+	
+	private static final double EPSILON_ALTITUDE = (0.1/60.0) * Math.PI/180.0;
+	
+	private static final int MAX_ITERS = 20;
 	
 	private static final double EARTH_RADIUS = 6378.137;
 	
@@ -107,6 +111,7 @@ public class RiseSetTest {
 		String date = null;
 		String longitude = null;
 		String latitude = null;
+		String typename = null;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -123,6 +128,9 @@ public class RiseSetTest {
 
 			if (args[i].equalsIgnoreCase("-longitude"))
 				longitude = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-type"))
+				typename = args[++i];
 		}
 
 		if (filename == null || bodyname == null || date == null ) {
@@ -188,12 +196,48 @@ public class RiseSetTest {
 
 		Place place = new Place(lat, lon, 0.0, 0.0);
 		
+		RiseSetType rsType = parseRiseSetType(typename);
+		
 		RiseSetTest rst = new RiseSetTest();
 		
 		try {
-			rst.run(ap, place, jd, RiseSetType.UPPER_LIMB);
+			rst.run(ap, place, jd, rsType);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private static RiseSetType parseRiseSetType(String typename) {
+		if (typename == null)
+			return RiseSetType.UPPER_LIMB;
+		
+		switch (typename.toLowerCase()) {
+			case "upper":
+			case "upperlimb":
+				return RiseSetType.UPPER_LIMB;
+				
+			case "lower":
+			case "lowerlimb":
+				return RiseSetType.LOWER_LIMB;
+				
+			case "centre":
+				return RiseSetType.CENTRE_OF_DISK;
+				
+			case "civil":
+			case "ct":
+				return RiseSetType.CIVIL_TWILIGHT;
+				
+			case "nautical":
+			case "nt":
+				return RiseSetType.NAUTICAL_TWILIGHT;
+				
+			case "astronomical":
+			case "astro":
+			case "at":
+				return RiseSetType.ASTRONOMICAL_TWILIGHT;
+				
+			default:
+				return RiseSetType.UPPER_LIMB;
 		}
 	}
 	
@@ -214,10 +258,8 @@ public class RiseSetTest {
 		this.AU = ap.getTarget().getEphemeris().getAU();
 		
 		TransitEvent[] transitEvents = calculateTransitTimes(ap, place, jd);
-		
-		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
 
-		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, targetAltitude, rsType);
+		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, rsType);
 		
 		int nEvents = altitudeEvents.length;
 		
@@ -236,7 +278,7 @@ public class RiseSetTest {
 			if (hasOppositeSign(alt1, alt2)) {
 				System.out.println("\nThere is a sign change between event " + i + " and event " + (i+1));
 				
-				double jdEvent = findRiseSetEventTime(ap, place, jd1, jd2, targetAltitude, rsType);
+				double jdEvent = findRiseSetEventTime(ap, place, jd1, jd2, rsType);
 				
 				System.out.println("\nEvent: " + ((alt1 < 0.0) ? "RISE" : "SET") + " at " + dateToString(jdEvent));
 			}
@@ -248,9 +290,11 @@ public class RiseSetTest {
 	}
 	
 	private double findRiseSetEventTime(ApparentPlace ap, Place place,
-			double jd1, double jd2, double targetAltitude, RiseSetType rsType) throws JPLEphemerisException {
-		System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + ", " + toDegrees(targetAltitude) +
+			double jd1, double jd2, RiseSetType rsType) throws JPLEphemerisException {
+		System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + 
 				", " + rsType + ")");
+
+		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
 		
 		double jdLow = jd1;
 		double jdHigh = jd2;
@@ -262,22 +306,30 @@ public class RiseSetTest {
 			
 			double altHigh = calculateGeometricAltitude(ap, place, jdHigh, rsType) - targetAltitude;
 			
-			System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.3f\n\t\tHigh: t = %.5f, altitude = %.3f\n",
+			System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.5f\n\t\tHigh: t = %.5f, altitude = %.5f\n",
 					nIters, jdLow, toDegrees(altLow), jdHigh, toDegrees(altHigh));
+			
+			if (Math.abs(altLow) < EPSILON_ALTITUDE)
+				return jdLow;
+			
+			if (Math.abs(altHigh) < EPSILON_ALTITUDE)
+				return jdHigh;
 			
 			double jdNew = (jdLow * altHigh - jdHigh * altLow)/(altHigh - altLow);
 			
 			double altNew = calculateGeometricAltitude(ap, place, jdNew, rsType) - targetAltitude;
 			
-			System.out.printf("\t\tNew:  t = %.5f, altitude = %.3f\n", jdNew, toDegrees(altNew));
+			boolean replaceHigh = hasOppositeSign(altLow, altNew);
 			
-			if (hasOppositeSign(altLow, altNew))
+			System.out.printf("\t\tNew:  t = %.5f, altitude = %.5f [replaces %s]\n", jdNew, toDegrees(altNew), replaceHigh ? "HIGH" : "LOW");
+			
+			if (replaceHigh)
 				jdHigh = jdNew;
 			else
 				jdLow = jdNew;
 			
 			System.out.printf("\t\tInterval size: %.5f\n", Math.abs(jdHigh - jdLow));
-		} while (Math.abs(jdHigh - jdLow) > EPSILON && ++nIters < 10);
+		} while (Math.abs(jdHigh - jdLow) > EPSILON_TIME && ++nIters < MAX_ITERS);
 		
 		return jdLow;
 	}
@@ -387,10 +439,12 @@ public class RiseSetTest {
 		return data;
 	}
 	
-	private AltitudeEvent[] calculateAltitudeEvents(ApparentPlace ap, Place place, double jdstart, TransitEvent[] transitEvents, double targetAltitude, RiseSetType rsType)
+	private AltitudeEvent[] calculateAltitudeEvents(ApparentPlace ap, Place place, double jdstart, TransitEvent[] transitEvents,  RiseSetType rsType)
 			throws JPLEphemerisException {
-		System.out.println("\nEntered calculateAltitudeEvents(ApparentPlace, Place, " + jdstart + ", TransitEvent[], " + toDegrees(targetAltitude) + 
-				", " +  rsType + ")");
+		System.out.println("\nEntered calculateAltitudeEvents(ApparentPlace, Place, " + jdstart + ", TransitEvent[], "
+			 +  rsType + ")");
+
+		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
 			
 		System.out.println("\tConstant part of target altitude is " + toDegrees(targetAltitude));
 		
@@ -575,6 +629,12 @@ public class RiseSetTest {
 		System.err.println("\t-startdate\tStart date");
 		System.err.println("\t-longitude\tLongitude, in degrees");
 		System.err.println("\t-latitude\tLatitude, in degrees");
+		
+		System.err.println();
+		
+		System.err.println("OPTIONAL PARAMETERS");
+		System.err.println("\t-type\t\tType code (upper|lower|centre|civil|nautical|astronomical)");
+
 	}
 
 }
