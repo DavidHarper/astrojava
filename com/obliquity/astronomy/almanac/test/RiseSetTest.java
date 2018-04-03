@@ -45,6 +45,15 @@ public class RiseSetTest {
 		ASTRONOMICAL_TWILIGHT
 	}
 	
+	enum RiseSetEventType {
+		RISE, SET
+	}
+	
+	class RiseSetEvent {
+		RiseSetEventType type;
+		double date;
+	}
+	
 	class TransitEvent {
 		TransitType type;
 		double date;
@@ -85,6 +94,8 @@ public class RiseSetTest {
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
 	private static final double EPSILON = 0.1/86400.0;
+	
+	private static final double EARTH_RADIUS = 6378.137;
 	
 	private static final double HORIZONTAL_REFRACTION = (-34.0 / 60.0) * Math.PI/180.0;
 	
@@ -196,13 +207,53 @@ public class RiseSetTest {
 		} else
 			return new Date();		
 	}
+	
+	private double AU = Double.NaN;
 
-	public void run(ApparentPlace ap, Place place, double jd, RiseSetType type) throws JPLEphemerisException {
+	public void run(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
+		this.AU = ap.getTarget().getEphemeris().getAU();
+		
 		TransitEvent[] transitEvents = calculateTransitTimes(ap, place, jd);
 		
-		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, type);
+		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, rsType);
+		
+		int nEvents = altitudeEvents.length;
+		
+		System.out.println("\nThere are " + nEvents + " altitude events:");
+		
+		for (int i = 0; i < nEvents; i++)
+			System.out.printf("\tEvent %1d : date = %.5f, altitude = %.3f\n", i, altitudeEvents[i].date , toDegrees(altitudeEvents[i].altitude));
+		
+		for (int i = 0; i < nEvents - 1; i++) {
+			double jd1 = altitudeEvents[i].date;
+			double alt1 = altitudeEvents[i].altitude;
+			
+			double jd2 = altitudeEvents[i+1].date;
+			double alt2 = altitudeEvents[i+1].altitude;
+			
+			if ((alt1 < 0.0 && alt2 > 0.0) || (alt1 > 0.0 && alt2 < 0.0)) {
+				System.out.println("\nThere is a sign change between event " + i + " and event " + (i+1));
+				
+				RiseSetEvent rsEvent = findRiseSetEvent(ap, place, jd1, jd2, rsType);
+			}
+		}
 	}
 	
+	private RiseSetEvent findRiseSetEvent(ApparentPlace ap, Place place,
+			double jd1, double jd2, RiseSetType rsType) {
+		System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + ", " + rsType + ")");
+		
+		double jdLow = jd1;
+		double jdHigh = jd2;
+		int nIters = 0;
+		
+		do {
+			
+		} while (Math.abs(jdHigh - jdLow) > EPSILON && ++nIters < 10);
+		
+		return null;
+	}
+
 	private double getConstantPartOfTargetAltitude(int body, RiseSetType type) {
 		switch (body) {
 			case JPLEphemeris.SUN:
@@ -320,7 +371,7 @@ public class RiseSetTest {
 		
 		AltitudeEvent[] events = new AltitudeEvent[transitEvents.length + 2];
 		
-		events[0] = new AltitudeEvent(jdstart, calculateGeometricAltitude(ap, place, jdstart) - targetAltitude);
+		events[0] = new AltitudeEvent(jdstart, calculateGeometricAltitude(ap, place, jdstart, rsType) - targetAltitude);
 		
 		System.out.println("\n\tAt start of interval, altitude function is " + toDegrees(events[0].altitude));
 		
@@ -331,15 +382,15 @@ public class RiseSetTest {
 			
 			double jd2 = transitEvents[i].date;
 			
-			double alt2 = calculateGeometricAltitude(ap, place, jd2) - targetAltitude;
+			double alt2 = calculateGeometricAltitude(ap, place, jd2, rsType) - targetAltitude;
 			
 			double jd1 = jd2 - h;
 			
-			double alt1 = calculateGeometricAltitude(ap, place, jd1) - targetAltitude;
+			double alt1 = calculateGeometricAltitude(ap, place, jd1, rsType) - targetAltitude;
 			
 			double jd3 = jd2 + h;
 			
-			double alt3 = calculateGeometricAltitude(ap, place, jd3) - targetAltitude;
+			double alt3 = calculateGeometricAltitude(ap, place, jd3, rsType) - targetAltitude;
 			
 			System.out.printf("\t\tInterpolation points: (%.5f, %.3f), (%.5f, %.3f), (%.5f, %.3f)\n", jd1, toDegrees(alt1), jd2, toDegrees(alt2), jd3, toDegrees(alt3));
 			
@@ -359,21 +410,21 @@ public class RiseSetTest {
 			if (jd2new > jdfinish)
 				jd2new = jdfinish;
 			
-			double alt2new = calculateGeometricAltitude(ap, place, jd2new) - targetAltitude;
+			double alt2new = calculateGeometricAltitude(ap, place, jd2new, rsType) - targetAltitude;
 			
 			System.out.println("\tAt transit " + i + ", altitude function is " + toDegrees(alt2new));
 			
 			events[i + 1] = new AltitudeEvent(jd2new, alt2new);
 		}
 		
-		events[events.length - 1] = new AltitudeEvent(jdfinish, calculateGeometricAltitude(ap, place, jdfinish) - targetAltitude);
+		events[events.length - 1] = new AltitudeEvent(jdfinish, calculateGeometricAltitude(ap, place, jdfinish, rsType) - targetAltitude);
 		
 		System.out.println("\n\tAt end of interval, altitude function is " + toDegrees(events[events.length - 1].altitude));
 		
 		return events;
 	}
 	
-	private double calculateGeometricAltitude(ApparentPlace ap, Place place, double jd) throws JPLEphemerisException {
+	private double calculateGeometricAltitude(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
 		double deltaT = ap.getEarthRotationModel().deltaT(jd);
 		
 		ap.calculateApparentPlace(jd + deltaT);
@@ -388,9 +439,34 @@ public class RiseSetTest {
 		
 		double latitude = place.getLatitude();
 		
-		double q = Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(ha);
+		double alt = Math.asin(Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(ha));
 		
-		return Math.asin(q);
+		// Adjust altitude for Moon's parallax and semi-diameter
+		if (isMoon(ap)) {
+			double hp= Math.asin(EARTH_RADIUS/(AU * ap.getGeometricDistance()));
+			
+			switch (rsType) {
+				case UPPER_LIMB:
+					alt -= 0.7276 * hp;
+					break;
+					
+				case CENTRE_OF_DISK:
+					alt -= hp;
+					break;
+					
+				case LOWER_LIMB:
+					alt -= 1.1726 * hp;
+					
+				default:
+					// Do nothing
+			}
+		}
+		
+		return alt;
+	}
+	
+	private boolean isMoon(ApparentPlace ap) {
+		return ap.getTarget().getBodyCode() == JPLEphemeris.MOON;
 	}
 	
 	private double getMeanSiderealRate(int iBody) {
