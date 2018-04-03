@@ -302,7 +302,10 @@ public class RiseSetTest {
 				if (!quiet)
 					System.out.println("\nThere is a sign change between event " + i + " and event " + (i+1));
 				
-				double jdEvent = findRiseSetEventTime(ap, place, jd1, jd2, rsType);
+				boolean useBisection = Boolean.getBoolean("bisection");
+				
+				double jdEvent = useBisection ? findRiseSetEventTimeByBisection(ap, place, jd1, jd2, rsType):
+					findRiseSetEventTimeByFalsePosition(ap, place, jd1, jd2, rsType);
 				
 				if (!Double.isNaN(jdEvent))
 					System.out.println(((alt1 < 0.0) ? "RISE " : "SET  ") + dateToString(jdEvent));
@@ -314,7 +317,49 @@ public class RiseSetTest {
 		return (x < 0.0 && y > 0.0) || (x > 0.0 && y < 0.0);
 	}
 	
-	private double findRiseSetEventTime(ApparentPlace ap, Place place,
+	private double findRiseSetEventTimeByBisection(ApparentPlace ap, Place place,
+			double jd1, double jd2, RiseSetType rsType) throws JPLEphemerisException {
+		if (!quiet)
+			System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + 
+					", " + rsType + ")");
+
+		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
+		
+		double jdLow = jd1;
+		double jdHigh = jd2;
+		
+		// Use the method of bisection to find the root
+		for (int nIters = 0; nIters < MAX_ITERS; nIters++) {
+			double altLow = calculateGeometricAltitude(ap, place, jdLow, rsType) - targetAltitude;
+			
+			double altHigh = calculateGeometricAltitude(ap, place, jdHigh, rsType) - targetAltitude;
+			
+			if (!quiet)
+				System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.5f\n\t\tHigh: t = %.5f, altitude = %.5f\n",
+					nIters, jdLow, toDegrees(altLow), jdHigh, toDegrees(altHigh));
+
+			double jdNew = 0.5 * (jdLow + jdHigh);
+			
+			double altNew = calculateGeometricAltitude(ap, place, jdNew, rsType) - targetAltitude;
+			
+			boolean replaceHigh = hasOppositeSign(altLow, altNew);
+			
+			if (!quiet)
+				System.out.printf("\t\tNew:  t = %.5f, altitude = %.5f [replaces %s]\n", jdNew, toDegrees(altNew), replaceHigh ? "HIGH" : "LOW");
+		
+			if (Math.abs(altNew) < EPSILON_ALTITUDE)
+				return jdNew;
+			
+			if (replaceHigh)
+				jdHigh = jdNew;
+			else
+				jdLow = jdNew;
+		}
+		
+		return Double.NaN;
+	}
+	
+	private double findRiseSetEventTimeByFalsePosition(ApparentPlace ap, Place place,
 			double jd1, double jd2, RiseSetType rsType) throws JPLEphemerisException {
 		if (!quiet)
 			System.out.println("\nEntered findRiseSetEvent(ApparentPlace, Place, " + jd1 + ", " + jd2 + 
