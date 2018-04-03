@@ -93,8 +93,6 @@ public class RiseSetTest {
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
-	private static final double EPSILON_TIME = 0.1/86400.0;
-	
 	private static final double EPSILON_ALTITUDE = (0.1/60.0) * Math.PI/180.0;
 	
 	private static final int MAX_ITERS = 20;
