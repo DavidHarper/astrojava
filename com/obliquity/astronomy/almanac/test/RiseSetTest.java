@@ -34,6 +34,37 @@ import java.util.TimeZone;
 import com.obliquity.astronomy.almanac.*;
 
 public class RiseSetTest {
+	enum TransitType { UPPER, LOWER }
+	
+	enum RiseSetType {
+		UPPER_LIMB,
+		LOWER_LIMB,
+		CENTRE_OF_DISK,
+		CIVIL_TWILIGHT,
+		NAUTICAL_TWILIGHT,
+		ASTRONOMICAL_TWILIGHT
+	}
+	
+	class TransitEvent {
+		TransitType type;
+		double date;
+		
+		public TransitEvent(TransitType type, double date) {
+			this.type = type;
+			this.date = date;
+		}
+	}
+	
+	class AltitudeEvent {
+		double date;
+		double altitude;
+		
+		public AltitudeEvent(double date, double altitude) {
+			this.date = date;
+			this.altitude = altitude;
+		}
+	}
+	
 	public static final double TWOPI = 2.0 * Math.PI;
 	
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
@@ -149,7 +180,7 @@ public class RiseSetTest {
 		RiseSetTest rst = new RiseSetTest();
 		
 		try {
-			rst.run(ap, place, jd);
+			rst.run(ap, place, jd, RiseSetType.UPPER_LIMB);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -166,13 +197,41 @@ public class RiseSetTest {
 			return new Date();		
 	}
 
-	public void run(ApparentPlace ap, Place place, double jd) throws JPLEphemerisException {
-		double[] transitTimes = calculateTransitTimes(ap, place, jd);
+	public void run(ApparentPlace ap, Place place, double jd, RiseSetType type) throws JPLEphemerisException {
+		TransitEvent[] transitEvents = calculateTransitTimes(ap, place, jd);
 		
-		
+		AltitudeEvent[] altitudeEvents = calculateAltitudeEvents(ap, place, jd, transitEvents, type);
 	}
 	
-	private double[] calculateTransitTimes(ApparentPlace ap, Place place, double jdstart) throws JPLEphemerisException {
+	private double getConstantPartOfTargetAltitude(int body, RiseSetType type) {
+		switch (body) {
+			case JPLEphemeris.SUN:
+				switch (type) {
+					case UPPER_LIMB:
+						return HORIZONTAL_REFRACTION - SOLAR_SEMIDIAMETER;
+						
+					case CENTRE_OF_DISK:
+						return HORIZONTAL_REFRACTION;
+						
+					case LOWER_LIMB:
+						return HORIZONTAL_REFRACTION + SOLAR_SEMIDIAMETER;
+						
+					case CIVIL_TWILIGHT:
+						return -6.0 * Math.PI/180.0;
+						
+					case NAUTICAL_TWILIGHT:
+						return -12.0 * Math.PI/180.0;
+						
+					case ASTRONOMICAL_TWILIGHT:
+						return -18.0 * Math.PI/180.0;
+				}
+				
+			default:
+				return HORIZONTAL_REFRACTION;
+		}
+	}
+	
+	private TransitEvent[] calculateTransitTimes(ApparentPlace ap, Place place, double jdstart) throws JPLEphemerisException {
 		System.out.println("Entered calculateTransitTimes(ApparentPlace, Place, " + jdstart + ")");
 		
 		double deltaT = ap.getEarthRotationModel().deltaT(jdstart);
@@ -187,11 +246,13 @@ public class RiseSetTest {
 		
 		double ha = reduceAngle(gmst - ra + place.getLongitude());
 		
-		System.out.println("\tHour angle at start of interval = " + toDegrees(ha));
+		System.out.println("\n\tHour angle at start of interval = " + toDegrees(ha));
 		
-		double[] transits = new double[3];
+		TransitEvent[] transits = new TransitEvent[3];
 		
 		double targetHA = ha < 0.0 ? 0.0 : Math.PI;
+		
+		TransitType targetType = ha < 0.0 ? TransitType.UPPER : TransitType.LOWER;
 		
 		double meanSiderealRate = getMeanSiderealRate(ap.getTarget().getBodyCode());
 		
@@ -202,7 +263,7 @@ public class RiseSetTest {
 		int iTransits = 0;
 		
 		for (int i = 0; i < 3; i++) {
-			System.out.println("\tLooking for transit " + i + " with target HA = " + toDegrees(targetHA));
+			System.out.println("\n\tLooking for transit " + i + " with target HA = " + toDegrees(targetHA));
 			
 			do {
 				ap.calculateApparentPlace(jd + deltaT);
@@ -223,26 +284,113 @@ public class RiseSetTest {
 			} while (Math.abs(dt) > 0.00001);
 			
 			if (jd < jdstart + 1.0) {
-				transits[i] = jd;
+				transits[i] = new TransitEvent(targetType, jd);
 			
-				System.out.println("\tTransit " + i + " is at " + jd);
+				System.out.println("\tTransit " + i + " is " + targetType + " at " + jd);
 			
 				iTransits++;
 			}
 			
 			targetHA += Math.PI;
 			
+			targetType = (targetType == TransitType.LOWER) ? TransitType.UPPER : TransitType.LOWER;
+			
 			jd += Math.PI/meanSiderealRate;
 		}
 		
-		System.out.println("\tFound " + iTransits + " transits");
+		System.out.println("\n\tFound " + iTransits + " transits");
 		
-		double[] data = new double[iTransits];
+		TransitEvent[] data = new TransitEvent[iTransits];
 		
 		for (int i = 0; i < iTransits; i++)
 			data[i] = transits[i];
 		
 		return data;
+	}
+	
+	private AltitudeEvent[] calculateAltitudeEvents(ApparentPlace ap, Place place, double jdstart, TransitEvent[] transitEvents, RiseSetType rsType)
+			throws JPLEphemerisException {
+		System.out.println("\nEntered calculateAltitudeEvents(ApparentPlace, Place, " + jdstart + ", TransitEvent[], " + rsType + ")");
+		
+		double targetAltitude = getConstantPartOfTargetAltitude(ap.getTarget().getBodyCode(), rsType);
+		
+		System.out.println("\tConstant part of target altitude is " + toDegrees(targetAltitude));
+		
+		double jdfinish = jdstart + 1.0;
+		
+		AltitudeEvent[] events = new AltitudeEvent[transitEvents.length + 2];
+		
+		events[0] = new AltitudeEvent(jdstart, calculateGeometricAltitude(ap, place, jdstart) - targetAltitude);
+		
+		System.out.println("\n\tAt start of interval, altitude function is " + toDegrees(events[0].altitude));
+		
+		final double h = 30.0/1440.0;
+		
+		for (int i = 0; i < transitEvents.length; i++) {
+			System.out.println("\n\tFinding altitude extremum at transit " + i);
+			
+			double jd2 = transitEvents[i].date;
+			
+			double alt2 = calculateGeometricAltitude(ap, place, jd2) - targetAltitude;
+			
+			double jd1 = jd2 - h;
+			
+			double alt1 = calculateGeometricAltitude(ap, place, jd1) - targetAltitude;
+			
+			double jd3 = jd2 + h;
+			
+			double alt3 = calculateGeometricAltitude(ap, place, jd3) - targetAltitude;
+			
+			System.out.printf("\t\tInterpolation points: (%.5f, %.3f), (%.5f, %.3f), (%.5f, %.3f)\n", jd1, toDegrees(alt1), jd2, toDegrees(alt2), jd3, toDegrees(alt3));
+			
+			double a = alt3 - alt1;
+			
+			double b = alt1 - 2.0 * alt2 + alt3;
+			
+			double dt = -0.5 * h * a/b;
+			
+			System.out.printf("\t\ta = %.6f, b = %.6f, dt = %.5f\n", a, b, dt);
+			
+			double jd2new = jd2 + dt;
+			
+			if (jd2new < jdstart)
+				jd2new = jdstart;
+			
+			if (jd2new > jdfinish)
+				jd2new = jdfinish;
+			
+			double alt2new = calculateGeometricAltitude(ap, place, jd2new) - targetAltitude;
+			
+			System.out.println("\tAt transit " + i + ", altitude function is " + toDegrees(alt2new));
+			
+			events[i + 1] = new AltitudeEvent(jd2new, alt2new);
+		}
+		
+		events[events.length - 1] = new AltitudeEvent(jdfinish, calculateGeometricAltitude(ap, place, jdfinish) - targetAltitude);
+		
+		System.out.println("\n\tAt end of interval, altitude function is " + toDegrees(events[events.length - 1].altitude));
+		
+		return events;
+	}
+	
+	private double calculateGeometricAltitude(ApparentPlace ap, Place place, double jd) throws JPLEphemerisException {
+		double deltaT = ap.getEarthRotationModel().deltaT(jd);
+		
+		ap.calculateApparentPlace(jd + deltaT);
+		
+		double ra = ap.getRightAscensionOfDate();
+		
+		double dec = ap.getDeclinationOfDate();
+		
+		double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(jd);
+		
+		double ha = reduceAngle(gmst - ra + place.getLongitude());
+		
+		double latitude = place.getLatitude();
+		
+		double q = Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(ha);
+		
+		return Math.asin(q);
 	}
 	
 	private double getMeanSiderealRate(int iBody) {
