@@ -610,7 +610,7 @@ public class RiseSetTest {
 			
 			switch (rsType) {
 				case UPPER_LIMB:
-					alt -= 0.7276 * hp;
+					alt -= 0.7276 * hp;  // hp - sd
 					break;
 					
 				case CENTRE_OF_DISK:
@@ -618,7 +618,7 @@ public class RiseSetTest {
 					break;
 					
 				case LOWER_LIMB:
-					alt -= 1.1726 * hp;
+					alt -= 1.2724 * hp;  // hp + sd
 					
 				default:
 					// Do nothing
