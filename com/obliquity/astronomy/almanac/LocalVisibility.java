@@ -403,7 +403,7 @@ public class LocalVisibility {
 					break;
 					
 				case LOWER_LIMB:
-					alt -= 1.1726 * hp;
+					alt -= 1.2724 * hp;
 					
 				default:
 					// Do nothing
