@@ -126,9 +126,25 @@ public class AlmanacData {
 			double raSun = apSun.getRightAscensionJ2000();
 			double decSun = apSun.getDeclinationJ2000();
 			
-			EarthRotationModel erm = apTarget.getEarthRotationModel();
+			IAUEarthRotationModel erm = (IAUEarthRotationModel)apTarget.getEarthRotationModel();
+			
+			double epochAsJD = Double.NaN;
+			
+			switch (targetEpoch) {
+			case J2000:
+				epochAsJD = erm.JulianEpoch(2000.0);
+				break;
+				
+			case B1875:
+				epochAsJD = erm.BesselianEpoch(1875.0);
+				break;
+				
+			default:
+				epochAsJD = t;
+				break;
+			}
 
-			double obliquity = erm.meanObliquity(t);
+			double obliquity = erm.meanObliquity(epochAsJD);
 
 			data.elongation = 180.0/PI * calculateElongation(ra, dec, raSun, decSun);
 			
