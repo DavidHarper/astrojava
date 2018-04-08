@@ -27,7 +27,7 @@ package com.obliquity.astronomy.almanac;
 public class HorizontalCoordinates {
 	public double altitude, azimuth;
 	
-	public HorizontalCoordinates(double altitude, double azmiuth) {
+	public HorizontalCoordinates(double altitude, double azimuth) {
 		this.altitude = altitude;
 		this.azimuth = azimuth;
 	}
