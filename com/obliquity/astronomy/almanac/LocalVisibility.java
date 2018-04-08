@@ -115,9 +115,9 @@ public class LocalVisibility {
 		
 		// Use the method of bisection to find the root
 		for (int nIters = 0; nIters < MAX_ITERS; nIters++) {
-			double altLow = calculateGeometricAltitude(ap, place, jdLow, rsType) - targetAltitude;
+			double altLow = calculateGeometricAltitudeForRisingOrSetting(ap, place, jdLow, rsType) - targetAltitude;
 			
-			double altHigh = calculateGeometricAltitude(ap, place, jdHigh, rsType) - targetAltitude;
+			double altHigh = calculateGeometricAltitudeForRisingOrSetting(ap, place, jdHigh, rsType) - targetAltitude;
 			
 			if (verbose)
 				System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.5f\n\t\tHigh: t = %.5f, altitude = %.5f\n",
@@ -125,7 +125,7 @@ public class LocalVisibility {
 
 			double jdNew = 0.5 * (jdLow + jdHigh);
 			
-			double altNew = calculateGeometricAltitude(ap, place, jdNew, rsType) - targetAltitude;
+			double altNew = calculateGeometricAltitudeForRisingOrSetting(ap, place, jdNew, rsType) - targetAltitude;
 			
 			boolean replaceHigh = hasOppositeSign(altLow, altNew);
 			
@@ -157,9 +157,9 @@ public class LocalVisibility {
 		
 		// Use the method of false position (Regula Falsi) to find the root
 		for (int nIters = 0; nIters < MAX_ITERS; nIters++) {
-			double altLow = calculateGeometricAltitude(ap, place, jdLow, rsType) - targetAltitude;
+			double altLow = calculateGeometricAltitudeForRisingOrSetting(ap, place, jdLow, rsType) - targetAltitude;
 			
-			double altHigh = calculateGeometricAltitude(ap, place, jdHigh, rsType) - targetAltitude;
+			double altHigh = calculateGeometricAltitudeForRisingOrSetting(ap, place, jdHigh, rsType) - targetAltitude;
 			
 			if (verbose)
 				System.out.printf("\n\tIteration %2d\n\t\tLow:  t = %.5f, altitude = %.5f\n\t\tHigh: t = %.5f, altitude = %.5f\n",
@@ -167,7 +167,7 @@ public class LocalVisibility {
 
 			double jdNew = (jdLow * altHigh - jdHigh * altLow)/(altHigh - altLow);
 			
-			double altNew = calculateGeometricAltitude(ap, place, jdNew, rsType) - targetAltitude;
+			double altNew = calculateGeometricAltitudeForRisingOrSetting(ap, place, jdNew, rsType) - targetAltitude;
 			
 			boolean replaceHigh = hasOppositeSign(altLow, altNew);
 			
@@ -313,7 +313,7 @@ public class LocalVisibility {
 		
 		AltitudeEvent[] events = new AltitudeEvent[transitEvents.length + 2];
 		
-		events[0] = new AltitudeEvent(jdstart, calculateGeometricAltitude(ap, place, jdstart, rsType) - targetAltitude);
+		events[0] = new AltitudeEvent(jdstart, calculateGeometricAltitudeForRisingOrSetting(ap, place, jdstart, rsType) - targetAltitude);
 		
 		if (verbose)
 			System.out.println("\n\tAt start of interval, altitude function is " + toDegrees(events[0].altitude));
@@ -326,15 +326,15 @@ public class LocalVisibility {
 			
 			double jd2 = transitEvents[i].date;
 			
-			double alt2 = calculateGeometricAltitude(ap, place, jd2, rsType) - targetAltitude;
+			double alt2 = calculateGeometricAltitudeForRisingOrSetting(ap, place, jd2, rsType) - targetAltitude;
 			
 			double jd1 = jd2 - h;
 			
-			double alt1 = calculateGeometricAltitude(ap, place, jd1, rsType) - targetAltitude;
+			double alt1 = calculateGeometricAltitudeForRisingOrSetting(ap, place, jd1, rsType) - targetAltitude;
 			
 			double jd3 = jd2 + h;
 			
-			double alt3 = calculateGeometricAltitude(ap, place, jd3, rsType) - targetAltitude;
+			double alt3 = calculateGeometricAltitudeForRisingOrSetting(ap, place, jd3, rsType) - targetAltitude;
 			
 			if (verbose)	
 				System.out.printf("\t\tInterpolation points: (%.5f, %.3f), (%.5f, %.3f), (%.5f, %.3f)\n", jd1, toDegrees(alt1), jd2, toDegrees(alt2), jd3, toDegrees(alt3));
@@ -356,7 +356,7 @@ public class LocalVisibility {
 			if (jd2new > jdfinish)
 				jd2new = jdfinish;
 			
-			double alt2new = calculateGeometricAltitude(ap, place, jd2new, rsType) - targetAltitude;
+			double alt2new = calculateGeometricAltitudeForRisingOrSetting(ap, place, jd2new, rsType) - targetAltitude;
 			
 			if (verbose)
 				System.out.println("\tAt transit " + i + ", altitude function is " + toDegrees(alt2new));
@@ -364,7 +364,7 @@ public class LocalVisibility {
 			events[i + 1] = new AltitudeEvent(jd2new, alt2new);
 		}
 		
-		events[events.length - 1] = new AltitudeEvent(jdfinish, calculateGeometricAltitude(ap, place, jdfinish, rsType) - targetAltitude);
+		events[events.length - 1] = new AltitudeEvent(jdfinish, calculateGeometricAltitudeForRisingOrSetting(ap, place, jdfinish, rsType) - targetAltitude);
 		
 		if (verbose)
 			System.out.println("\n\tAt end of interval, altitude function is " + toDegrees(events[events.length - 1].altitude));
@@ -372,7 +372,7 @@ public class LocalVisibility {
 		return events;
 	}
 	
-	private double calculateGeometricAltitude(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
+	private double calculateGeometricAltitudeForRisingOrSetting(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
 		double deltaT = ap.getEarthRotationModel().deltaT(jd);
 		
 		ap.calculateApparentPlace(jd + deltaT);
