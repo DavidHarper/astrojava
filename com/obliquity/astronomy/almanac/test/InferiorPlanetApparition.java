@@ -31,6 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import com.obliquity.astronomy.almanac.AlmanacData;
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.AstronomicalDate;
 import com.obliquity.astronomy.almanac.EarthCentre;
@@ -189,9 +190,13 @@ public class InferiorPlanetApparition {
 				
 				HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apPlanet, place, date);
 				
-				if (hc.altitude > 0.0)
+				if (hc.altitude > 0.0) {
+					AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
+					
 					System.out.println((rse.type == RiseSetEventType.RISE ? "SUNRISE " : "SUNSET  ") + dateToString(date) + " " + 
-							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI));
+							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
+									dfmt3.format(data.magnitude));
+				}
 			}
 			
 			RiseSetEvent[] civilTwilights = lv.findRiseSetEvents(apSun, place, jd, RiseSetType.CIVIL_TWILIGHT);
@@ -201,9 +206,13 @@ public class InferiorPlanetApparition {
 				
 				HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apPlanet, place, date);
 				
-				if (hc.altitude > 0.0)
+				if (hc.altitude > 0.0) {
+					AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
+					
 					System.out.println((rse.type == RiseSetEventType.RISE ? "CIVIL_E " : "CIVIL_S ") + dateToString(date) + " " + 
-							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI));
+							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
+							dfmt3.format(data.magnitude));
+				}
 			}
 		}
 	
