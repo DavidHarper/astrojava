@@ -155,7 +155,7 @@ public class AlmanacData {
 					phaseAngle, t) : 0.0;
 			
 			if (iBody == JPLEphemeris.SATURN)
-				data.magnitude += saturnRingCorrection(apTarget, apSun, phaseAngle);
+				data.magnitude += saturnRingCorrection(apTarget, apSun, t);
 				
 			double ce = cos(obliquity);		
 			double se = sin(obliquity);
