@@ -24,12 +24,11 @@
 
 package com.obliquity.astronomy.almanac;
 
-public class RiseSetEvent {
-	public RiseSetEventType type;
-	public double date;
-	
-	public RiseSetEvent(RiseSetEventType type, double date) {
-		this.type = type;
-		this.date = date;
-	}
+public enum RiseSetType {
+	UPPER_LIMB,
+	LOWER_LIMB,
+	CENTRE_OF_DISK,
+	CIVIL_TWILIGHT,
+	NAUTICAL_TWILIGHT,
+	ASTRONOMICAL_TWILIGHT
 }

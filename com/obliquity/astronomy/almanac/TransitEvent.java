@@ -24,11 +24,11 @@
 
 package com.obliquity.astronomy.almanac;
 
-public class RiseSetEvent {
-	public RiseSetEventType type;
+public class TransitEvent {
+	public TransitType type;
 	public double date;
 	
-	public RiseSetEvent(RiseSetEventType type, double date) {
+	public TransitEvent(TransitType type, double date) {
 		this.type = type;
 		this.date = date;
 	}
