@@ -399,7 +399,12 @@ public class LocalVisibility {
 		double altitude = Math.asin(z);
 		double azimuth = Math.atan2(y, x);
 		
-		return new HorizontalCoordinates(altitude, azimuth);
+		double p = Math.sin(lha);
+		double q = Math.sin(latitude) * Math.cos(dec) - Math.cos(latitude) * Math.sin(dec) * Math.sin(lha);
+		
+		double parallacticAngle = Math.atan2(p, q);
+		
+		return new HorizontalCoordinates(altitude, azimuth, parallacticAngle);
 	}
 	
 	public HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(ApparentPlace ap, Place place, double jd) 

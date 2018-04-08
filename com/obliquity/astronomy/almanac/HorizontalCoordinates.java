@@ -26,9 +26,16 @@ package com.obliquity.astronomy.almanac;
 
 public class HorizontalCoordinates {
 	public double altitude, azimuth;
+	public double parallacticAngle = Double.NaN;
 	
 	public HorizontalCoordinates(double altitude, double azimuth) {
 		this.altitude = altitude;
 		this.azimuth = azimuth;
+	}
+	
+	public HorizontalCoordinates(double altitude, double azimuth, double parallacticAngle) {
+		this.altitude = altitude;
+		this.azimuth = azimuth;
+		this.parallacticAngle = parallacticAngle;
 	}
 }

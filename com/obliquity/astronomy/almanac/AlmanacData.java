@@ -33,6 +33,7 @@ public class AlmanacData {
 	public double elongation = Double.NaN, eclipticElongation = Double.NaN;
 	public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
 	public double magnitude = Double.NaN, semiDiameter = Double.NaN;
+	public double positionAngleOfBrightLimb = Double.NaN;
 	public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
 	public SaturnRingAngles saturnRingAngles = null;
 	
@@ -120,11 +121,11 @@ public class AlmanacData {
 		if (iBody != JPLEphemeris.SUN) {
 			apSun.calculateApparentPlace(t);
 
-			ra = apTarget.getRightAscensionJ2000();
-			dec = apTarget.getDeclinationJ2000();
+			ra = apTarget.getRightAscensionOfDate();
+			dec = apTarget.getDeclinationOfDate();
 
-			double raSun = apSun.getRightAscensionJ2000();
-			double decSun = apSun.getDeclinationJ2000();
+			double raSun = apSun.getRightAscensionOfDate();
+			double decSun = apSun.getDeclinationOfDate();
 			
 			IAUEarthRotationModel erm = (IAUEarthRotationModel)apTarget.getEarthRotationModel();
 			
@@ -163,6 +164,11 @@ public class AlmanacData {
 			data.phaseAngle = phaseAngle * 180.0 / PI;
 
 			data.illuminatedFraction = 0.5 * (1.0 + cos(phaseAngle));
+			
+			double y = cos(decSun) * sin(raSun - ra);
+			double x = sin(decSun) * cos(dec) - cos(decSun) * sin(dec) * cos(raSun - ra);
+			
+			data.positionAngleOfBrightLimb = atan2(y, x);
 
 			data.magnitude = iBody != JPLEphemeris.MOON ? calculateMagnitude(iBody, dEarthPlanet, dPlanetSun,
 					phaseAngle, t) : 0.0;
