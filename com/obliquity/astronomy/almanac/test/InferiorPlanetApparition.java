@@ -59,6 +59,7 @@ public class InferiorPlanetApparition {
 		String enddate = null;
 		String longitude = null;
 		String latitude = null;
+		boolean civil = false;
 		
 		int kBody = -1;
 
@@ -71,6 +72,9 @@ public class InferiorPlanetApparition {
 
 			if (args[i].equalsIgnoreCase("-mercury"))
 				kBody = JPLEphemeris.MERCURY;
+
+			if (args[i].equalsIgnoreCase("-civil"))
+				civil = true;
 
 			if (args[i].equalsIgnoreCase("-startdate"))
 				startdate = args[++i];
@@ -135,7 +139,6 @@ public class InferiorPlanetApparition {
 
 		MovingPoint planet = null;
 
-
 		planet = new PlanetCentre(ephemeris, kBody);
 
 		EarthCentre earth = new EarthCentre(ephemeris);
@@ -158,13 +161,13 @@ public class InferiorPlanetApparition {
 		InferiorPlanetApparition ipa = new InferiorPlanetApparition();
 		
 		try {
-			ipa.run(apPlanet, apSun, place, jdstart, jdfinish);
+			ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public void run(ApparentPlace apPlanet, ApparentPlace apSun, Place place, double jdstart, double jdfinish) throws JPLEphemerisException {
+	public void run(ApparentPlace apPlanet, ApparentPlace apSun, Place place, double jdstart, double jdfinish, boolean civil) throws JPLEphemerisException {
 		LocalVisibility lv = new LocalVisibility();
 
 		for (double jd = jdstart; jd < jdfinish; jd += 1.0) {
@@ -186,21 +189,23 @@ public class InferiorPlanetApparition {
 				}
 			}
 			
-			RiseSetEvent[] civilTwilights = lv.findRiseSetEvents(apSun, place, jd, RiseSetType.CIVIL_TWILIGHT);
+			if (civil) {
+				RiseSetEvent[] civilTwilights = lv.findRiseSetEvents(apSun, place, jd, RiseSetType.CIVIL_TWILIGHT);
 
-			for (RiseSetEvent rse : civilTwilights) {
-				double date = rse.date;
+				for (RiseSetEvent rse : civilTwilights) {
+					double date = rse.date;
 				
-				HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apPlanet, place, date);
+					HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apPlanet, place, date);
 				
-				if (hc.altitude > 0.0) {
-					AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
+					if (hc.altitude > 0.0) {
+						AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
 					
-					double positionAngle = reduceAngle(hc.parallacticAngle + data.positionAngleOfBrightLimb) * 180.0/Math.PI;
+						double positionAngle = reduceAngle(hc.parallacticAngle + data.positionAngleOfBrightLimb) * 180.0/Math.PI;
 					
-					System.out.println((rse.type == RiseSetEventType.RISE ? "CIVIL_E " : "CIVIL_S ") + dateToString(date) + " " + 
-							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
-							dfmt3.format(data.magnitude) + " " + dfmt3.format(positionAngle));
+						System.out.println((rse.type == RiseSetEventType.RISE ? "CIVIL_E " : "CIVIL_S ") + dateToString(date) + " " + 
+								dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
+								dfmt3.format(data.magnitude) + " " + dfmt3.format(positionAngle));
+					}
 				}
 			}
 		}
@@ -258,7 +263,7 @@ public class InferiorPlanetApparition {
 		
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
-
+		System.err.println("\t-civil\tShow altitude at start/end of civil twilight");
 	}
 
 }
