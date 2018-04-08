@@ -34,7 +34,25 @@ public class TerrestrialObserver extends EarthCentre {
 		this.erm = erm;
 		this.latitude = latitude;
 		this.longitude = longitude;
-		this.height = height;
+		this.height = height;		
+	}
+	
+	public TerrestrialObserver(JPLEphemeris ephemeris, EarthRotationModel erm,
+			Place place) {
+		super(ephemeris);
+		this.erm = erm;
+		this.latitude = place.getLatitude();
+		this.longitude = place.getLongitude();
+		this.height = place.getHeight();
+	}
+	
+	public TerrestrialObserver(EarthCentre ec, EarthRotationModel erm,
+			Place place) {
+		super(ec.getEphemeris());
+		this.erm = erm;
+		this.latitude = place.getLatitude();
+		this.longitude = place.getLongitude();
+		this.height = place.getHeight();
 	}
 
 	public void getStateVector(double time, StateVector sv)
