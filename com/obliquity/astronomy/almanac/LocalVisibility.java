@@ -391,6 +391,51 @@ public class LocalVisibility {
 		return Math.asin(Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(ha));
 	}
 	
+	private HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(double lha, double dec, double latitude) {
+		double x = Math.cos(latitude) * Math.sin(dec) - Math.sin(latitude) * Math.cos(dec) * Math.cos(lha);
+		double y = -Math.cos(dec) * Math.sin(lha);
+		double z = Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(lha);
+		
+		double altitude = Math.asin(z);
+		double azimuth = Math.atan2(y, x);
+		
+		return new HorizontalCoordinates(altitude, azimuth);
+	}
+	
+	public HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(ApparentPlace ap, Place place, double jd) 
+			 throws JPLEphemerisException {
+		double deltaT = ap.getEarthRotationModel().deltaT(jd);
+		
+		ap.calculateApparentPlace(jd + deltaT);
+		
+		double ra = ap.getRightAscensionOfDate();
+		
+		double dec = ap.getDeclinationOfDate();
+		
+		double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(jd);
+		
+		double lha = reduceAngle(gmst - ra + place.getLongitude());
+		
+		double latitude = place.getLatitude();
+
+		return calculateGeometricAltitudeAndAzimuth(lha, dec, latitude);
+	}
+	
+	public HorizontalCoordinates calculateApparentAltitudeAndAzimuth(ApparentPlace ap, Place place, double jd, double temperature, double pressure) 
+			 throws JPLEphemerisException {
+		HorizontalCoordinates data = calculateGeometricAltitudeAndAzimuth(ap, place, jd);
+		
+		double refraction = calculateRefraction(data.altitude, temperature, pressure, RefractionType.GEOMETRIC_TO_APPARENT);
+		
+		data.altitude += refraction;
+		
+		return data;
+	}
+	
+	public HorizontalCoordinates calculateApparentAltitudeAndAzimuth(ApparentPlace ap, Place place, double jd) throws JPLEphemerisException {
+		return calculateApparentAltitudeAndAzimuth(ap, place, jd, STANDARD_TEMPERATURE, STANDARD_PRESSURE);
+	}
+	
 	public double calculateRefraction(double altitude, double temperature, double pressure, RefractionType type) {
 		double correctionFactor = 0.28 * pressure/(temperature + 273.15);
 		
