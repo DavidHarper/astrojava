@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import static java.lang.Math.*;
 
+import com.obliquity.astronomy.almanac.AlmanacData;
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.EarthCentre;
 import com.obliquity.astronomy.almanac.EarthRotationModel;
@@ -46,27 +47,10 @@ import com.obliquity.astronomy.almanac.Matrix;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.SaturnRingAngles;
 import com.obliquity.astronomy.almanac.Vector;
 
-public class SimpleAlmanac {
-	private class SaturnRingAngles {
-		public double B = Double.NaN, P = Double.NaN, U = Double.NaN;
-	};
-	
-	private class AlmanacData {
-		public double julianDate = Double.NaN;
-		public Date date = null;
-		public double rightAscension= Double.NaN, declination = Double.NaN;
-		public int epoch = -1;
-		public double geometricDistance = Double.NaN, lightPathDistance = Double.NaN, heliocentricDistance = Double.NaN;
-		public String constellation = null;
-		public double elongation = Double.NaN, eclipticElongation = Double.NaN;
-		public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
-		public double magnitude = Double.NaN, semiDiameter = Double.NaN;
-		public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
-		public SaturnRingAngles saturnRingAngles = null;
-	};
-	
+public class SimpleAlmanac {	
 	public static final int OF_DATE = 1;
 	public static final int J2000 = 2;
 	public static final int B1875 = 3;
