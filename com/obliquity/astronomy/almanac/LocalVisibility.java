@@ -445,7 +445,7 @@ public class LocalVisibility {
 				1.0 / Math.tan((a + 7.31/(a + 4.4)) * Math.PI/180.0) :
 				1.02 / Math.tan((a + 10.3/(a + 5.11)) * Math.PI/180.0);
 		
-		return refraction * correctionFactor;
+		return refraction * correctionFactor * Math.PI/(180.0 * 60.0);
 	}
 	
 	public static final double STANDARD_TEMPERATURE = 10.0;
