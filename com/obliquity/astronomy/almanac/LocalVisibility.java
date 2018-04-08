@@ -372,7 +372,64 @@ public class LocalVisibility {
 		return events;
 	}
 	
+	public double calculateGeometricAltitude(ApparentPlace ap, Place place, double jd) 
+			 throws JPLEphemerisException {
+		double deltaT = ap.getEarthRotationModel().deltaT(jd);
+		
+		ap.calculateApparentPlace(jd + deltaT);
+		
+		double ra = ap.getRightAscensionOfDate();
+		
+		double dec = ap.getDeclinationOfDate();
+		
+		double gmst = ap.getEarthRotationModel().greenwichApparentSiderealTime(jd);
+		
+		double ha = reduceAngle(gmst - ra + place.getLongitude());
+		
+		double latitude = place.getLatitude();
+		
+		return Math.asin(Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(ha));
+	}
+	
+	public double calculateRefraction(double altitude, double temperature, double pressure, RefractionType type) {
+		double correctionFactor = 0.28 * pressure/(temperature + 273.15);
+		
+		double a = 180.0 * altitude/Math.PI;
+		
+		double refraction = (type == RefractionType.APPARENT_TO_GEOMETRIC) ?
+				1.0 / Math.tan((a + 7.31/(a + 4.4)) * Math.PI/180.0) :
+				1.02 / Math.tan((a + 10.3/(a + 5.11)) * Math.PI/180.0);
+		
+		return refraction * correctionFactor;
+	}
+	
+	public static final double STANDARD_TEMPERATURE = 10.0;
+	public static final double STANDARD_PRESSURE = 1010.0;
+	
+	public double calculateRefraction(double altitude, RefractionType type) {
+		return calculateRefraction(altitude, STANDARD_TEMPERATURE, STANDARD_PRESSURE, type);
+	}
+	
+	public double calculateApparentAltitude(ApparentPlace ap, Place place, double jd, double temperature, double pressure) 
+			 throws JPLEphemerisException {
+		double geometricAltitude = calculateGeometricAltitude(ap, place, jd);
+		
+		double refraction = calculateRefraction(geometricAltitude, temperature, pressure, RefractionType.GEOMETRIC_TO_APPARENT);
+		
+		return geometricAltitude + refraction;
+	}
+	
+	public double calculateApparentAltitude(ApparentPlace ap, Place place, double jd) throws JPLEphemerisException {
+		return calculateApparentAltitude(ap, place, jd, STANDARD_TEMPERATURE, STANDARD_PRESSURE);
+	}
+	
 	private double calculateGeometricAltitudeForRisingOrSetting(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
+		// NOTE
+		//
+		// Duplication of code from calculateGeometricAltitude is deliberate
+		// because we need the geometric distance from the apparent place in
+		// order to calculate the parallax if this is the Moon.
+		
 		double deltaT = ap.getEarthRotationModel().deltaT(jd);
 		
 		ap.calculateApparentPlace(jd + deltaT);
