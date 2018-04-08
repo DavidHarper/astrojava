@@ -52,7 +52,7 @@ public class LocalVisibility {
 	
 	private double AU = Double.NaN;
 	
-	private final boolean verbose = !Boolean.getBoolean("quiet");
+	private final boolean verbose = Boolean.getBoolean("verbose");
 	
 	public RiseSetEvent[] findRiseSetEvents(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
 		this.AU = ap.getTarget().getEphemeris().getAU();
