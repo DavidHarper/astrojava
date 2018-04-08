@@ -25,6 +25,7 @@
 package com.obliquity.astronomy.almanac.test;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -181,11 +182,7 @@ public class InferiorPlanetApparition {
 				if (hc.altitude > 0.0) {
 					AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
 					
-					double positionAngle = reduceAngle(hc.parallacticAngle + data.positionAngleOfBrightLimb) * 180.0/Math.PI;
-					
-					System.out.println((rse.type == RiseSetEventType.RISE ? "SUNRISE " : "SUNSET  ") + dateToString(date) + " " + 
-							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
-									dfmt3.format(data.magnitude) + " " + dfmt3.format(positionAngle));
+					displayAspect((rse.type == RiseSetEventType.RISE ? "SUNRISE" : "SUNSET "), date, hc, data, System.out);
 				}
 			}
 			
@@ -199,17 +196,35 @@ public class InferiorPlanetApparition {
 				
 					if (hc.altitude > 0.0) {
 						AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
-					
-						double positionAngle = reduceAngle(hc.parallacticAngle + data.positionAngleOfBrightLimb) * 180.0/Math.PI;
-					
-						System.out.println((rse.type == RiseSetEventType.RISE ? "CIVIL_E " : "CIVIL_S ") + dateToString(date) + " " + 
-								dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
-								dfmt3.format(data.magnitude) + " " + dfmt3.format(positionAngle));
+						
+						displayAspect((rse.type == RiseSetEventType.RISE ? "CIVIL_E" : "CIVIL_S"), date, hc, data, System.out);
 					}
 				}
 			}
 		}
+	}
 	
+	private final String SEPARATOR = " ";
+	
+	private void displayAspect(String prefix, double date, HorizontalCoordinates hc, AlmanacData data, PrintStream ps) {
+		double positionAngle = reduceAngle(data.positionAngleOfBrightLimb- hc.parallacticAngle) * 180.0/Math.PI;
+		
+		ps.print(prefix);
+		ps.print(SEPARATOR); 
+		ps.print(dateToString(date));
+		ps.print(SEPARATOR); 
+		ps.print(dfmt3.format(180.0 * hc.altitude/Math.PI));
+		ps.print(SEPARATOR); 
+		ps.print(dfmt3.format(180.0 * hc.azimuth/Math.PI));
+		ps.print(SEPARATOR); 
+		ps.print(dfmt3.format(data.magnitude));
+		ps.print(SEPARATOR); 
+		ps.print(dfmt3.format(data.semiDiameter));
+		ps.print(SEPARATOR);
+		ps.print(dfmt3.format(data.illuminatedFraction));
+		ps.print(SEPARATOR); 
+		ps.print(dfmt3.format(positionAngle));
+		ps.println();
 	}
 	
 	private final DecimalFormat dfmt1 = new DecimalFormat("0000");
