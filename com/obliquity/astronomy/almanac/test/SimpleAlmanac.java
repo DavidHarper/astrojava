@@ -368,6 +368,8 @@ public class SimpleAlmanac {
 			throws JPLEphemerisException {
 		ExtendedAlmanacData data = new ExtendedAlmanacData();
 		
+		data.epoch = targetEpoch;
+		
 		AlmanacData.calculateAlmanacData(apTarget, apSun, t, targetEpoch, data);
 		
 		apTarget.calculateApparentPlace(t);
