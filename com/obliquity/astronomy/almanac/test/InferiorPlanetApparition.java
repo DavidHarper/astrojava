@@ -31,22 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import com.obliquity.astronomy.almanac.AlmanacData;
-import com.obliquity.astronomy.almanac.ApparentPlace;
-import com.obliquity.astronomy.almanac.AstronomicalDate;
-import com.obliquity.astronomy.almanac.EarthCentre;
-import com.obliquity.astronomy.almanac.EarthRotationModel;
-import com.obliquity.astronomy.almanac.HorizontalCoordinates;
-import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
-import com.obliquity.astronomy.almanac.JPLEphemeris;
-import com.obliquity.astronomy.almanac.JPLEphemerisException;
-import com.obliquity.astronomy.almanac.LocalVisibility;
-import com.obliquity.astronomy.almanac.MovingPoint;
-import com.obliquity.astronomy.almanac.Place;
-import com.obliquity.astronomy.almanac.PlanetCentre;
-import com.obliquity.astronomy.almanac.RiseSetEvent;
-import com.obliquity.astronomy.almanac.RiseSetEventType;
-import com.obliquity.astronomy.almanac.RiseSetType;
+import com.obliquity.astronomy.almanac.*;
 
 public class InferiorPlanetApparition {
 	public static final double TWOPI = 2.0 * Math.PI;
@@ -237,7 +222,7 @@ public class InferiorPlanetApparition {
 				return datefmtIn.parse(str);
 			}
 		} else
-			return new Date();		
+			return new Date();
 	}
 
 	public static void showUsage() {
