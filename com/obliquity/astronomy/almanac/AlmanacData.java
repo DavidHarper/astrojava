@@ -88,9 +88,6 @@ public class AlmanacData {
 			dec = Math.atan2(dc.getZ(), aux);
 			break;
 		}
-
-		ra = apTarget.getRightAscensionOfDate();
-		dec = apTarget.getDeclinationOfDate();
 		
 		data.julianDate = t;
 		
