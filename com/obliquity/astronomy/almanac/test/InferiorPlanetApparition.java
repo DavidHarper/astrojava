@@ -178,9 +178,11 @@ public class InferiorPlanetApparition {
 				if (hc.altitude > 0.0) {
 					AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
 					
+					double positionAngle = reduceAngle(hc.parallacticAngle + data.positionAngleOfBrightLimb) * 180.0/Math.PI;
+					
 					System.out.println((rse.type == RiseSetEventType.RISE ? "SUNRISE " : "SUNSET  ") + dateToString(date) + " " + 
 							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
-									dfmt3.format(data.magnitude));
+									dfmt3.format(data.magnitude) + " " + dfmt3.format(positionAngle));
 				}
 			}
 			
@@ -194,9 +196,11 @@ public class InferiorPlanetApparition {
 				if (hc.altitude > 0.0) {
 					AlmanacData data = AlmanacData.calculateAlmanacData(apPlanet, apSun, date, AlmanacData.OF_DATE, new AlmanacData());
 					
+					double positionAngle = reduceAngle(hc.parallacticAngle + data.positionAngleOfBrightLimb) * 180.0/Math.PI;
+					
 					System.out.println((rse.type == RiseSetEventType.RISE ? "CIVIL_E " : "CIVIL_S ") + dateToString(date) + " " + 
 							dfmt3.format(180.0 * hc.altitude/Math.PI) + " " + dfmt3.format(180.0 * hc.azimuth/Math.PI) + " " +
-							dfmt3.format(data.magnitude));
+							dfmt3.format(data.magnitude) + " " + dfmt3.format(positionAngle));
 				}
 			}
 		}
@@ -223,6 +227,17 @@ public class InferiorPlanetApparition {
 			}
 		} else
 			return new Date();
+	}
+	
+	// Reduce an angle to the range (-PI, PI]
+	private double reduceAngle(double x) {
+		while (x > Math.PI)
+			x -= TWOPI;
+		
+		while (x <= -Math.PI)
+			x+= TWOPI;
+		
+		return x;
 	}
 
 	public static void showUsage() {
