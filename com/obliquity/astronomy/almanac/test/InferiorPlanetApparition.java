@@ -34,9 +34,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
 import com.obliquity.astronomy.almanac.*;
 
 public class InferiorPlanetApparition {
+	public enum Horizon { EAST, WEST, BOTH }
+	
 	public static final double TWOPI = 2.0 * Math.PI;
 
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat(
@@ -64,6 +69,8 @@ public class InferiorPlanetApparition {
 		String longitude = null;
 		String latitude = null;
 		boolean civil = false;
+		boolean graph = false;
+		Horizon horizon = Horizon.BOTH;
 
 		int kBody = -1;
 
@@ -92,6 +99,14 @@ public class InferiorPlanetApparition {
 			if (args[i].equalsIgnoreCase("-longitude"))
 				longitude = args[++i];
 
+			if (args[i].equalsIgnoreCase("-graph"))
+				graph = true;
+
+			if (args[i].equalsIgnoreCase("-east"))
+				horizon = Horizon.EAST;
+
+			if (args[i].equalsIgnoreCase("-west"))
+				horizon = Horizon.WEST;
 		}
 
 		if (filename == null || kBody < 0 || startdate == null) {
@@ -166,19 +181,46 @@ public class InferiorPlanetApparition {
 		Place place = new Place(lat, lon, 0.0, 0.0);
 
 		InferiorPlanetApparition ipa = new InferiorPlanetApparition();
+		
+		if (graph) {
+			try {
+				final InferiorPlanetApparitionData[] data = ipa.calculateInferiorPlanetApparitionData(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
+				
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						createUI(data);
+					}
+				});
+				} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 
-		try {
-			ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil);
-		} catch (JPLEphemerisException e) {
-			e.printStackTrace();
+		} else {
+			try {
+				ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
+			} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+			}
 		}
+	}
+	
+	public static void createUI(InferiorPlanetApparitionData[] data) {
+		InferiorPlanetApparitionPanel panel = new InferiorPlanetApparitionPanel(data);
+		
+		JFrame frame = new JFrame("Inferior Planet Apparition");
+		
+		frame.getContentPane().add(panel);
+		frame.setSize(900, 800);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setVisible(true);
 	}
 
 	public void run(ApparentPlace apPlanet, ApparentPlace apSun, Place place,
-			double jdstart, double jdfinish, boolean civil)
+			double jdstart, double jdfinish, boolean civil, Horizon horizon)
 			throws JPLEphemerisException {
 		InferiorPlanetApparitionData[] data = calculateInferiorPlanetApparitionData(
-				apPlanet, apSun, place, jdstart, jdfinish, civil);
+				apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
 
 		for (InferiorPlanetApparitionData ipaData : data)
 			displayAspect(ipaData, System.out);
@@ -186,53 +228,31 @@ public class InferiorPlanetApparition {
 
 	public InferiorPlanetApparitionData[] calculateInferiorPlanetApparitionData(
 			ApparentPlace apPlanet, ApparentPlace apSun, Place place,
-			double jdstart, double jdfinish, boolean civil)
+			double jdstart, double jdfinish, boolean civil, Horizon horizon)
 			throws JPLEphemerisException {
 		LocalVisibility lv = new LocalVisibility();
 
 		List<InferiorPlanetApparitionData> ipaData = new ArrayList<InferiorPlanetApparitionData>();
 
 		for (double jd = jdstart; jd < jdfinish; jd += 1.0) {
-			if (civil) {
+			RiseSetType riseSetType = civil ? RiseSetType.CIVIL_TWILIGHT : RiseSetType.UPPER_LIMB;
+			
 				RiseSetEvent[] civilTwilights = lv.findRiseSetEvents(apSun,
-						place, jd, RiseSetType.CIVIL_TWILIGHT);
+						place, jd, riseSetType);
 
 				for (RiseSetEvent rse : civilTwilights) {
-					double date = rse.date;
+					if (keepRiseSetEvent(rse.type, horizon)) {
+						double date = rse.date;
 
-					HorizontalCoordinates hc = lv
-							.calculateApparentAltitudeAndAzimuth(apPlanet,
-									place, date);
+						HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apPlanet,
+										place, date);
 
-					if (hc.altitude > 0.0) {
-						AlmanacData almanacData = AlmanacData
-								.calculateAlmanacData(apPlanet, apSun, date,
+						if (hc.altitude > 0.0) {
+							AlmanacData almanacData = AlmanacData.calculateAlmanacData(apPlanet, apSun, date,
 										AlmanacData.OF_DATE, new AlmanacData());
-
-						ipaData.add(new InferiorPlanetApparitionData(
-								RiseSetType.CIVIL_TWILIGHT, rse.type, hc,
-								almanacData));
-					}
-				}
-			} else {
-				RiseSetEvent[] sunRiseSet = lv.findRiseSetEvents(apSun, place,
-						jd, RiseSetType.UPPER_LIMB);
-
-				for (RiseSetEvent rse : sunRiseSet) {
-					double date = rse.date;
-
-					HorizontalCoordinates hc = lv
-							.calculateApparentAltitudeAndAzimuth(apPlanet,
-									place, date);
-
-					if (hc.altitude > 0.0) {
-						AlmanacData almanacData = AlmanacData
-								.calculateAlmanacData(apPlanet, apSun, date,
-										AlmanacData.OF_DATE, new AlmanacData());
-
-						ipaData.add(new InferiorPlanetApparitionData(
-								RiseSetType.UPPER_LIMB, rse.type, hc,
-								almanacData));
+							
+							ipaData.add(new InferiorPlanetApparitionData(
+								riseSetType, rse.type, hc, almanacData));
 					}
 				}
 			}
@@ -244,6 +264,19 @@ public class InferiorPlanetApparition {
 		ipaData.toArray(data);
 
 		return data;
+	}
+	
+	private boolean keepRiseSetEvent(RiseSetEventType rseType, Horizon horizon) {
+		switch (horizon) {
+		case EAST:
+			return rseType == RiseSetEventType.RISE;
+			
+		case WEST:
+			return rseType == RiseSetEventType.SET;
+			
+		default:
+			return true;
+		}
 	}
 
 	private final String SEPARATOR = " ";
@@ -348,8 +381,8 @@ public class InferiorPlanetApparition {
 
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
-		System.err.println(
-				"\t-civil\tShow altitude at start/end of civil twilight");
+		System.err.println("\t-civil\tShow altitude at start/end of civil twilight");
+		System.err.println("\t-graph\tDisplay the a[[arition graphically");
 	}
 
 }
