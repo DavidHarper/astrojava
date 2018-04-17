@@ -246,13 +246,16 @@ public class InferiorPlanetApparition {
 
 						HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apPlanet,
 										place, date);
+						
+						HorizontalCoordinates hcSun = lv.calculateApparentAltitudeAndAzimuth(apSun,
+								place, date);
 
 						if (hc.altitude > 0.0) {
 							AlmanacData almanacData = AlmanacData.calculateAlmanacData(apPlanet, apSun, date,
 										AlmanacData.OF_DATE, new AlmanacData());
 							
 							ipaData.add(new InferiorPlanetApparitionData(
-								riseSetType, rse.type, hc, almanacData));
+								riseSetType, rse.type, hc, almanacData, hcSun.azimuth));
 					}
 				}
 			}
@@ -286,7 +289,7 @@ public class InferiorPlanetApparition {
 		String prefix = eventPrefix(ipaData);
 
 		displayAspect(prefix, ipaData.almanacData.julianDate,
-				ipaData.horizontalCoordinates, ipaData.almanacData, ps);
+				ipaData.horizontalCoordinates, ipaData.almanacData, ipaData.sunAzimuth, ps);
 	}
 
 	private String eventPrefix(InferiorPlanetApparitionData ipaData) {
@@ -305,32 +308,37 @@ public class InferiorPlanetApparition {
 	}
 
 	private void displayAspect(String prefix, double date,
-			HorizontalCoordinates hc, AlmanacData data, PrintStream ps) {
+			HorizontalCoordinates hc, AlmanacData data, double sunAzimuth, PrintStream ps) {
 		double positionAngle = reduceAngle(
 				data.positionAngleOfBrightLimb - hc.parallacticAngle) * 180.0
 				/ Math.PI;
 
-		ps.print(prefix);
+		final String fmt0 = "%-8s";
+		final String fmt1 = "%7.2f";
+		final String fmt2 = "%5.2f";
+		
+		ps.printf(fmt0, prefix);
 		ps.print(SEPARATOR);
 		ps.print(dateToString(date));
 		ps.print(SEPARATOR);
-		ps.print(dfmt3.format(180.0 * hc.altitude / Math.PI));
+		ps.printf(fmt1, 180.0 * hc.altitude / Math.PI);
 		ps.print(SEPARATOR);
-		ps.print(dfmt3.format(180.0 * hc.azimuth / Math.PI));
+		ps.printf(fmt1, 180.0 * hc.azimuth / Math.PI);
 		ps.print(SEPARATOR);
-		ps.print(dfmt3.format(data.magnitude));
+		ps.printf(fmt2, data.magnitude);
 		ps.print(SEPARATOR);
-		ps.print(dfmt3.format(data.semiDiameter));
+		ps.printf(fmt2, data.semiDiameter);
 		ps.print(SEPARATOR);
-		ps.print(dfmt3.format(data.illuminatedFraction));
+		ps.printf(fmt2, data.illuminatedFraction);
 		ps.print(SEPARATOR);
-		ps.print(dfmt3.format(positionAngle));
+		ps.printf(fmt1, positionAngle);
+		ps.print(SEPARATOR);
+		ps.printf(fmt1, 180.0 * sunAzimuth / Math.PI);
 		ps.println();
 	}
 
 	private final DecimalFormat dfmt1 = new DecimalFormat("0000");
 	private final DecimalFormat dfmt2 = new DecimalFormat("00");
-	private final DecimalFormat dfmt3 = new DecimalFormat("0.00");
 
 	private String dateToString(double t) {
 		AstronomicalDate ad = new AstronomicalDate(t);

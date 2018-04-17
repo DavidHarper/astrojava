@@ -34,11 +34,21 @@ public class InferiorPlanetApparitionData {
 	public RiseSetEventType riseSetEventType;
 	public HorizontalCoordinates horizontalCoordinates;
 	public AlmanacData almanacData;
+	public double sunAzimuth = Double.NaN;
 	
 	public InferiorPlanetApparitionData(RiseSetType riseSetType, RiseSetEventType riseSetEventType, HorizontalCoordinates horizontalCoordinates, AlmanacData almanacData) {
 		this.riseSetType = riseSetType;
 		this.riseSetEventType = riseSetEventType;
 		this.horizontalCoordinates = horizontalCoordinates;
 		this.almanacData = almanacData;
+	}
+
+	public InferiorPlanetApparitionData(RiseSetType riseSetType, RiseSetEventType riseSetEventType, HorizontalCoordinates horizontalCoordinates, AlmanacData almanacData,
+			double sunAzimuth) {
+		this.riseSetType = riseSetType;
+		this.riseSetEventType = riseSetEventType;
+		this.horizontalCoordinates = horizontalCoordinates;
+		this.almanacData = almanacData;
+		this.sunAzimuth = sunAzimuth;
 	}
 }
