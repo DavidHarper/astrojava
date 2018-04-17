@@ -109,7 +109,7 @@ public class InferiorPlanetApparition {
 				horizon = Horizon.WEST;
 		}
 
-		if (filename == null || kBody < 0 || startdate == null) {
+		if (filename == null || kBody < 0 || startdate == null || latitude == null || longitude == null) {
 			showUsage();
 			System.exit(1);
 		}
@@ -391,6 +391,9 @@ public class InferiorPlanetApparition {
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
 		System.err.println("\t-civil\tShow altitude at start/end of civil twilight");
 		System.err.println("\t-graph\tDisplay the a[[arition graphically");
+		
+		System.err.println("\t-east\tShow only events at sunrise/morning civil twilight");
+		System.err.println("\t-west\tShow only events at sunset/evening civil twilight");
 	}
 
 }
