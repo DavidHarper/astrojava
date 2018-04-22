@@ -71,6 +71,7 @@ public class InferiorPlanetApparition {
 		boolean civil = false;
 		boolean graph = false;
 		Horizon horizon = Horizon.BOTH;
+		boolean useJD = false;
 
 		int kBody = -1;
 
@@ -107,6 +108,9 @@ public class InferiorPlanetApparition {
 
 			if (args[i].equalsIgnoreCase("-west"))
 				horizon = Horizon.WEST;
+			
+			if (args[i].equalsIgnoreCase("-jd"))
+				useJD = true;
 		}
 
 		if (filename == null || kBody < 0 || startdate == null || latitude == null || longitude == null) {
@@ -198,7 +202,7 @@ public class InferiorPlanetApparition {
 
 		} else {
 			try {
-				ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
+				ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon, useJD);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
@@ -217,13 +221,13 @@ public class InferiorPlanetApparition {
 	}
 
 	public void run(ApparentPlace apPlanet, ApparentPlace apSun, Place place,
-			double jdstart, double jdfinish, boolean civil, Horizon horizon)
+			double jdstart, double jdfinish, boolean civil, Horizon horizon, boolean useJD)
 			throws JPLEphemerisException {
 		InferiorPlanetApparitionData[] data = calculateInferiorPlanetApparitionData(
 				apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
 
 		for (InferiorPlanetApparitionData ipaData : data)
-			displayAspect(ipaData, System.out);
+			displayAspect(ipaData, useJD, System.out);
 	}
 
 	public InferiorPlanetApparitionData[] calculateInferiorPlanetApparitionData(
@@ -284,12 +288,12 @@ public class InferiorPlanetApparition {
 
 	private final String SEPARATOR = " ";
 
-	private void displayAspect(InferiorPlanetApparitionData ipaData,
+	private void displayAspect(InferiorPlanetApparitionData ipaData, boolean useJD,
 			PrintStream ps) {
 		String prefix = eventPrefix(ipaData);
 
 		displayAspect(prefix, ipaData.almanacData.julianDate,
-				ipaData.horizontalCoordinates, ipaData.almanacData, ipaData.sunAzimuth, ps);
+				ipaData.horizontalCoordinates, ipaData.almanacData, ipaData.sunAzimuth, useJD, ps);
 	}
 
 	private String eventPrefix(InferiorPlanetApparitionData ipaData) {
@@ -308,7 +312,7 @@ public class InferiorPlanetApparition {
 	}
 
 	private void displayAspect(String prefix, double date,
-			HorizontalCoordinates hc, AlmanacData data, double sunAzimuth, PrintStream ps) {
+			HorizontalCoordinates hc, AlmanacData data, double sunAzimuth, boolean useJD, PrintStream ps) {
 		double positionAngle = reduceAngle(
 				data.positionAngleOfBrightLimb - hc.parallacticAngle) * 180.0
 				/ Math.PI;
@@ -316,10 +320,16 @@ public class InferiorPlanetApparition {
 		final String fmt0 = "%-8s";
 		final String fmt1 = "%7.2f";
 		final String fmt2 = "%5.2f";
+		final String fmt3 = "   %13.5f";
 		
 		ps.printf(fmt0, prefix);
 		ps.print(SEPARATOR);
-		ps.print(dateToString(date));
+		
+		if (useJD)
+			ps.printf(fmt3, date);
+		else
+			ps.print(dateToString(date));
+		
 		ps.print(SEPARATOR);
 		ps.printf(fmt1, 180.0 * hc.altitude / Math.PI);
 		ps.print(SEPARATOR);
@@ -394,6 +404,8 @@ public class InferiorPlanetApparition {
 		
 		System.err.println("\t-east\tShow only events at sunrise/morning civil twilight");
 		System.err.println("\t-west\tShow only events at sunset/evening civil twilight");
+		
+		System.err.println("\t-jd\tDisplay date and time as Julian Day Number");
 	}
 
 }
