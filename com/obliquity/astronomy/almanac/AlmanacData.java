@@ -117,6 +117,45 @@ public class AlmanacData {
 		AU = apTarget.getTarget().getEphemeris().getAU();
 
 		data.semiDiameter = calculateSemiDiameter(iBody, dEarthPlanet);
+		
+		IAUEarthRotationModel erm = (IAUEarthRotationModel)apTarget.getEarthRotationModel();
+		
+		double epochAsJD = Double.NaN;
+		
+		switch (targetEpoch) {
+		case J2000:
+			epochAsJD = erm.JulianEpoch(2000.0);
+			break;
+			
+		case B1875:
+			epochAsJD = erm.BesselianEpoch(1875.0);
+			break;
+			
+		default:
+			epochAsJD = t;
+			break;
+		}
+
+		double obliquity = erm.meanObliquity(epochAsJD);
+		
+		double ce = cos(obliquity);		
+		double se = sin(obliquity);
+		
+		double xe = xa;
+		double ye = ce * ya + se * za;
+		double ze = -se * ya + ce * za;
+		
+		double lambda = atan2(ye, xe);
+		double beta = asin(ze);
+		
+		lambda *= 180.0/PI;
+		
+		if (lambda < 0.0)
+			lambda += 360.0;
+		
+		data.eclipticLongitude = lambda;
+		
+		data.eclipticLatitude = beta * 180.0/PI;
 
 		if (iBody != JPLEphemeris.SUN) {
 			apSun.calculateApparentPlace(t);
@@ -126,26 +165,6 @@ public class AlmanacData {
 
 			double raSun = apSun.getRightAscensionOfDate();
 			double decSun = apSun.getDeclinationOfDate();
-			
-			IAUEarthRotationModel erm = (IAUEarthRotationModel)apTarget.getEarthRotationModel();
-			
-			double epochAsJD = Double.NaN;
-			
-			switch (targetEpoch) {
-			case J2000:
-				epochAsJD = erm.JulianEpoch(2000.0);
-				break;
-				
-			case B1875:
-				epochAsJD = erm.BesselianEpoch(1875.0);
-				break;
-				
-			default:
-				epochAsJD = t;
-				break;
-			}
-
-			double obliquity = erm.meanObliquity(epochAsJD);
 
 			data.elongation = 180.0/PI * calculateElongation(ra, dec, raSun, decSun);
 			
@@ -175,25 +194,6 @@ public class AlmanacData {
 			
 			if (iBody == JPLEphemeris.SATURN)
 				data.magnitude += saturnRingCorrection(apTarget, apSun, t);
-				
-			double ce = cos(obliquity);		
-			double se = sin(obliquity);
-				
-			double xe = xa;
-			double ye = ce * ya + se * za;
-			double ze = -se * ya + ce * za;
-				
-			double lambda = atan2(ye, xe);
-			double beta = asin(ze);
-				
-			lambda *= 180.0/PI;
-				
-			if (lambda < 0.0)
-				lambda += 360.0;
-				
-			data.eclipticLongitude = lambda;
-				
-			data.eclipticLatitude = beta * 180.0/PI;
 			
 			if (iBody == JPLEphemeris.SATURN)
 				data.saturnRingAngles = calculateSaturnRingAngles(apTarget, t);

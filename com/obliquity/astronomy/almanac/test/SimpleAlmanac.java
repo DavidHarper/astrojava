@@ -467,6 +467,8 @@ public class SimpleAlmanac {
 			
 			if (data.saturnRingAngles != null)
 				ps.printf("  %8.5f", data.saturnRingAngles.B);
+		} else if (targetIsSun()) {
+			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 		}
 
 		ps.println();
@@ -490,6 +492,10 @@ public class SimpleAlmanac {
 		default:
 			return false;
 		}
+	}
+	
+	private boolean targetIsSun() {
+		return apTarget.getTarget().getBodyCode() == JPLEphemeris.SUN;
 	}
 
 	public static void showUsage() {
@@ -527,6 +533,7 @@ public class SimpleAlmanac {
 				"14\tConstellation",
 				"15\tEpoch of Right Ascension and Declination",
 				"16\tApparent diameter of disk",
+				"",
 				"[For Moon and planets]",
 				"17\tElongation",
 				"18\tElongation in ecliptic longitude",
@@ -535,7 +542,12 @@ public class SimpleAlmanac {
 				"21\tApparent magnitude (zero for Moon)",
 				"22\tEcliptic longitude (in same reference frame as RA and Dec)",
 				"23\tEcliptic latitude (in same reference frame as RA and Dec)",
-				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane"
+				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane",
+				"",
+				"[For Sun]",
+				"17\tEcliptic longitude (in same reference frame as RA and Dec)",
+				"18\tEcliptic latitude (in same reference frame as RA and Dec)",
+			
 		};
 		
 		for (String line : lines)
