@@ -38,7 +38,9 @@ public class VenusMagnitudeExplorer {
 			
 			double delta = Math.sqrt(rEarth * rEarth + rVenus * rVenus - 2.0 * rEarth * rVenus * Math.cos(x));
 			
-			double theta = Math.acos((delta * delta + rVenus * rVenus - rEarth * rEarth)/(2.0 * delta * rVenus));
+			double z = (delta * delta + rVenus * rVenus - rEarth * rEarth)/(2.0 * delta * rVenus);
+			
+			double theta = Math.acos(z);
 			
 			theta *= 180.0/Math.PI;
 			
@@ -54,7 +56,13 @@ public class VenusMagnitudeExplorer {
 			
 			double m = m1 + m2 + m3;
 			
-			System.out.printf("%3d  %4.1f  %7.5f %6.2f %6.2f  %6.2f\n", i, theta, delta, m2, m3, m);
+			double semiDiameter = 8.41/delta;
+			
+			double illuminatedFraction = 0.5 * (1.0 + z);
+			
+			double illuminatedArea = Math.PI * semiDiameter * semiDiameter * illuminatedFraction;
+			
+			System.out.printf("%3d  %4.1f  %7.5f  %5.2f  %7.2f  %6.2f %6.2f  %6.2f\n", i, theta, delta, semiDiameter, illuminatedArea, m2, m3, m);
 		}
 	}
 }
