@@ -546,6 +546,7 @@ public class SimpleAlmanac {
 				"22\tEcliptic longitude (in same reference frame as RA and Dec)",
 				"23\tEcliptic latitude (in same reference frame as RA and Dec)",
 				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane",
+				"25\t[Saturn only] Saturnicentric latitude of Sun referred to ring plane",
 				"",
 				"[For Sun]",
 				"17\tEcliptic longitude (in same reference frame as RA and Dec)",
