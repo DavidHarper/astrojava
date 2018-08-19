@@ -196,7 +196,7 @@ public class AlmanacData {
 				data.magnitude += saturnRingCorrection(apTarget, apSun, t);
 			
 			if (iBody == JPLEphemeris.SATURN)
-				data.saturnRingAnglesForEarth = calculateSaturnRingAngles(apTarget, t);
+				data.saturnRingAnglesForEarth = calculateSaturnRingAnglesForEarth(apTarget, t);
 		}
 
 		return data;
@@ -296,7 +296,7 @@ public class AlmanacData {
 		}
 	}
 			
-	private static SaturnRingAngles calculateSaturnRingAngles(ApparentPlace apTarget, double t) {
+	private static SaturnRingAngles calculateSaturnRingAnglesForEarth(ApparentPlace apTarget, double t) {
 		double tau = (t - 2451545.0)/36525.0;
 		
 		// Saturn pole coordinates from Davies, M.E. et al. (1989) Celes. Mech. 46, 187
