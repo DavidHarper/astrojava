@@ -52,6 +52,10 @@ public class ApparentPlace {
 	protected final String NO_POSITION_CALCULATED = "The apparent place has not yet been calculated.";
 
 	private final static double EPSILON = 1.0e-9;
+	
+	// Speed of light in AU/day
+	
+	public final static double SPEED_OF_LIGHT = 173.1446;
 
 	public ApparentPlace(MovingPoint observer, MovingPoint target,
 			MovingPoint sun, EarthRotationModel erm) {
@@ -85,6 +89,13 @@ public class ApparentPlace {
 	public double getGeometricDistance() throws IllegalStateException {
 		if (isValid)
 			return gd;
+		else
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
+	}
+	
+	public double getLightTime() throws IllegalStateException {
+		if (isValid)
+			return gd/SPEED_OF_LIGHT;
 		else
 			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
@@ -150,7 +161,6 @@ public class ApparentPlace {
 		Vector Q = new Vector();
 		Vector E = new Vector();
 
-		double c = 173.1446;
 		double factor = 2.0 * 9.87e-9;
 
 		svObserver = observer.getStateVector(t);
@@ -193,7 +203,7 @@ public class ApparentPlace {
 			if (target != sun)
 				pl += factor * Math.log((EE + PP + QQ) / (EE - PP + QQ));
 
-			double newtau = pl / c;
+			double newtau = pl / SPEED_OF_LIGHT;
 
 			dtau = newtau - tau;
 
@@ -221,7 +231,7 @@ public class ApparentPlace {
 		}
 
 		Vector V = svObserver.getVelocity();
-		V.multiplyBy(1.0 / c);
+		V.multiplyBy(1.0 / SPEED_OF_LIGHT);
 
 		double VV = V.magnitude();
 
