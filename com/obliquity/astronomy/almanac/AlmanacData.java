@@ -341,26 +341,39 @@ public class AlmanacData {
 		return sra;
 	}
 	
-	private static double saturnRingNodeLongitude(double tau) {
-		return (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;
-	}
-	
-	private static double saturnRingInclination(double tau) {
-		return (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
-	}
-	
 	private static SaturnRingAngles calculateSaturnRingAnglesForSun(ApparentPlace apTarget, ApparentPlace apSun, double t)
 			throws JPLEphemerisException {
-		double[] eclipticCoordinates = getHeliocentricEclipticCoordinates(apTarget, apSun, t);
+		double lightTime = apTarget.getHeliocentricDistance()/ApparentPlace.SPEED_OF_LIGHT;
+
+		double[] eclipticCoordinates = getHeliocentricEclipticCoordinates(apTarget, apSun, t - lightTime);
 		double hlong = eclipticCoordinates[0];
 		double hlat = eclipticCoordinates[1];
+		
+		// Julian centuries since 2000
+		double tau = (t - 2451545.0) / 36525.0;
+		
+		double raSaturnPole = saturnPoleRightAscension(tau);
+		double decSaturnPole = saturnPoleDeclination(tau);
 
-		// Julian centuries since 1900
-		double tau = (t - 2415020.0) / 36525.0;
+		double xp = cos(decSaturnPole) * cos(raSaturnPole);
+		double yp = cos(decSaturnPole) * sin(raSaturnPole);
+		double zp = sin(decSaturnPole);
+		
+		double eps = apTarget.getEarthRotationModel().meanObliquity(t);
+		
+		double xpe = xp;
+		double ype = yp * cos(eps) + zp * sin(eps);
+		double zpe = -yp * sin(eps) + zp * cos(eps);
+		
+		double lngSaturnPole = atan2(ype, xpe);
+		double latSaturnPole = asin(zpe);
 
 		// Ring orientation angles
-		double node = saturnRingNodeLongitude(tau);
-		double incl = saturnRingInclination(tau);
+		double node = lngSaturnPole + 0.5 * PI;
+		double incl = 0.5 * PI - latSaturnPole;
+		
+		// Apply approximate correction for precession in longitude
+		node += (5029.0966 * tau/3600.0) * PI/180.0;
 
 		double p1 = -sin(incl) * cos(hlong - node);
 		double p2 = cos(incl) * cos(hlat) + sin(incl) * sin(hlat) * sin(hlong - node);
@@ -378,6 +391,16 @@ public class AlmanacData {
 		
 		return sra;
 	}
+	
+	// Ring node and inclination from Meeus, Astronomical Algorithms, 1991, p302
+	
+	private static double saturnRingNodeLongitude(double tau) {
+		return (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;
+	}
+	
+	private static double saturnRingInclination(double tau) {
+		return (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
+	}
 
 	private static double saturnRingCorrection(ApparentPlace apTarget, ApparentPlace apSun, double t) throws JPLEphemerisException {
 		final double R = PI / 180.0;
@@ -391,7 +414,7 @@ public class AlmanacData {
 		double hlat = eclipticCoordinates[1];
 
 		// Julian centuries since 1900
-		double tau = (t - 2415020.0) / 36525.0;
+		double tau = (t - 2451545.0) / 36525.0;
 
 		// Ring orientation angles
 		double node = saturnRingNodeLongitude(tau);
