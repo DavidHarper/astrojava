@@ -467,6 +467,9 @@ public class SimpleAlmanac {
 			
 			if (data.saturnRingAnglesForEarth != null)
 				ps.printf("  %8.5f", data.saturnRingAnglesForEarth.B);
+			
+			if (data.saturnRingAnglesForSun != null)
+				ps.printf("  %8.5f", data.saturnRingAnglesForSun.B);
 		} else if (targetIsSun()) {
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 		}

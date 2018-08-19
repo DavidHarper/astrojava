@@ -36,6 +36,7 @@ public class AlmanacData {
 	public double positionAngleOfBrightLimb = Double.NaN;
 	public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
 	public SaturnRingAngles saturnRingAnglesForEarth = null;
+	public SaturnRingAngles saturnRingAnglesForSun = null;
 	
 	public static final int OF_DATE = 0, J2000 = 1, B1875 = 2;
 	
@@ -197,6 +198,9 @@ public class AlmanacData {
 			
 			if (iBody == JPLEphemeris.SATURN)
 				data.saturnRingAnglesForEarth = calculateSaturnRingAnglesForEarth(apTarget, t);
+			
+			if (iBody == JPLEphemeris.SATURN)
+				data.saturnRingAnglesForSun = calculateSaturnRingAnglesForSun(apTarget, apSun, t);
 		}
 
 		return data;
@@ -295,13 +299,22 @@ public class AlmanacData {
 					"Cannot calculate a magnitude for the target body.");
 		}
 	}
+	
+	// Saturn pole coordinates from Davies, M.E. et al. (1989) Celes. Mech. 46, 187
+	
+	private static double saturnPoleRightAscension(double tau) {
+		return (40.58 - 0.036 * tau) * PI/180.0;
+	}
+	
+	private static double saturnPoleDeclination(double tau) {
+		return (83.54 - 0.004 * tau) * PI/180.0;
+	}
 			
 	private static SaturnRingAngles calculateSaturnRingAnglesForEarth(ApparentPlace apTarget, double t) {
 		double tau = (t - 2451545.0)/36525.0;
 		
-		// Saturn pole coordinates from Davies, M.E. et al. (1989) Celes. Mech. 46, 187
-		double raSaturnPole = (40.58 - 0.036 * tau) * PI/180.0;
-		double decSaturnPole = (83.54 - 0.004 * tau) * PI/180.0;
+		double raSaturnPole = saturnPoleRightAscension(tau);
+		double decSaturnPole = saturnPoleDeclination(tau);
 		
 		double J = 0.5 * PI - decSaturnPole;
 		double N = raSaturnPole + 0.5 * PI;
@@ -327,6 +340,44 @@ public class AlmanacData {
 		
 		return sra;
 	}
+	
+	private static double saturnRingNodeLongitude(double tau) {
+		return (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;
+	}
+	
+	private static double saturnRingInclination(double tau) {
+		return (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
+	}
+	
+	private static SaturnRingAngles calculateSaturnRingAnglesForSun(ApparentPlace apTarget, ApparentPlace apSun, double t)
+			throws JPLEphemerisException {
+		double[] eclipticCoordinates = getHeliocentricEclipticCoordinates(apTarget, apSun, t);
+		double hlong = eclipticCoordinates[0];
+		double hlat = eclipticCoordinates[1];
+
+		// Julian centuries since 1900
+		double tau = (t - 2415020.0) / 36525.0;
+
+		// Ring orientation angles
+		double node = saturnRingNodeLongitude(tau);
+		double incl = saturnRingInclination(tau);
+
+		double p1 = -sin(incl) * cos(hlong - node);
+		double p2 = cos(incl) * cos(hlat) + sin(incl) * sin(hlat) * sin(hlong - node);
+		double p3 = -cos(incl) * sin(hlat) + sin(incl) * cos(hlat) * sin(hlong - node);
+		double p4 = sin(incl) * sin(hlat) + cos(incl) * cos(hlat) * sin(hlong - node);
+		double p5 = cos(hlat) * cos(hlong - node);
+		
+		SaturnRingAngles sra = new SaturnRingAngles();
+		
+		sra.B = asin(p3) * 180.0/PI;
+		
+		sra.U = atan2(p4, p5) * 180.0/PI;
+		
+		sra.P = atan2(p1, p2) * 180.0/PI;
+		
+		return sra;
+	}
 
 	private static double saturnRingCorrection(ApparentPlace apTarget, ApparentPlace apSun, double t) throws JPLEphemerisException {
 		final double R = PI / 180.0;
@@ -343,8 +394,8 @@ public class AlmanacData {
 		double tau = (t - 2415020.0) / 36525.0;
 
 		// Ring orientation angles
-		double node = (169.508470 + tau * (1.394681 + tau * 0.000412)) * PI/180.0;
-		double incl = (28.075216 - tau * (0.012998 - tau * 0.000004)) * PI/180.0;
+		double node = saturnRingNodeLongitude(tau);
+		double incl = saturnRingInclination(tau);
 
 		double nn = (126.35863 + 3.99712 * tau + 0.23542 * tau * tau) * R;
 		double jj = (6.91086 - 0.44892 * tau + 0.01291 * tau * tau) * R;
