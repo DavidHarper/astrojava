@@ -35,7 +35,7 @@ public class AlmanacData {
 	public double magnitude = Double.NaN, semiDiameter = Double.NaN;
 	public double positionAngleOfBrightLimb = Double.NaN;
 	public double eclipticLongitude = Double.NaN, eclipticLatitude = Double.NaN;
-	public SaturnRingAngles saturnRingAngles = null;
+	public SaturnRingAngles saturnRingAnglesForEarth = null;
 	
 	public static final int OF_DATE = 0, J2000 = 1, B1875 = 2;
 	
@@ -196,7 +196,7 @@ public class AlmanacData {
 				data.magnitude += saturnRingCorrection(apTarget, apSun, t);
 			
 			if (iBody == JPLEphemeris.SATURN)
-				data.saturnRingAngles = calculateSaturnRingAngles(apTarget, t);
+				data.saturnRingAnglesForEarth = calculateSaturnRingAngles(apTarget, t);
 		}
 
 		return data;
