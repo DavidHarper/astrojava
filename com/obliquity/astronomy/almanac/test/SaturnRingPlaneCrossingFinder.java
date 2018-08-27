@@ -55,6 +55,9 @@ public class SaturnRingPlaneCrossingFinder {
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
+	// Convergence criterion in radians.
+	private static final double EPSILON = 1.0e-6;
+	
 	private ApparentPlace apSaturn = null, apSun = null;
 	
 	private EarthRotationModel erm = new IAUEarthRotationModel();
@@ -231,7 +234,7 @@ public class SaturnRingPlaneCrossingFinder {
 			dt = -B/dbdt;
 		
 			t += dt;
-		} while (Math.abs(B) > 1e-6);
+		} while (Math.abs(B) > EPSILON);
 		
 		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
 
