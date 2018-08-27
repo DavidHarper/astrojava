@@ -239,6 +239,7 @@ public class SaturnRingPlaneCrossingFinder {
 
 		Date date = new Date(ticks);
 		
-		ps.println(datefmtOut.format(date) + " " + (target == EARTH ? "Earth" : "Sun"));
+		ps.println(datefmtOut.format(date) + " " + ((dbdt > 0.0) ? '+' : '-') + " " +
+				(target == EARTH ? "Earth" : "Sun"));
 	}
 }
