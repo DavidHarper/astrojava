@@ -38,6 +38,10 @@ public class ApparentPlace {
 	protected double raOfDate;
 	protected double decOfDate;
 	
+	protected Vector dcMean = null;
+	protected double raMean;
+	protected double decMean;
+	
 	protected Vector dcJ2000 = null;
 	protected double raJ2000;
 	protected double decJ2000;
@@ -117,6 +121,20 @@ public class ApparentPlace {
 	public double getDeclinationOfDate() throws IllegalStateException {
 		if (isValidOfDate)
 			return decOfDate;
+		else
+			throw new IllegalStateException(isValid ? NO_POSITION_OF_DATE : NO_POSITION_CALCULATED);
+	}
+
+	public double getMeanRightAscension() throws IllegalStateException {
+		if (isValidOfDate)
+			return raMean;
+		else
+			throw new IllegalStateException(isValid ? NO_POSITION_OF_DATE : NO_POSITION_CALCULATED);
+	}
+
+	public double getMeanDeclination() throws IllegalStateException {
+		if (isValidOfDate)
+			return decMean;
 		else
 			throw new IllegalStateException(isValid ? NO_POSITION_OF_DATE : NO_POSITION_CALCULATED);
 	}
@@ -269,7 +287,18 @@ public class ApparentPlace {
 			erm.nutationMatrix(ut, nutate);
 
 			P.multiplyBy(precess);
+			
+			dcMean = new Vector(P);
+			
+			x = dcMean.getX();
+			y = dcMean.getY();
+			z = dcMean.getZ();
+			
+			raMean = Math.atan2(y, x);
+			decMean = Math.atan2(z, Math.sqrt(x * x + y * y));
+			
 			P.multiplyBy(nutate);
+			
 			dcOfDate = new Vector(P);
 
 			 x = dcOfDate.getX();
