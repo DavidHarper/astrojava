@@ -2,7 +2,7 @@ package com.obliquity.astronomy.almanac;
 /*
  * astrojava - a package for reading JPL ephemeris files
  *
- * Copyright (C) 2006-2014 David Harper at obliquity.com
+ * Copyright (C) 2006-2018 David Harper at obliquity.com
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
