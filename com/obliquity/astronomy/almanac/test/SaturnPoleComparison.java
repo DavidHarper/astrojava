@@ -50,7 +50,7 @@ public class SaturnPoleComparison {
 	public void run() {
 		double J2000 = erm.JulianEpoch(2000.0);
 		
-		double B1875 = erm.BesselianEpoch(1875.25);
+		double B1875 = erm.BesselianEpoch(1889.25);
 		
 		PolePosition struvePole = nodeAndInclinationToPolePosition(167.9680, 28.0758, B1875, J2000);
 		
