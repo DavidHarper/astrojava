@@ -35,10 +35,12 @@ public class SaturnPoleModelTester {
 	public static void main(String[] args) {
 		SaturnPoleModelTester tester = new SaturnPoleModelTester();
 		
-		tester.run();
+		double epoch = args.length > 0 ? Double.parseDouble(args[0]) : 2451545.0;
+		
+		tester.run(epoch);
 	}
 	
-	public void run() {
+	public void run(double epoch) {
 		IAU1989SaturnPoleModel iau1989 = new IAU1989SaturnPoleModel();
 		
 		Jacobson2007SaturnPoleModel jacobson2007 = new Jacobson2007SaturnPoleModel();
@@ -49,17 +51,15 @@ public class SaturnPoleModelTester {
 		
 		HarperTaylorSaturnPoleModel harperTaylor = new HarperTaylorSaturnPoleModel();
 		
-		double J2000 = 2451545.0;
+		SaturnPolePosition iau1989Pole = iau1989.getPolePosition(epoch);
 		
-		SaturnPolePosition iau1989Pole = iau1989.getPolePosition(J2000);
+		SaturnPolePosition jacobson2007Pole = jacobson2007.getPolePosition(epoch);
 		
-		SaturnPolePosition jacobson2007Pole = jacobson2007.getPolePosition(J2000);
+		SaturnPolePosition struvePole = struve.getPolePosition(epoch);
 		
-		SaturnPolePosition struvePole = struve.getPolePosition(J2000);
+		SaturnPolePosition dourneauPole = dourneau.getPolePosition(epoch);
 		
-		SaturnPolePosition dourneauPole = dourneau.getPolePosition(J2000);
-		
-		SaturnPolePosition harperTaylorPole = harperTaylor.getPolePosition(J2000);
+		SaturnPolePosition harperTaylorPole = harperTaylor.getPolePosition(epoch);
 		
 		showPole("IAU", iau1989Pole, iau1989Pole);
 		showPole("Struve", struvePole, iau1989Pole);
