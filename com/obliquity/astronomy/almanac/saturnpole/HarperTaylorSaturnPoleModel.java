@@ -25,9 +25,15 @@
 package com.obliquity.astronomy.almanac.saturnpole;
 
 public class HarperTaylorSaturnPoleModel extends EclipticNodeAndInclinationSaturnPoleModel {
+	private final double sourceEpoch;
+	
 	public HarperTaylorSaturnPoleModel() {
-		super(168.8387  * Math.PI/180.0, 28.0653 * Math.PI/180.0, 0.0);
+		super(168.8387  * Math.PI/180.0, 28.0653 * Math.PI/180.0);
 		this.sourceEpoch = erm.BesselianEpoch(1950.0);
+	}
+	
+	double getSourceEpoch() {
+		return sourceEpoch;
 	}
 
 	public SaturnPolePosition getPolePosition(double epoch) {

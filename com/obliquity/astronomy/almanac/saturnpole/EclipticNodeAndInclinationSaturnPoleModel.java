@@ -31,18 +31,19 @@ import com.obliquity.astronomy.almanac.Vector;
 public abstract class EclipticNodeAndInclinationSaturnPoleModel extends AbstractSaturnPoleModel {
 	IAUEarthRotationModel erm = new IAUEarthRotationModel();
 	
-	double node, inclination, sourceEpoch;
+	final double node, inclination;
 	
-	protected EclipticNodeAndInclinationSaturnPoleModel(double node, double inclination, double sourceEpoch) {
+	protected EclipticNodeAndInclinationSaturnPoleModel(double node, double inclination) {
 		this.node = node;
 		this.inclination = inclination;
-		this.sourceEpoch = sourceEpoch;
 	}
 	
+	abstract double getSourceEpoch();
+	
 	protected SaturnPolePosition nodeAndInclinationToPolePosition(double targetEpoch) {
-		Matrix precession = erm.precessionMatrix(sourceEpoch, targetEpoch);
+		Matrix precession = erm.precessionMatrix(getSourceEpoch(), targetEpoch);
 		
-		double obliquity = erm.meanObliquity(sourceEpoch);
+		double obliquity = erm.meanObliquity(getSourceEpoch());
 		
 		double lngPole = node - 0.5 * Math.PI;
 		

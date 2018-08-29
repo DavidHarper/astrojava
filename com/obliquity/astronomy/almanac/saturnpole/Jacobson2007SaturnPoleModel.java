@@ -24,8 +24,8 @@
 
 package com.obliquity.astronomy.almanac.saturnpole;
 
-public class Jacobson2007SaturnPoleModel extends AbstractSaturnPoleModel {
-	public SaturnPolePosition getPolePosition(double epoch) {
+public class Jacobson2007SaturnPoleModel extends RightAscensionAndDeclinationSaturnPoleModel {
+	public SaturnPolePosition getPolePositionInSourceFrame(double epoch) {
 		double T = (epoch - 2451545.0)/36525.0;
 		
 		double omega1 = (Math.PI/180.0) * (24.058014 - 50.933966 * T);
@@ -39,5 +39,9 @@ public class Jacobson2007SaturnPoleModel extends AbstractSaturnPoleModel {
 				+ 0.000011 * Math.cos(omega3);
 		
 		return new SaturnPolePosition(Math.PI * ra/180.0, Math.PI * dec/180.0);
+	}
+
+	double getSourceEpoch() {
+		return 2451545.0;
 	}
 }
