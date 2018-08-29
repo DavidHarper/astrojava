@@ -258,23 +258,46 @@ public class TestApparentPlace {
 		if (ra < 0.0)
 			ra += 24.0;
 
-		ps.print(dfmtb.format(t));
+		ps.println(dfmtb.format(t));
 		
-		ps.print("  ");
+		ps.print("   True RA: ");
 		
 		printAngle(ra, ifmta, ifmta, dfmta, ps, false);
 		
-		ps.print("  ");
+		ps.println();
+		
+		ps.print("   Mean RA: ");
+
+		ra = ap.getMeanRightAscension() * 12.0 / Math.PI;
+
+		if (ra < 0.0)
+			ra += 24.0;
+		
+		printAngle(ra, ifmta, ifmta, dfmta, ps, false);
+		
+		ps.println();
+		
+		ps.print("  True Dec: ");
 		
 		printAngle(dec, ifmta, ifmta, dfmtb, ps, true);
 		
-		ps.print("  ");
+		ps.println();
 		
-		ps.print(dfmtc.format(ap.getGeometricDistance()));
+		ps.print("  Mean Dec: ");
 		
-		ps.print("  ");
+		dec = ap.getMeanDeclination() * 180.0 / Math.PI;
 		
-		ps.print(dfmtc.format(ap.getLightPathDistance()));
+		printAngle(dec, ifmta, ifmta, dfmtb, ps, true);
+		
+		ps.println();
+		
+		ps.print("   Geometric distance: ");
+		
+		ps.println(dfmtc.format(ap.getGeometricDistance()));
+		
+		ps.print("  Light-path distance: ");
+		
+		ps.println(dfmtc.format(ap.getLightPathDistance()));
 		
 		ps.println();
 	}
