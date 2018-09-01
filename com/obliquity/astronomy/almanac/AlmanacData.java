@@ -38,7 +38,7 @@ public class AlmanacData {
 	public SaturnRingAngles saturnRingAnglesForEarth = null;
 	public SaturnRingAngles saturnRingAnglesForSun = null;
 	
-	public static final int OF_DATE = 0, J2000 = 1, B1875 = 2;
+	public static final int TRUE_OF_DATE = 0, J2000 = 1, B1875 = 2, MEAN_OF_DATE = 3;
 	
 	private static final double MOON_RADIUS = 1738.0;
 	private static final double SUN_RADIUS = 696000.0;
@@ -65,9 +65,14 @@ public class AlmanacData {
 		double ra = 0.0, dec = 0.0;
 
 		switch (targetEpoch) {
-		case OF_DATE:
+		case TRUE_OF_DATE:
 			ra = apTarget.getRightAscensionOfDate();
 			dec = apTarget.getDeclinationOfDate();
+			break;
+			
+		case MEAN_OF_DATE:
+			ra = apTarget.getMeanRightAscension();
+			dec = apTarget.getMeanDeclination();
 			break;
 
 		case J2000:

@@ -108,7 +108,7 @@ public class SimpleAlmanac {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
-		int targetEpoch = AlmanacData.OF_DATE;
+		int targetEpoch = AlmanacData.TRUE_OF_DATE;
 		boolean elongationDeltas = false;
 
 		for (int i = 0; i < args.length; i++) {
@@ -136,8 +136,11 @@ public class SimpleAlmanac {
 			if (args[i].equalsIgnoreCase("-b1875"))
 				targetEpoch = AlmanacData.B1875;
 
-			if (args[i].equalsIgnoreCase("-ofdate"))
-				targetEpoch = AlmanacData.OF_DATE;
+			if (args[i].equalsIgnoreCase("-true"))
+				targetEpoch = AlmanacData.TRUE_OF_DATE;
+			
+			if (args[i].equalsIgnoreCase("-mean"))
+				targetEpoch = AlmanacData.MEAN_OF_DATE;
 
 			if (args[i].equalsIgnoreCase("-elongationdeltas"))
 				elongationDeltas = true;
@@ -435,8 +438,12 @@ public class SimpleAlmanac {
 		String epochName = null;
 		
 		switch (data.epoch) {
-		case AlmanacData.OF_DATE:
-			epochName = " DATE";
+		case AlmanacData.TRUE_OF_DATE:
+			epochName = " TRUE";
+			break;
+			
+		case AlmanacData.MEAN_OF_DATE:
+			epochName = " MEAN";
 			break;
 
 		case AlmanacData.J2000:
@@ -520,10 +527,13 @@ public class SimpleAlmanac {
 				"Valid step size formats are an integer or an integer followed by a single letter (d, h, m, s) to indicate",
 				"units.  If no units are specified, days are asssumed.",
 				"",
-				"\t-j2000\t\tCalculate position for epoch J2000",
-				"\t-b1875\t\tCalculate position for epoch B1875",
-				"\t-ofdate\t\tCalculate position for epoch of date (this is the default)",
 				"\t-elongationdeltas\tDisplay change in elongation between output lines (prefixed with #)",
+				"",
+				"COORDINATE SYSTEM FOR RIGHT ASCENSION AND DECLINATION",
+				"\t-true\t\tCalculate true position for epoch of date [this is the default]",
+				"\t-mean\t\tCalculate mean position for epoch of date (i.e. apply precession but not nutation)",
+				"\t-j2000\t\tCalculate position for epoch J2000",
+				"\t-b1875\t\tCalculate position for epoch B1875 (the reference frame of the Delporte constellation boundaries)",
 				"",
 				"OUTPUT COLUMNS (prefixed by column number)",
 				"1\tJulian Day Number",

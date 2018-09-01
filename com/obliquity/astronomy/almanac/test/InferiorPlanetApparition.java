@@ -252,7 +252,7 @@ public class InferiorPlanetApparition {
 
 						if (hc.altitude > 0.0) {
 							AlmanacData almanacData = AlmanacData.calculateAlmanacData(apPlanet, apSun, date,
-										AlmanacData.OF_DATE, new AlmanacData());
+										AlmanacData.TRUE_OF_DATE, new AlmanacData());
 							
 							ipaData.add(new InferiorPlanetApparitionData(
 								riseSetType, rse.type, hc, almanacData, hcSun.azimuth));

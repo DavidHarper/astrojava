@@ -176,7 +176,7 @@ public class SaturnRingPlaneCrossingFinder {
 		for (double t = jdstart; t < jdfinish; t += jdstep) {
 			AlmanacData data = new AlmanacData();
 			
-			AlmanacData.calculateAlmanacData(apSaturn, apSun, t, AlmanacData.OF_DATE, data);
+			AlmanacData.calculateAlmanacData(apSaturn, apSun, t, AlmanacData.TRUE_OF_DATE, data);
 			
 			if (lastData != null) {
 				double earthLatitudeBefore = lastData.saturnRingAnglesForEarth.B;
@@ -224,7 +224,7 @@ public class SaturnRingPlaneCrossingFinder {
 		do {
 			i++;
 			
-			AlmanacData.calculateAlmanacData(apSaturn, apSun, t, AlmanacData.OF_DATE, data);
+			AlmanacData.calculateAlmanacData(apSaturn, apSun, t, AlmanacData.TRUE_OF_DATE, data);
 		
 			B = (target == EARTH) ? data.saturnRingAnglesForEarth.B : data.saturnRingAnglesForSun.B;
 		
