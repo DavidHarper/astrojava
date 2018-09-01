@@ -24,6 +24,12 @@
 
 package com.obliquity.astronomy.almanac.saturnpole;
 
+/*
+ * Source: Jacobson, R.A. (2007) The Orientation and Precession of the Pole of Saturn.
+ * American Astronomical Society, DDA meeting #38, id.13.06
+ * http://adsabs.harvard.edu/abs/2007DDA....38.1306J
+ */
+
 public class Jacobson2007SaturnPoleModel extends RightAscensionAndDeclinationSaturnPoleModel {
 	public SaturnPolePosition getPolePositionInSourceFrame(double epoch) {
 		double T = (epoch - 2451545.0)/36525.0;

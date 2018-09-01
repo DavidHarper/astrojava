@@ -24,6 +24,12 @@
 
 package com.obliquity.astronomy.almanac.saturnpole;
 
+/*
+ * Source: Davies, M.E. et al. (1989) Report of the IAU/IAG/COSPAR working group on
+ * cartographic coordinates and rotational elements of the planets and satellites - 1988
+ * Celestial Mechanics and Dynamical Astronomy 46, 187.
+ */
+
 public class IAU1989SaturnPoleModel extends RightAscensionAndDeclinationSaturnPoleModel {
 	public SaturnPolePosition getPolePositionInSourceFrame(double epoch) {
 		double T = (epoch - 2451545.0)/36525.0;

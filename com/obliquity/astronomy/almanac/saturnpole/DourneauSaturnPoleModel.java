@@ -24,6 +24,12 @@
 
 package com.obliquity.astronomy.almanac.saturnpole;
 
+/*
+ * Source: Dourneau, G. (1993) Orbital elements of the eight major satellites of Saturn.
+ * Astron. Astrophys. 267, 292.
+ * http://adsabs.harvard.edu/abs/1993A%26A...267..292D
+ */
+
 public class DourneauSaturnPoleModel extends EclipticNodeAndInclinationSaturnPoleModel {
 	private final double sourceEpoch;
 	

@@ -24,6 +24,12 @@
 
 package com.obliquity.astronomy.almanac.saturnpole;
 
+/*
+ * Source: Harper, D. and Taylor, D.B. (1993) The orbits of the major satellites of Saturn.
+ * Astron. Astrophys. 268, 326.
+ * http://adsabs.harvard.edu/abs/1993A%26A...268..326H
+ */
+
 public class HarperTaylorSaturnPoleModel extends EclipticNodeAndInclinationSaturnPoleModel {
 	private final double sourceEpoch;
 	
