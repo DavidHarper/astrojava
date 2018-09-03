@@ -28,7 +28,7 @@ import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.Matrix;
 import com.obliquity.astronomy.almanac.Vector;
 
-public abstract class EclipticNodeAndInclinationSaturnPoleModel extends AbstractSaturnPoleModel {
+public abstract class EclipticNodeAndInclinationSaturnPoleModel implements SaturnPoleModel {
 	IAUEarthRotationModel erm = new IAUEarthRotationModel();
 	
 	final double node, inclination;

@@ -28,7 +28,7 @@ import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.Matrix;
 import com.obliquity.astronomy.almanac.Vector;
 
-public abstract class RightAscensionAndDeclinationSaturnPoleModel extends AbstractSaturnPoleModel {
+public abstract class RightAscensionAndDeclinationSaturnPoleModel implements SaturnPoleModel {
 	IAUEarthRotationModel erm = new IAUEarthRotationModel();
 	
 	abstract SaturnPolePosition getPolePositionInSourceFrame(double epoch);
