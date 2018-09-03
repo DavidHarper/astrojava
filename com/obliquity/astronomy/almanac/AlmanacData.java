@@ -377,8 +377,8 @@ public class AlmanacData {
 		// Calculate the apparent RA and Dec of the Sun as seen from Saturn
 		apSun.calculateApparentPlace(t - lightTime, apTarget.getTarget());
 		
-		double alpha = apSun.getMeanRightAscension();
-		double delta = apSun.getMeanDeclination();
+		double alpha = apSun.getMeanRightAscension() + Math.PI;
+		double delta = -apSun.getMeanDeclination();
 		
 		double phi = alpha - N;
 		
