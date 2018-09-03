@@ -25,7 +25,7 @@
 package com.obliquity.astronomy.almanac;
 
 public class ApparentPlace {
-	protected MovingPoint observer;
+	protected MovingPoint defaultObserver;
 	protected MovingPoint target;
 	protected MovingPoint sun;
 	protected EarthRotationModel erm;
@@ -63,7 +63,7 @@ public class ApparentPlace {
 
 	public ApparentPlace(MovingPoint observer, MovingPoint target,
 			MovingPoint sun, EarthRotationModel erm) {
-		this.observer = observer;
+		this.defaultObserver = observer;
 		this.target = target;
 		this.sun = sun;
 		this.erm = erm;
@@ -158,7 +158,7 @@ public class ApparentPlace {
 	}
 	
 	public MovingPoint getObserver() {
-		return observer;
+		return defaultObserver;
 	}
 	
 	public MovingPoint getSun() {
@@ -170,6 +170,10 @@ public class ApparentPlace {
 	}
 
 	public void calculateApparentPlace(double t) throws JPLEphemerisException {
+		calculateApparentPlace(t, defaultObserver);
+	}
+	
+	public void calculateApparentPlace(double t, MovingPoint observer) throws JPLEphemerisException {
 		StateVector svObserver = null;
 		Vector EB = null;
 		Vector SB = new Vector();
