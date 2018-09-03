@@ -40,6 +40,12 @@ import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.saturnpole.DourneauSaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.HarperTaylorSaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.IAU1989SaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.Jacobson2007SaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.SaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.StruveSaturnPoleModel;
 
 public class SaturnRingPlaneCrossingFinder {
 	private static final int EARTH = 0, SUN = 1;
@@ -81,6 +87,7 @@ public class SaturnRingPlaneCrossingFinder {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		String poleModelName = null;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -94,12 +101,21 @@ public class SaturnRingPlaneCrossingFinder {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-saturnpolemodel"))
+				poleModelName = args[++i];
 		}
 
 		if (filename == null  || startdate == null
 				|| enddate == null) {
 			showUsage();
 			System.exit(1);
+		}
+		
+		if (poleModelName != null) {
+			SaturnPoleModel poleModel = parsePoleModel(poleModelName);
+			
+			AlmanacData.setSaturnPoleModel(poleModel);
 		}
 
 		Date date = null;
@@ -153,6 +169,31 @@ public class SaturnRingPlaneCrossingFinder {
 			e.printStackTrace();
 		}
 	}
+	
+	private static SaturnPoleModel parsePoleModel(String poleModelName) {
+		if (poleModelName == null)
+			return null;
+		
+		switch (poleModelName.toLowerCase()) {
+		case "dourneau":
+			return new DourneauSaturnPoleModel();
+			
+		case "harpertaylor":
+			return new HarperTaylorSaturnPoleModel();
+			
+		case "iau1989":
+			return new IAU1989SaturnPoleModel();
+			
+		case "jacobson2007":
+			return new Jacobson2007SaturnPoleModel();
+			
+		case "struve":
+			return new StruveSaturnPoleModel();
+			
+		default:
+			return null;
+		}
+	}
 
 	public static void showUsage() {
 		String[] lines = { "MANDATORY PARAMETERS",
@@ -161,7 +202,12 @@ public class SaturnRingPlaneCrossingFinder {
 				"\t-enddate\tEnd date",
 				"",
 				"OPTIONAL PARAMETERS",
-				"\t-step\t\tStep size in days [default: 1.0]"
+				"\t-step\t\tStep size in days [default: 1.0]",
+				"",
+				"SATURN POLE MODEL",
+				"\t-saturnpolemodel MODELNAME\tUse this model for the pole of Saturn [default: iau1989]",
+				"",
+				"\tAvailable models: dourneau, harpertaylor, iau1989, jacobson2007, struve",
 		};
 		
 		for (String line : lines)
