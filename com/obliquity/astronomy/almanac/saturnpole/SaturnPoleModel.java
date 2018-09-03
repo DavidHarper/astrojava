@@ -25,5 +25,5 @@
 package com.obliquity.astronomy.almanac.saturnpole;
 
 public interface SaturnPoleModel {
-
+	public SaturnPolePosition getPolePosition(double epoch);
 }
