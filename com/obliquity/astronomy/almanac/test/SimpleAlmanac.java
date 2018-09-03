@@ -46,6 +46,12 @@ import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.Vector;
+import com.obliquity.astronomy.almanac.saturnpole.DourneauSaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.HarperTaylorSaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.IAU1989SaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.Jacobson2007SaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.SaturnPoleModel;
+import com.obliquity.astronomy.almanac.saturnpole.StruveSaturnPoleModel;
 
 public class SimpleAlmanac {	
 	private class ExtendedAlmanacData extends AlmanacData {
@@ -108,6 +114,7 @@ public class SimpleAlmanac {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		String poleModelName = null;
 		int targetEpoch = AlmanacData.TRUE_OF_DATE;
 		boolean elongationDeltas = false;
 
@@ -144,6 +151,9 @@ public class SimpleAlmanac {
 
 			if (args[i].equalsIgnoreCase("-elongationdeltas"))
 				elongationDeltas = true;
+			
+			if (args[i].equalsIgnoreCase("-saturnpolemodel"))
+				poleModelName = args[++i];
 		}
 
 		if (filename == null || bodyname == null) {
@@ -157,7 +167,13 @@ public class SimpleAlmanac {
 			System.err.println("Unknown body name: \"" + bodyname + "\"");
 			System.exit(1);
 		}
-
+		
+		if (poleModelName != null) {
+			SaturnPoleModel poleModel = parsePoleModel(poleModelName);
+			
+			AlmanacData.setSaturnPoleModel(poleModel);
+		}
+		
 		Date date = null;
 		
 		try {
@@ -312,6 +328,31 @@ public class SimpleAlmanac {
 			return JPLEphemeris.PLUTO;
 
 		return -1;
+	}
+	
+	private static SaturnPoleModel parsePoleModel(String poleModelName) {
+		if (poleModelName == null)
+			return null;
+		
+		switch (poleModelName.toLowerCase()) {
+		case "dourneau":
+			return new DourneauSaturnPoleModel();
+			
+		case "harpertaylor":
+			return new HarperTaylorSaturnPoleModel();
+			
+		case "iau1989":
+			return new IAU1989SaturnPoleModel();
+			
+		case "jacobson2007":
+			return new Jacobson2007SaturnPoleModel();
+			
+		case "struve":
+			return new StruveSaturnPoleModel();
+			
+		default:
+			return null;
+		}
 	}
 
 	public void run(double jdstart, double jdfinish, double jdstep, PrintStream ps) {
@@ -534,6 +575,11 @@ public class SimpleAlmanac {
 				"\t-mean\t\tCalculate mean position for epoch of date (i.e. apply precession but not nutation)",
 				"\t-j2000\t\tCalculate position for epoch J2000",
 				"\t-b1875\t\tCalculate position for epoch B1875 (the reference frame of the Delporte constellation boundaries)",
+				"",
+				"SATURN POLE MODEL",
+				"\t-saturnpolemodel MODELNAME\tUse this model for the pole of Saturn [default: iau1989]",
+				"",
+				"\tAvailable models: dourneau, harpertaylor, iau1989, jacobson2007, struve",
 				"",
 				"OUTPUT COLUMNS (prefixed by column number)",
 				"1\tJulian Day Number",
