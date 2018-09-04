@@ -320,16 +320,6 @@ public class AlmanacData {
 					"Cannot calculate a magnitude for the target body.");
 		}
 	}
-	
-	// Saturn pole coordinates from Davies, M.E. et al. (1989) Celes. Mech. 46, 187
-	
-	private static double saturnPoleRightAscension(double tau) {
-		return (40.58 - 0.036 * tau) * PI/180.0;
-	}
-	
-	private static double saturnPoleDeclination(double tau) {
-		return (83.54 - 0.004 * tau) * PI/180.0;
-	}
 			
 	private static SaturnRingAngles calculateSaturnRingAnglesForEarth(ApparentPlace apTarget, double t) {
 		SaturnPolePosition polePosition = saturnPoleModel.getPolePosition(t);
