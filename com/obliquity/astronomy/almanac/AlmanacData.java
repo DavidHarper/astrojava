@@ -322,46 +322,14 @@ public class AlmanacData {
 	}
 			
 	private static SaturnRingAngles calculateSaturnRingAnglesForEarth(ApparentPlace apTarget, double t) {
-		SaturnPolePosition polePosition = saturnPoleModel.getPolePosition(t);
-		
-		double raSaturnPole = polePosition.rightAscension;
-		double decSaturnPole = polePosition.declination;
-		
-		double J = 0.5 * PI - decSaturnPole;
-		double N = raSaturnPole + 0.5 * PI;
-		
 		double alpha = apTarget.getMeanRightAscension();
 		double delta = apTarget.getMeanDeclination();
 		
-		double phi = alpha - N;
-		
-		double p1 = cos(J) * cos(delta) * sin(phi) + sin(J) * sin(delta);
-		double p2 = cos(delta) * cos(phi);
-		double p3 = sin(J) * cos(delta) * sin(phi) - cos(J) * sin(delta);
-		double p4 = -sin(J) * cos(phi);
-		double p5 = sin(J) * sin(delta) * sin(phi) + cos(J) * cos(delta);
-		
-		SaturnRingAngles sra = new SaturnRingAngles();
-		
-		sra.B = asin(p3) * 180.0/PI;
-		
-		sra.U = atan2(p1, p2) * 180.0/PI;
-		
-		sra.P = atan2(p4, p5) * 180.0/PI;
-		
-		return sra;
+		return calculateSaturnRingAngles(t, alpha, delta);
 	}
 	
 	private static SaturnRingAngles calculateSaturnRingAnglesForSun(ApparentPlace apTarget, ApparentPlace apSun, double t)
 			throws JPLEphemerisException {
-		SaturnPolePosition polePosition = saturnPoleModel.getPolePosition(t);
-		
-		double raSaturnPole = polePosition.rightAscension;
-		double decSaturnPole = polePosition.declination;
-		
-		double J = 0.5 * PI - decSaturnPole;
-		double N = raSaturnPole + 0.5 * PI;
-		
 		double lightTime = apTarget.getHeliocentricDistance()/ApparentPlace.SPEED_OF_LIGHT;
 		
 		// Calculate the apparent RA and Dec of the Sun as seen from Saturn
@@ -370,6 +338,17 @@ public class AlmanacData {
 		double alpha = apSun.getMeanRightAscension() + Math.PI;
 		double delta = -apSun.getMeanDeclination();
 		
+		return calculateSaturnRingAngles(t, alpha, delta);
+	}
+	
+	public static SaturnRingAngles calculateSaturnRingAngles(double t, double alpha, double delta) {
+		SaturnPolePosition polePosition = saturnPoleModel.getPolePosition(t);
+		
+		double raSaturnPole = polePosition.rightAscension;
+		double decSaturnPole = polePosition.declination;
+		
+		double J = 0.5 * PI - decSaturnPole;
+		double N = raSaturnPole + 0.5 * PI;
 		double phi = alpha - N;
 		
 		double p1 = cos(J) * cos(delta) * sin(phi) + sin(J) * sin(delta);
@@ -386,9 +365,8 @@ public class AlmanacData {
 		
 		sra.P = atan2(p4, p5) * 180.0/PI;
 		
-		return sra;
+		return sra;		
 	}
-	
 	
 	// Ring node and inclination from Meeus, Astronomical Algorithms, 1991, p302
 	
