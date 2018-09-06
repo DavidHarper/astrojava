@@ -363,7 +363,13 @@ public class AlmanacData {
 		
 		sra.U = atan2(p1, p2) * 180.0/PI;
 		
+		if (sra.U < 0.0)
+			sra.U += 360.0;
+		
 		sra.P = atan2(p4, p5) * 180.0/PI;
+		
+		if (sra.P < 0.0)
+			sra.P += 360.0;
 		
 		return sra;		
 	}
