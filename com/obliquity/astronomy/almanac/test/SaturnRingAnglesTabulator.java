@@ -40,7 +40,6 @@ import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
-import com.obliquity.astronomy.almanac.SaturnRingAngles;
 import com.obliquity.astronomy.almanac.saturnpole.DourneauSaturnPoleModel;
 import com.obliquity.astronomy.almanac.saturnpole.HarperTaylorSaturnPoleModel;
 import com.obliquity.astronomy.almanac.saturnpole.IAU1989SaturnPoleModel;
