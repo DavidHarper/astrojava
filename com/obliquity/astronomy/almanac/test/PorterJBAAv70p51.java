@@ -24,6 +24,7 @@
 
 package com.obliquity.astronomy.almanac.test;
 
+import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.Vector;
 
 /*
@@ -74,6 +75,35 @@ public class PorterJBAAv70p51 {
 		System.out.println("Pole of V1 x V3 is: RA = " + (ra * 12.0/Math.PI) + " h (" + (ra * 180.0/Math.PI) + " degrees), Dec = " + (dec * 180.0/Math.PI) + " degrees");
 		
 		Vector pole = radec2dc(ra, dec);
+		
+		System.out.println("Pole vector: " + pole);
+		
+		IAUEarthRotationModel erm = new IAUEarthRotationModel();
+		
+		double eps = erm.meanObliquity(2451545.0);
+		
+		double ce = Math.cos(eps);
+		
+		double se = Math.sin(eps);
+		
+		System.out.println("cos(eps) = " + ce + ", sin(eps) = " + se);
+		
+		double x = pole.getX();
+		
+		double y = ce * pole.getY() + se * pole.getZ();
+		
+		double z = -se * pole.getY() + ce * pole.getZ();
+		
+		System.out.println("Pole vector in ecliptic coordinates: (" + x + ", " + y + ", " + z + ")");
+		
+		double lambda = Math.atan2(y,x) * 180.0/Math.PI;
+		
+		if (lambda < 0.0)
+			lambda += 360.0;
+		
+		double beta = Math.asin(z) * 180.0/Math.PI;
+		
+		System.out.println("Referred to mean ecliptic and equinox: longitude " + lambda + ", latitude " + beta);
 		
 		System.out.println("Pole vector dot v1965dec = " + pole.scalarProduct(v1965dec));
 		System.out.println("Pole vector dot v1966jan = " + pole.scalarProduct(v1966jan));
