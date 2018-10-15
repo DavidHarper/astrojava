@@ -334,6 +334,8 @@ public class InferiorPlanetApparition {
 		ps.print(SEPARATOR);
 		ps.printf(fmt2, data.illuminatedFraction);
 		ps.print(SEPARATOR);
+		ps.printf(fmt1, data.elongation);
+		ps.print(SEPARATOR);
 		ps.printf(fmt1, positionAngle);
 		ps.print(SEPARATOR);
 		ps.printf(fmt1, 180.0 * sunAzimuth / Math.PI);
