@@ -24,11 +24,10 @@
 
 package com.obliquity.astronomy.almanac;
 
-public class TransitEvent extends LocalVisibilityEvent {
-	public TransitType type;
+public abstract class LocalVisibilityEvent implements Comparable<LocalVisibilityEvent> {
+	public double date;
 	
-	public TransitEvent(TransitType type, double date) {
-		this.type = type;
-		this.date = date;
+	public int compareTo(LocalVisibilityEvent that) {
+		return (this.date < that.date) ? -1 : 1;
 	}
 }

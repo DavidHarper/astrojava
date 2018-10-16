@@ -24,9 +24,8 @@
 
 package com.obliquity.astronomy.almanac;
 
-public class RiseSetEvent {
+public class RiseSetEvent extends LocalVisibilityEvent {
 	public RiseSetEventType type;
-	public double date;
 	
 	public RiseSetEvent(RiseSetEventType type, double date) {
 		this.type = type;
