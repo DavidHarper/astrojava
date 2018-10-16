@@ -185,6 +185,8 @@ public class NightlyPlanetNotes {
 		System.err.println("\t-civil\t\tDefine night by start/end of civil twilight instead of sunset/sunrise");
 	}
 
+	private final boolean debug = Boolean.getBoolean("nightlyplanetnotes.debug");
+	
 	private final DecimalFormat dfmt1 = new DecimalFormat("0000");
 	private final DecimalFormat dfmt2 = new DecimalFormat("00");
 
@@ -201,8 +203,53 @@ public class NightlyPlanetNotes {
 		return az < 0.0 ? 360.0 + az : az;
 	}
 	
+	private static final double
+			CP_NNE = 22.5, CP_ENE=67.5,
+			CP_ESE = 112.5, CP_SSE = 157.5,
+			CP_SSW = 202.5, CP_WSW = 247.5,
+			CP_WNW = 292.5, CP_NNW = 337.5;
+	
+	private String compassPoint(double az) {
+		az = normaliseAzimuth(180.0 * az/Math.PI);
+		
+		if (az > CP_NNW || az < CP_NNE)
+			return "north";
+		else if (az < CP_ENE)
+			return "north-east";
+		else if (az < CP_ESE)
+			return "east";
+		else if (az < CP_SSE)
+			return "south-east";
+		else if (az < CP_SSW)
+			return "south";
+		else if (az < CP_WSW)
+			return "south-west";
+		else if (az < CP_WNW)
+			return "west";
+		else
+			return "north-west";
+	}
+	
+	private String altitudeDescription(double alt) {
+		alt *= 180.0/Math.PI;
+		
+		if (alt < 0.0)
+			return "below the horizon";
+		else if (alt < 20.0)
+			return "low";
+		else if (alt < 45.0)
+			return "at moderate altitude";
+		else
+			return "high";
+	}
+	
+	private final DecimalFormat dfmt = new DecimalFormat("0.0");
+	
 	public void run(double jd, Place place, ApparentPlace[] apTargets, String[] targetNames, boolean civil, PrintStream ps) throws JPLEphemerisException {
 		LocalVisibility lv = new LocalVisibility();
+		
+		String sunsetName = civil ? "Evening Civil Twilight" : "Sunset";
+		String sunriseName = civil ? "Morning Civil Twilight" : "Sunrise";
 		
 		RiseSetType riseSetType = civil ? RiseSetType.CIVIL_TWILIGHT : RiseSetType.UPPER_LIMB;
 		
@@ -231,12 +278,12 @@ public class NightlyPlanetNotes {
 		}
 		
 		if (sunset == null) {
-			ps.println("ERROR: failed to find sunset");
+			ps.println("ERROR: failed to find " + sunsetName);
 			return;
 		}
 		
 		if (sunrise == null) {
-			ps.println("ERROR: failed to find sunrise");
+			ps.println("ERROR: failed to find " + sunriseName);
 			return;
 		}
 		
@@ -244,7 +291,7 @@ public class NightlyPlanetNotes {
 			ps.println("ERROR: failed to find midnight");
 		}
 		
-		ps.println("Sunset is at " + dateToString(sunset.date));
+		ps.println(sunsetName + " is at " + dateToString(sunset.date));
 		
 		String format = "\t%-8s is at altitude %4.1f and azimuth %5.1f (%s)\n";
 		
@@ -262,7 +309,7 @@ public class NightlyPlanetNotes {
 			}
 		}
 		
-		ps.println("Midnight is at " + dateToString(midnight.date));
+		ps.println("\nMidnight is at " + dateToString(midnight.date));
 		
 		for (int i = 1; i < apTargets.length; i++) {
 			if (apTargets[i] == null)
@@ -278,7 +325,7 @@ public class NightlyPlanetNotes {
 			}
 		}
 		
-		ps.println("Sunrise is at " + dateToString(sunrise.date));
+		ps.println("\n" + sunriseName + " is at " + dateToString(sunrise.date));
 		
 		for (int i = 1; i < apTargets.length; i++) {
 			if (apTargets[i] == null)
@@ -293,5 +340,106 @@ public class NightlyPlanetNotes {
 						hc.azimuth < 0.0 ? "setting" : "rising");
 			}
 		}
+		
+		ps.println();
+		
+		for (int i = 1; i < apTargets.length; i++) {
+			if (apTargets[i] == null)
+				continue;
+			
+			if (debug)
+				ps.println("SUMMARY FOR " + targetNames[i]);
+			
+			rsEvents = lv.findRiseSetEvents(apTargets[i], place, sunset.date, RiseSetType.UPPER_LIMB);
+			
+			RiseSetEvent rising = null, setting = null;
+			
+			for (RiseSetEvent rse : rsEvents) {
+				switch (rse.type) {
+				case RISE:
+					rising = rse;
+					
+					if (debug)
+						ps.println("RISES:   " + dateToString(rse.date));
+					break;
+					
+				case SET:
+					setting = rse;
+					
+					if (debug)
+						ps.println("SETS:    " + dateToString(rse.date));
+					break;
+				}
+			}	
+			
+			trEvents = lv.findTransitEvents(apTargets[i], place, sunset.date);
+			
+			TransitEvent transit = null;
+			
+			for (TransitEvent te : trEvents) {
+				if (te.type == TransitType.UPPER) {
+					transit = te;
+					
+					if (debug)
+						ps.println("TRANSIT: " + dateToString(te.date));
+				}
+			}
+			
+			HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(apTargets[i],
+					place, sunset.date);
+			
+			if (hc.altitude > 0.0) {
+				// Target is already visible at sunset.
+				ps.println(targetNames[i] + " is " + altitudeDescription(hc.altitude) + " (" +
+				dfmt.format(180.0*hc.altitude/Math.PI) +" degrees) in the " + compassPoint(hc.azimuth) + " at the start of the night.");
+			} else {
+				// Target is not yet visible at sunset.
+				reportEvent(ps, targetNames[i], "rises", rising.date, sunset.date, midnight.date, sunrise.date, true);
+			}
+			
+			if (transit.date > sunset.date && transit.date < sunrise.date) {
+				reportEvent(ps, targetNames[i], "transits", transit.date, sunset.date, midnight.date, sunrise.date, false);
+				
+				hc = lv.calculateApparentAltitudeAndAzimuth(apTargets[i],
+						place, transit.date);
+				
+				ps.println(", when it is " + altitudeDescription(hc.altitude) +
+						" (" + dfmt.format(180.0*hc.altitude/Math.PI) +
+						" degrees) in the " + compassPoint(hc.azimuth) + ".");
+			}
+			
+			hc = lv.calculateApparentAltitudeAndAzimuth(apTargets[i],
+					place, sunrise.date);
+			
+			if (hc.altitude > 0.0) {
+				// Target is already visible at sunset.
+				ps.println(targetNames[i] + " is " + altitudeDescription(hc.altitude) + " (" +
+				dfmt.format(180.0*hc.altitude/Math.PI) + " degrees) in the " + compassPoint(hc.azimuth) + " at the end of the night.");
+			} else {
+				// Target is not yet visible at sunset.
+				reportEvent(ps, targetNames[i], "sets", setting.date, sunset.date, midnight.date, sunrise.date, true);
+			}
+		}		
+	}
+	
+	private void reportEvent(PrintStream ps, String targetName, String eventVerb, double date, double sunset, double midnight, double sunrise, boolean newline) {
+		if (date < sunset || date > sunrise)
+			return;
+		
+		double t1 = 24.0 * (date - sunset);
+		double t2 = 24.0 * (date - midnight);
+		double t3 = 24.0 * (date - sunrise);
+		
+		ps.print(targetName + " " + eventVerb);
+		
+		if (Math.abs(t2) < Math.abs(t1) && Math.abs(t2) < Math.abs(t3))
+			ps.printf(" %.1f hours %s midnight", Math.abs(t2), (t2 < 0.0 ? "before" : "after"));
+		else if (Math.abs(t1) < Math.abs(t3))
+			ps.printf(" %.1f hours after the start of the night", t1);
+		else
+			ps.printf(" %.1f hours before the end of the night", Math.abs(t3));
+		
+		if (newline)
+			ps.println(".");
 	}
 }
