@@ -4,7 +4,7 @@ SCRIPT_DIR=`dirname $0`
 
 JAR_FILE=${SCRIPT_DIR}/almanac.jar
 
-APPCLASS=com.obliquity.astronomy.almanac.test.SaturnRingPlaneCrossingFinder
+APPCLASS=com.obliquity.astronomy.almanac.test.NightlyPlanetNotes
 
 if [ ! -f ${JAR_FILE} ]
 then

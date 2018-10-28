@@ -4,7 +4,7 @@ SCRIPT_DIR=`dirname $0`
 
 JAR_FILE=${SCRIPT_DIR}/almanac.jar
 
-RPXCLASS=com.obliquity.astronomy.almanac.test.SaturnRingAnglesTabulator
+APPCLASS=com.obliquity.astronomy.almanac.test.SaturnRingAnglesTabulator
 
 if [ ! -f ${JAR_FILE} ]
 then
@@ -17,4 +17,4 @@ then
   EPHEMERIS_OPTS="-ephemeris ${EPHEMERIS_FILE}"
 fi
 
-java ${JAVA_OPTS} -classpath ${JAR_FILE} ${RPXCLASS} ${EPHEMERIS_OPTS} "$@"
+java ${JAVA_OPTS} -classpath ${JAR_FILE} ${APPCLASS} ${EPHEMERIS_OPTS} "$@"
