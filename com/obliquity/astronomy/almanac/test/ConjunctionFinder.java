@@ -31,13 +31,13 @@ import static java.lang.Math.asin;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
 import com.obliquity.astronomy.almanac.ApparentPlace;
+import com.obliquity.astronomy.almanac.AstronomicalDate;
 import com.obliquity.astronomy.almanac.EarthCentre;
 import com.obliquity.astronomy.almanac.EarthRotationModel;
 import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
@@ -64,9 +64,6 @@ public class ConjunctionFinder {
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 
 	private static final double TWO_PI = 2.0 * Math.PI;
-
-	private static final DecimalFormat dfmt1 = new DecimalFormat("+0.000;-0.000");
-	private static final DecimalFormat dfmt2 = new DecimalFormat("+0.0;-0.0");
 	
 	private ApparentPlace apTarget1 = null, apTarget2 = null, apSun = null;
 	
@@ -347,8 +344,10 @@ public class ConjunctionFinder {
 					EclipticCoordinates ecSun = calculateEclipticCoordinates(raSun, decSun, tExact);
 					
 					double dLambda = reduceAngle(ec1.longitude - ecSun.longitude) * 180.0/Math.PI;
-									
-					ps.println(julianDateToCalendarDate(tExact) + " " + dfmt1.format(dY) + " " + dfmt2.format(dLambda));
+					
+					AstronomicalDate ad = new AstronomicalDate(tExact);
+					
+					ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %6.1f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), dY, dLambda);
 				}
 			}
 			
