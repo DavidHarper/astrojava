@@ -47,19 +47,30 @@ public class Nereid implements MovingPoint {
 	private final double EPOCH = 2451545.0,
 			SEMI_MAJOR_AXIS = 5513818.0,
 			ECCENTRICITY = 0.75074,
+			SEMI_MINOR_AXIS = SEMI_MAJOR_AXIS * Math.sqrt(1.0 - ECCENTRICITY * ECCENTRICITY),
 			LONGITUDE_OF_APSE = 256.6874,
 			MEAN_LONGITUDE = 113.3797,
 			INCLINATION = 7.0903,
 			LONGITUDE_OF_NODE = 335.5701,
 			LAMBDA_DOT = 0.9996276,
-			APSE_DOT = 0.0064,
-			NODE_DOT = -0.0381;
+			APSE_DOT = 0.0064/365.25,
+			NODE_DOT = -0.0381/365.25;
 	
 	/*
 	 * Position of the pole of the Laplacian plane, referred to the ICRF system.
 	 */
 	
 	private final double PLP_RA = 269.3023, PLP_DEC = 69.1166;
+	
+	/*
+	 * Other constants.
+	 */
+	
+	private final double TWO_PI = 2.0 * Math.PI;
+	
+	private final double EPSILON = 1.0/SEMI_MAJOR_AXIS;
+	
+	private final int MAX_KEPLER_ITERATIONS = 50;
 	
 	/*
 	 * Fixed basis vectors which define the Laplacian plane.  The vectors M2 and N2 are in
@@ -120,32 +131,96 @@ public class Nereid implements MovingPoint {
 		
 		return E;
 	}
+	
+	private void calculatePositionAndVelocity(double time, Vector position, Vector velocity) throws JPLEphemerisException {
+		if (position == null)
+			throw new JPLEphemerisException("Input position vector was null");
+		
+		if (!isValidDate(time))
+			throw new JPLEphemerisException("Date is outside valid range");
+		
+		double apse = Math.PI * (LONGITUDE_OF_APSE + (time - EPOCH) * APSE_DOT)/180.0;
+		
+		double lambda = Math.PI * (MEAN_LONGITUDE + (time - EPOCH) * LAMBDA_DOT)/180.0;
+		
+		double meanAnomaly = (lambda - apse) % TWO_PI;
+		
+		double eccAnomaly = solveKeplersEquation(meanAnomaly, ECCENTRICITY, EPSILON, MAX_KEPLER_ITERATIONS);
+		
+		if (Double.isNaN(eccAnomaly))
+			throw new JPLEphemerisException("Failed to solve Kepler's equation");
+				
+		double node = Math.PI * (LONGITUDE_OF_NODE + (time - EPOCH) * NODE_DOT)/180.0;
+		double incl = Math.PI * INCLINATION/180.0;
+		
+		double cosNode = Math.cos(node), sinNode = Math.sin(node), cosIncl = Math.cos(incl), sinIncl = Math.sin(incl);
+		
+		// Rotate basis vectors 
+		Vector N3 = Vector.linearCombination(N2, cosNode, M2, sinNode);
+		Vector M3 = Vector.linearCombination(N2, -sinNode, M2, cosNode);
+		Vector P3 = P2.copyOf();
+				
+		Vector M4 = Vector.linearCombination(M3, cosIncl, P3, sinIncl);
+		Vector N4 = N3.copyOf();
+		
+		// Calculate argument of pericentre.
+		
+		apse -= node;
+		
+		double cosApse = Math.cos(apse), sinApse = Math.sin(apse);
+		
+		Vector P = Vector.linearCombination(N4, cosApse, M4, sinApse);
+		Vector Q = Vector.linearCombination(N4, -sinApse, M4, cosApse);
+		
+		double cosE = Math.cos(eccAnomaly), sinE = Math.sin(eccAnomaly);
+		
+		double xw = SEMI_MAJOR_AXIS * (cosE - ECCENTRICITY);
+		double yw = SEMI_MINOR_AXIS * sinE;
+		
+		Vector pos = Vector.linearCombination(P, xw, Q, yw);
+		
+		position.copy(pos);
+		
+		if (velocity != null) {
+			double eDot = (Math.PI/180.0) * (LAMBDA_DOT - APSE_DOT)/(1.0 - ECCENTRICITY * cosE);
+		
+			double xwdot = -SEMI_MAJOR_AXIS * eDot * sinE;
+			double ywdot = SEMI_MINOR_AXIS * eDot * cosE;
+		
+			Vector vel = Vector.linearCombination(P, xwdot, Q, ywdot);
+			
+			velocity.copy(vel);
+		}
+	}
 
-	@Override
+	private StateVector statevector = new StateVector(new Vector(),
+			new Vector());
+
 	public StateVector getStateVector(double time)
 			throws JPLEphemerisException {
-		// TODO Auto-generated method stub
-		return null;
+		getStateVector(time, statevector);
+		return statevector;
 	}
 
-	@Override
 	public void getStateVector(double time, StateVector sv)
 			throws JPLEphemerisException {
-		// TODO Auto-generated method stub
-		
+		Vector position = statevector.getPosition();
+		Vector velocity = statevector.getVelocity();
+		calculatePositionAndVelocity(time, position, velocity);
 	}
 
-	@Override
 	public Vector getPosition(double time) throws JPLEphemerisException {
-		// TODO Auto-generated method stub
-		return null;
+		Vector position = statevector.getPosition();
+		getPosition(time, position);
+		return position;
+
 	}
 
-	@Override
 	public void getPosition(double time, Vector v)
 			throws JPLEphemerisException {
-		// TODO Auto-generated method stub
-		
+		Vector position = statevector.getPosition();
+		calculatePositionAndVelocity(time, position, null);
+		v.copy(position);
 	}
 
 	/*
