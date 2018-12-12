@@ -166,10 +166,8 @@ public class Vector implements java.lang.Cloneable {
 		z = zNew;
 	}
 	
-	public void linearCombination(Vector va, double xa, Vector vb, double xb) {
-		this.x = xa * va.x + xb * vb.x;
-		this.y = xa * va.y + xb * vb.y;
-		this.z = xa * va.z + xb * vb.z;
+	public static Vector linearCombination(Vector va, double xa, Vector vb, double xb) {
+		return new Vector(xa * va.x + xb * vb.x,  xa * va.y + xb * vb.y, xa * va.z + xb * vb.z);
 	}
 	
 	public void rotate(double angle, int axis) {
