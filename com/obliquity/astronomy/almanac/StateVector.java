@@ -86,4 +86,9 @@ public class StateVector {
 		position.subtract(that.getPosition());
 		velocity.subtract(that.getVelocity());
 	}
+	
+	public void add(StateVector that) {
+		position.add(that.getPosition());
+		velocity.add(that.getVelocity());
+	}
 }
