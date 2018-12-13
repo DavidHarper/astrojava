@@ -28,15 +28,29 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.Vector;
 
 public class TestNereid {
 	public static void main(String[] args) {
-		TestNereid tester = new TestNereid();
+		String filename = null;
 		
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equalsIgnoreCase("-ephemeris"))
+				filename = args[++i];
+		}
+		
+		if (filename == null) {
+			showUsage();
+			System.exit(1);
+		}
+
+		TestNereid tester = new TestNereid();
+
 		try {
-			tester.run();
+			JPLEphemeris ephemeris = new JPLEphemeris(filename);
+			tester.run(ephemeris);
 		} catch (JPLEphemerisException | IOException e) {
 			e.printStackTrace();
 		}
@@ -55,8 +69,10 @@ public class TestNereid {
 	 * Coordinate systm: Earth Mean Equator and Equinox of Reference Epoch            
 	 */
 	
-	public void run() throws JPLEphemerisException, IOException {
-		Nereid nereid = new Nereid();
+	public void run(JPLEphemeris ephemeris) throws JPLEphemerisException, IOException {
+		Nereid nereid = new Nereid(ephemeris);
+		
+		Vector p = new Vector();
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		
@@ -90,7 +106,7 @@ public class TestNereid {
 			
 			t0.normalise();
 			
-			Vector p = nereid.getPosition(t);
+			nereid.calculatePlanetocentricPositionAndVelocity(t, p, null);
 			
 			System.out.printf(format1, t, p.getX(), p.getY(), p.getZ());
 			System.out.printf(format2, "", p0.getX(), p0.getY(), p0.getZ());
@@ -114,5 +130,10 @@ public class TestNereid {
 		double z = Double.parseDouble(line.substring(56, 78));
 		
 		return new Vector(x, y, z);
+	}
+
+	public static void showUsage() {
+		System.err.println("MANDATORY PARAMETERS");
+		System.err.println("\t-ephemeris\tName of ephemeris file");
 	}
 }

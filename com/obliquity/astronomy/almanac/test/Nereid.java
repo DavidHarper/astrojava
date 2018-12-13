@@ -73,6 +73,13 @@ public class Nereid implements MovingPoint {
 	private final int MAX_KEPLER_ITERATIONS = 50;
 	
 	/*
+	 * JPL ephemeris object for calculating the position of Neptune.
+	 */
+	
+	private JPLEphemeris ephemeris;
+	private double AU;
+	
+	/*
 	 * Fixed basis vectors which define the Laplacian plane.  The vectors M2 and N2 are in
 	 * the Laplacian plane, such that M2 is also in the XY-plane of the ICRF system.
 	 * The vector P2 is normal to the Laplacian plane.
@@ -97,7 +104,9 @@ public class Nereid implements MovingPoint {
 		P2 = Vector.linearCombination(M1, -sinIncl, P1, cosIncl);
 	}
 	
-	public Nereid() {
+	public Nereid(JPLEphemeris ephemeris) {
+		this.ephemeris = ephemeris;
+		AU = 1.0 / ephemeris.getAU();
 		constructBasisVectors();
 	}
 	
@@ -132,7 +141,7 @@ public class Nereid implements MovingPoint {
 		return E;
 	}
 	
-	private void calculatePositionAndVelocity(double time, Vector position, Vector velocity) throws JPLEphemerisException {
+	public void calculatePlanetocentricPositionAndVelocity(double time, Vector position, Vector velocity) throws JPLEphemerisException {
 		if (position == null)
 			throw new JPLEphemerisException("Input position vector was null");
 		
@@ -206,7 +215,7 @@ public class Nereid implements MovingPoint {
 			throws JPLEphemerisException {
 		Vector position = statevector.getPosition();
 		Vector velocity = statevector.getVelocity();
-		calculatePositionAndVelocity(time, position, velocity);
+		calculatePlanetocentricPositionAndVelocity(time, position, velocity);
 	}
 
 	public Vector getPosition(double time) throws JPLEphemerisException {
@@ -219,7 +228,7 @@ public class Nereid implements MovingPoint {
 	public void getPosition(double time, Vector v)
 			throws JPLEphemerisException {
 		Vector position = statevector.getPosition();
-		calculatePositionAndVelocity(time, position, null);
+		calculatePlanetocentricPositionAndVelocity(time, position, null);
 		v.copy(position);
 	}
 
