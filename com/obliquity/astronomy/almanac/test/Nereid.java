@@ -27,6 +27,7 @@ package com.obliquity.astronomy.almanac.test;
 import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MovingPoint;
+import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.StateVector;
 import com.obliquity.astronomy.almanac.Vector;
 
@@ -78,6 +79,7 @@ public class Nereid implements MovingPoint {
 	
 	private JPLEphemeris ephemeris;
 	private double AU;
+	private PlanetCentre neptune;
 	
 	/*
 	 * Fixed basis vectors which define the Laplacian plane.  The vectors M2 and N2 are in
@@ -107,6 +109,7 @@ public class Nereid implements MovingPoint {
 	public Nereid(JPLEphemeris ephemeris) {
 		this.ephemeris = ephemeris;
 		AU = 1.0 / ephemeris.getAU();
+		neptune = new PlanetCentre(ephemeris, JPLEphemeris.NEPTUNE);
 		constructBasisVectors();
 	}
 	
@@ -202,34 +205,59 @@ public class Nereid implements MovingPoint {
 		}
 	}
 
-	private StateVector statevector = new StateVector(new Vector(),
-			new Vector());
+	private Vector nereidPosition = new Vector(), nereidVelocity = new Vector();
+	
+	private StateVector nereidStateVector = new StateVector(nereidPosition, nereidVelocity);
+	
+	private Vector neptunePosition = new Vector(), neptuneVelocity = new Vector();
+	
+	private StateVector neptuneStateVector = new StateVector(neptunePosition, neptuneVelocity);
 
 	public StateVector getStateVector(double time)
 			throws JPLEphemerisException {
-		getStateVector(time, statevector);
-		return statevector;
+		neptune.getStateVector(time, neptuneStateVector);
+		
+		getStateVector(time, nereidStateVector);
+		
+		nereidStateVector.add(neptuneStateVector);
+		
+		return nereidStateVector;
 	}
 
 	public void getStateVector(double time, StateVector sv)
 			throws JPLEphemerisException {
-		Vector position = statevector.getPosition();
-		Vector velocity = statevector.getVelocity();
+		neptune.getStateVector(time, neptuneStateVector);
+		
+		Vector position = sv.getPosition();
+		Vector velocity = sv.getVelocity();
+		
 		calculatePlanetocentricPositionAndVelocity(time, position, velocity);
+		
+		position.multiplyBy(AU);
+		velocity.multiplyBy(AU);
+		
+		sv.add(neptuneStateVector);
 	}
 
 	public Vector getPosition(double time) throws JPLEphemerisException {
-		Vector position = statevector.getPosition();
-		getPosition(time, position);
-		return position;
+		neptune.getPosition(time, neptunePosition);
+		
+		getPosition(time, nereidPosition);
 
+		nereidPosition.add(neptunePosition);
+		
+		return nereidPosition;
 	}
 
-	public void getPosition(double time, Vector v)
+	public void getPosition(double time, Vector p)
 			throws JPLEphemerisException {
-		Vector position = statevector.getPosition();
-		calculatePlanetocentricPositionAndVelocity(time, position, null);
-		v.copy(position);
+		neptune.getPosition(time, neptunePosition);
+		
+		calculatePlanetocentricPositionAndVelocity(time, p, null);
+		
+		p.multiplyBy(AU);
+		
+		p.add(neptunePosition);
 	}
 
 	/*
@@ -241,15 +269,15 @@ public class Nereid implements MovingPoint {
 	private static double EARLIEST_DATE = 2451545.0 - 200.0 * 365.25, LATEST_DATE = 2451545.0 + 200.0 * 365.25;
 
 	public boolean isValidDate(double time) {
-		return time >= EARLIEST_DATE && time <= LATEST_DATE;
+		return time >= EARLIEST_DATE && time <= LATEST_DATE && ephemeris.isValidDate(time);
 	}
 	
 	public double getEarliestDate() {
-		return EARLIEST_DATE;
+		return Math.max(EARLIEST_DATE, ephemeris.getEarliestDate());
 	}
 	
 	public double getLatestDate() {
-		return LATEST_DATE;
+		return Math.min(LATEST_DATE,  ephemeris.getLatestDate());
 	}
 
 	/*
@@ -267,12 +295,8 @@ public class Nereid implements MovingPoint {
 	public int getBodyCode() {
 		return 802;
 	}
-
-	/*
-	 * There is no JPL ephemeris for this object.
-	 */
 	
 	public JPLEphemeris getEphemeris() {
-		return null;
+		return ephemeris;
 	}
 }
