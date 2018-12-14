@@ -73,6 +73,8 @@ public class Nereid implements MovingPoint {
 	
 	private final int MAX_KEPLER_ITERATIONS = 50;
 	
+	public static final int BODY_CODE = 802;
+	
 	/*
 	 * JPL ephemeris object for calculating the position of Neptune.
 	 */
@@ -293,7 +295,7 @@ public class Nereid implements MovingPoint {
 	 */
 	
 	public int getBodyCode() {
-		return 802;
+		return BODY_CODE;
 	}
 	
 	public JPLEphemeris getEphemeris() {
