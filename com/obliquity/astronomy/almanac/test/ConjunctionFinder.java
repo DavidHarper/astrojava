@@ -347,7 +347,8 @@ public class ConjunctionFinder {
 					
 					AstronomicalDate ad = new AstronomicalDate(tExact);
 					
-					ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %6.1f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), dY, dLambda);
+					ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %6.1f  %7.4f  %7.4f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
+							dY, dLambda, apTarget1.getGeometricDistance(), apTarget2.getGeometricDistance());
 				}
 			}
 			
