@@ -267,6 +267,19 @@ public class TestApparentPlace {
 		ps.print(formatDegrees.format(xd) + " " + formatMinutes.format(xm) + " " + formatSeconds.format(x));
 	}
 	
+	private static final SimpleDateFormat datefmtOut = new SimpleDateFormat(
+			"yyyy-MM-dd HH:mm:ss");
+	
+	private static void printDate(double t, PrintStream ps) {
+		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
+
+		long ticks = (long) dticks;
+
+		Date date = new Date(ticks);
+
+		ps.print(datefmtOut.format(date));
+	}
+	
 	private static void displayApparentPlaceEquatorial(double t, ApparentPlace ap, int epoch, PrintStream ps) {
 		double ra = Double.NaN;
 		double dec = Double.NaN;
@@ -294,7 +307,11 @@ public class TestApparentPlace {
 		if (ra < 0.0)
 			ra += 24.0;
 
-		ps.print(dfmtb.format(t));
+		ps.print(dfmta.format(t));
+		
+		ps.print(" ");
+		
+		printDate(t, ps);
 		
 		ps.print(" ");
 		
@@ -352,10 +369,14 @@ public class TestApparentPlace {
 		if (lambda < 0.0)
 			lambda += 360.0;
 		
-		ps.print(dfmtb.format(t));
+		ps.print(dfmta.format(t));
 		
 		ps.print(" ");
 		
+		printDate(t, ps);
+		
+		ps.print(" ");
+	
 		printAngle(lambda, ifmtb, ifmta, dfmta, ps, false);
 		
 		ps.print("  ");
