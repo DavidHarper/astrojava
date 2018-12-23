@@ -48,6 +48,10 @@ public class TestApparentPlace {
 	
 	private static final int EQUATORIAL = 0;
 	private static final int ECLIPTIC = 1;
+	
+	private static final int TRUE = 0;
+	private static final int MEAN = 1;
+	private static final int J2000 = 2;
 
 	public static void main(String args[]) {
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -58,6 +62,7 @@ public class TestApparentPlace {
 		String enddate = null;
 		String stepsize = null;
 		int referenceSystem = EQUATORIAL;
+		int epoch = TRUE;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -74,6 +79,12 @@ public class TestApparentPlace {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-mean"))
+				epoch = MEAN;
+			
+			if (args[i].equalsIgnoreCase("-j2000"))
+				epoch = J2000;
 			
 			if (args[i].equalsIgnoreCase("-ecliptic"))
 				referenceSystem = ECLIPTIC;
@@ -164,7 +175,7 @@ public class TestApparentPlace {
 			for (double t = jdstart; t <= jdfinish; t += jdstep) {
 				ap.calculateApparentPlace(t);
 				if (!timingTest)
-					displayApparentPlace(t, ap, referenceSystem, System.out);
+					displayApparentPlace(t, ap, referenceSystem, epoch, System.out);
 				nSteps++;
 			}
 		} catch (JPLEphemerisException jplee) {
@@ -221,14 +232,14 @@ public class TestApparentPlace {
 	}
 
 	private static void displayApparentPlace(double t, ApparentPlace ap, int referenceSystem,
-			PrintStream ps) {
+			int epoch, PrintStream ps) {
 		switch (referenceSystem) {
 		case EQUATORIAL:
-			displayApparentPlaceEquatorial(t, ap, ps);
+			displayApparentPlaceEquatorial(t, ap, epoch, ps);
 			break;
 			
 		case ECLIPTIC:
-			displayApparentPlaceEcliptic(t, ap, ps);
+			displayApparentPlaceEcliptic(t, ap, epoch, ps);
 			break;
 		}
 	}
@@ -256,66 +267,80 @@ public class TestApparentPlace {
 		ps.print(formatDegrees.format(xd) + " " + formatMinutes.format(xm) + " " + formatSeconds.format(x));
 	}
 	
-	private static void displayApparentPlaceEquatorial(double t, ApparentPlace ap, PrintStream ps) {
-		double ra = ap.getRightAscensionOfDate() * 12.0 / Math.PI;
-		double dec = ap.getDeclinationOfDate() * 180.0 / Math.PI;
+	private static void displayApparentPlaceEquatorial(double t, ApparentPlace ap, int epoch, PrintStream ps) {
+		double ra = Double.NaN;
+		double dec = Double.NaN;
+		
+		switch (epoch) {
+		case TRUE:
+			ra = ap.getRightAscensionOfDate();
+			dec = ap.getDeclinationOfDate();
+			break;
+			
+		case MEAN:
+			ra = ap.getMeanRightAscension();
+			dec = ap.getMeanDeclination();
+			break;
+			
+		case J2000:
+			ra = ap.getRightAscensionJ2000();
+			dec = ap.getDeclinationJ2000();
+			break;
+		}
+		
+		ra *= 12.0 / Math.PI;
+		dec *= 180.0 / Math.PI;
 
 		if (ra < 0.0)
 			ra += 24.0;
 
-		ps.println(dfmtb.format(t));
+		ps.print(dfmtb.format(t));
 		
-		ps.print("   True RA: ");
-		
-		printAngle(ra, ifmta, ifmta, dfmta, ps, false);
-		
-		ps.println();
-		
-		ps.print("   Mean RA: ");
-
-		ra = ap.getMeanRightAscension() * 12.0 / Math.PI;
-
-		if (ra < 0.0)
-			ra += 24.0;
+		ps.print(" ");
 		
 		printAngle(ra, ifmta, ifmta, dfmta, ps, false);
-		
-		ps.println();
-		
-		ps.print("  True Dec: ");
+				
+		ps.print(" ");
 		
 		printAngle(dec, ifmta, ifmta, dfmtb, ps, true);
 		
-		ps.println();
+		ps.print(" ");
 		
-		ps.print("  Mean Dec: ");
+		ps.print(dfmtc.format(ap.getGeometricDistance()));
 		
-		dec = ap.getMeanDeclination() * 180.0 / Math.PI;
+		ps.print(" ");
 		
-		printAngle(dec, ifmta, ifmta, dfmtb, ps, true);
-		
-		ps.println();
-		
-		ps.print("   Geometric distance: ");
-		
-		ps.println(dfmtc.format(ap.getGeometricDistance()));
-		
-		ps.print("  Light-path distance: ");
-		
-		ps.println(dfmtc.format(ap.getLightPathDistance()));
+		ps.print(dfmtc.format(ap.getLightPathDistance()));
 		
 		ps.println();
 	}
 	
-	private static void displayApparentPlaceEcliptic(double t, ApparentPlace ap, PrintStream ps) {
+	private static void displayApparentPlaceEcliptic(double t, ApparentPlace ap, int epoch, PrintStream ps) {
 		double obliquity = erm.meanObliquity(t);
 		
 		erm.nutationAngles(t, na);
 		
 		obliquity += na.getDeps();
 		
-		double ra = ap.getRightAscensionOfDate();
-		double dec = ap.getDeclinationOfDate();
+		double ra = Double.NaN;
+		double dec = Double.NaN;
+		
+		switch (epoch) {
+		case TRUE:
+			ra = ap.getRightAscensionOfDate();
+			dec = ap.getDeclinationOfDate();
+			break;
+			
+		case MEAN:
+			ra = ap.getMeanRightAscension();
+			dec = ap.getMeanDeclination();
+			break;
+			
+		case J2000:
+			ra = ap.getRightAscensionJ2000();
+			dec = ap.getDeclinationJ2000();
+			break;
+		}
 		
 		double x = Math.cos(dec) * Math.cos(ra);
 		double y = Math.sin(obliquity) * Math.sin(dec) + Math.cos(obliquity) * Math.cos(dec) * Math.sin(ra);
@@ -358,6 +383,11 @@ public class TestApparentPlace {
 		System.err.println();
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-step\t\tStep size (days)");
+		System.err.println();
+		System.err.println("\t-true\t\tDisplay true coordinates of date [this is the default]");
+		System.err.println("\t-mean\t\tDisplay mean coordinates of date");
+		System.err.println("\t-j2000\t\tDisplay coordinates in J2000 reference system");
+		System.err.println();
 		System.err.println("\t-ecliptic\tDisplay longitude and latitude on the mean ecliptic of date");
 	}
 }
