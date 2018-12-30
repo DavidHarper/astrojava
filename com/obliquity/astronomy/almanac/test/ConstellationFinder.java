@@ -263,20 +263,27 @@ public class ConstellationFinder {
 		return -1;
 	}
 	
-	public static String getZone(double ra, double dec) {
-		dec *= 180.0/Math.PI;
+	/*
+	 * IMPORTANT: The input Right Ascension and Declination must be referred
+	 * to the equator and equinox of B1875, as this is the coordinate system
+	 * in which the Delporte constellation boundaries were defined.  If necessary,
+	 * apply precession to convert your RA and Dec to B1875.
+	 */
+	
+	public static String getZone(double ra1875, double dec1875) {
+		dec1875 *= 180.0/Math.PI;
 		
-		int j0 = findFirstZone(dec);
+		int j0 = findFirstZone(dec1875);
 		
-		ra *= 12.0/Math.PI;
+		ra1875 *= 12.0/Math.PI;
 		
-		ra %= 24.0;
+		ra1875 %= 24.0;
 		
-		while (ra < 0.0)
-			ra += 24.0;
+		while (ra1875 < 0.0)
+			ra1875 += 24.0;
 		
 		for (int j = j0; j < zoneData.length; j++)
-			if (zoneData[j][0] <= ra && ra <= zoneData[j][1])
+			if (zoneData[j][0] <= ra1875 && ra1875 <= zoneData[j][1])
 				return zoneName[j];
 		
 		// This should never happen
