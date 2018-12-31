@@ -24,6 +24,10 @@
 
 package com.obliquity.astronomy.almanac.test;
 
+import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
+import com.obliquity.astronomy.almanac.Matrix;
+import com.obliquity.astronomy.almanac.Vector;
+
 /*
  * This class uses data and methods from:
  * 
@@ -289,4 +293,36 @@ public class ConstellationFinder {
 		// This should never happen
 		return null;
 	}
+	
+	private static Matrix precessJ2000toB1875 = null;
+ 
+	static {
+		IAUEarthRotationModel erm = new IAUEarthRotationModel();
+		double epochJ2000 = erm.JulianEpoch(2000.0);
+		double epochB1875 = erm.BesselianEpoch(1875.0);
+		precessJ2000toB1875 = new Matrix();
+		erm.precessionMatrix(epochJ2000, epochB1875, precessJ2000toB1875);
+	}
+	
+	/*
+	 * This method is provided as a convenience so that coordinates can be
+	 * passed in the J2000 (ICRF) reference frame.
+	 */
+	
+	public static String getZoneJ2000(double ra2000, double dec2000) {
+		Vector dc = new Vector(Math.cos(dec2000) * Math.cos(ra2000), Math.cos(dec2000) * Math.sin(ra2000), Math.sin(dec2000));
+		dc.multiplyBy(precessJ2000toB1875);
+
+		double ra1875 = Math.atan2(dc.getY(), dc.getX());
+
+		while (ra1875 < 0.0)
+			ra1875 += 2.0 * Math.PI;
+
+		double aux = Math.sqrt(dc.getX() * dc.getX() + dc.getY() * dc.getY());
+
+		double dec1875 = Math.atan2(dc.getZ(), aux);
+		
+		return getZone(ra1875, dec1875);
+	}
+
 }
