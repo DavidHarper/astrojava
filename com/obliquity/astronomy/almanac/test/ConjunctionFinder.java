@@ -236,7 +236,19 @@ public class ConjunctionFinder {
 				"\t-enddate\tEnd date",
 				"",
 				"OPTIONAL PARAMETERS",
-				"\t-longitude\tUse ecliptic longitude in place of Right Ascension"
+				"\t-longitude\tUse ecliptic longitude in place of Right Ascension",
+				"",
+				"OUTPUT FORMAT",
+				"\tEach line gives the date and time at conjunction in this format:",
+				"",
+				"\tYYYY MM DD hh:mm dY el1 gd1 gd2",
+				"",
+				"where",
+				"",
+				"\tdY\tDifference in ecliptic latitude in the sense body2-body1 (or declination if -longitude was specified)",
+				"\tel1\tEcliptic elongation of body 1 from the Sun",
+				"\tgd1\tGeometric distance of body 1",
+				"\tgd2\tGeometric distance of body 2"
 		};
 		
 		for (String line : lines)
