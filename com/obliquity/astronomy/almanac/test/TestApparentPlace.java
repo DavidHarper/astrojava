@@ -150,8 +150,8 @@ public class TestApparentPlace {
 
 		if (kBody == JPLEphemeris.MOON)
 			planet = new MoonCentre(ephemeris);
-		else if (kBody == Nereid.BODY_CODE)
-			planet = new Nereid(ephemeris);
+		else if (kBody == NereidJacobson2009.BODY_CODE)
+			planet = new NereidJacobson2009(ephemeris);
 		else
 			planet = new PlanetCentre(ephemeris, kBody);
 
@@ -226,7 +226,7 @@ public class TestApparentPlace {
 			return JPLEphemeris.PLUTO;
 		
 		if (bodyname.equalsIgnoreCase("nereid"))
-			return Nereid.BODY_CODE;
+			return NereidJacobson2009.BODY_CODE;
 
 		return -1;
 	}

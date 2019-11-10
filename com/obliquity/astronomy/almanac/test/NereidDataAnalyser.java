@@ -159,7 +159,7 @@ public class NereidDataAnalyser {
 		JPLEphemeris ephemeris =  new JPLEphemeris(ephemerisFilename, jdstart - 1.0,
 					jdfinish + 1.0);
 
-		MovingPoint nereid = new Nereid(ephemeris);
+		MovingPoint nereid = new NereidJacobson2009(ephemeris);
 		
 		EarthCentre earth = new EarthCentre(ephemeris);
 

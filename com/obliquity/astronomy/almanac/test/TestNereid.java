@@ -70,7 +70,7 @@ public class TestNereid {
 	 */
 	
 	public void run(JPLEphemeris ephemeris) throws JPLEphemerisException, IOException {
-		Nereid nereid = new Nereid(ephemeris);
+		NereidJacobson2009 nereid = new NereidJacobson2009(ephemeris);
 		
 		Vector p = new Vector();
 		

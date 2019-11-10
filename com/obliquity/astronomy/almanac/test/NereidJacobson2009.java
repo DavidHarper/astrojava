@@ -37,7 +37,7 @@ import com.obliquity.astronomy.almanac.Vector;
  * 
  */
 
-public class Nereid implements MovingPoint {
+public class NereidJacobson2009 implements MovingPoint {
 	/*
 	 * Mean orbital elements of Nereid, taken from Table 6 of Jacobson (2009).
 	 * 
@@ -108,7 +108,7 @@ public class Nereid implements MovingPoint {
 		P2 = Vector.linearCombination(M1, -sinIncl, P1, cosIncl);
 	}
 	
-	public Nereid(JPLEphemeris ephemeris) {
+	public NereidJacobson2009(JPLEphemeris ephemeris) {
 		this.ephemeris = ephemeris;
 		AU = 1.0 / ephemeris.getAU();
 		neptune = new PlanetCentre(ephemeris, JPLEphemeris.NEPTUNE);
