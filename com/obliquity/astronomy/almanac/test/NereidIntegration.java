@@ -65,6 +65,8 @@ public class NereidIntegration implements MovingPoint {
 	private double AU;
 	private PlanetCentre neptune;
 	
+	private boolean debug = Boolean.getBoolean("nereid.debug");
+	
 	public NereidIntegration(String filename, JPLEphemeris ephemeris) throws IOException {
 		this(new FileInputStream(filename), ephemeris);
 	}
@@ -117,14 +119,14 @@ public class NereidIntegration implements MovingPoint {
 		if (line == null)
 			return null;
 		
-		String[] words = line.split("\\s+");
+		String[] words = line.trim().split("\\s+");
 		
 		if (words == null || words.length < 3)
 			return null;
 		
-		try {
-			NereidChebyshevData data = new NereidChebyshevData();
+		NereidChebyshevData data = new NereidChebyshevData();
 
+		try {
 			data.jdStart = Double.parseDouble(words[0]);
 			data.jdEnd = Double.parseDouble(words[1]);
 			int nCoeffs = Integer.parseInt(words[2]);
@@ -137,20 +139,20 @@ public class NereidIntegration implements MovingPoint {
 				if (line == null)
 					return null;
 				
-				words = line.split("\\s+");
+				words = line.trim().split("\\s+");
 				
 				if (words == null || words.length < 3)
 					return null;
 
 				for (int j = 0; j < 3; j++)
-					data.coeffs[i][j] = Double.parseDouble(words[j]);
+					data.coeffs[j][i] = Double.parseDouble(words[j]);
 			}
-			
-			return data;
 		}
 		catch (NumberFormatException nfe) {
 			return null;
 		}	
+		
+		return data;
 	}
 	
 	public void calculatePlanetocentricPositionAndVelocity(double time, Vector position, Vector velocity) throws JPLEphemerisException {
