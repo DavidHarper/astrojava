@@ -91,7 +91,9 @@ public class NereidIntegration implements MovingPoint {
 				break;
 		}
 		
-		chebyshevData = dataList.toArray(chebyshevData);
+		chebyshevData = new NereidChebyshevData[dataList.size()];
+		
+		dataList.toArray(chebyshevData);
 		
 		jdEarliest = chebyshevData[0].jdStart;
 		jdLatest = chebyshevData[chebyshevData.length - 1].jdEnd;
