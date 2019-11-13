@@ -75,6 +75,13 @@ public class NereidDataAnalyser {
 			System.err.println("You must specify the ephemeris file using -Dephemeris=<filename>");
 			System.exit(1);
 		}
+		
+		String chebyshevFilename = System.getProperty("chebyshev");
+		
+		if (chebyshevFilename == null) {
+			System.err.println("You must specify the Chebyshev data file using -Dchebyshev=<filename>");
+			System.exit(1);
+		}
 			
 		NereidDataAnalyser analyser = new NereidDataAnalyser();
 		
@@ -159,7 +166,9 @@ public class NereidDataAnalyser {
 		JPLEphemeris ephemeris =  new JPLEphemeris(ephemerisFilename, jdstart - 1.0,
 					jdfinish + 1.0);
 
-		MovingPoint nereid = new NereidJacobson2009(ephemeris);
+		//MovingPoint nereid = new NereidJacobson2009(ephemeris);
+		
+		MovingPoint nereid = new NereidIntegration(System.getProperty("chebyshev"), ephemeris);
 		
 		EarthCentre earth = new EarthCentre(ephemeris);
 
