@@ -24,10 +24,13 @@
 
 package com.obliquity.astronomy.almanac.test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
+import com.obliquity.astronomy.almanac.Vector;
 
 public class TestNereid2 {
 	public static void main(String[] args) {
@@ -55,16 +58,48 @@ public class TestNereid2 {
 
 		try {
 			JPLEphemeris ephemeris = new JPLEphemeris(ephemerisFilename);
-			NereidIntegration nereid = new NereidIntegration(chebyshevFilename, ephemeris);
-			tester.run(nereid);
+			
+			NereidIntegration nereid1 = new NereidIntegration(chebyshevFilename, ephemeris);
+			
+			NereidJacobson2009 nereid2 = new NereidJacobson2009(ephemeris);
+			
+			tester.run(nereid1, nereid2);
 		} catch (JPLEphemerisException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void run(NereidIntegration nereid) {
-		// TODO Auto-generated method stub
+	private void run(NereidIntegration nereid1, NereidJacobson2009 nereid2) throws IOException, JPLEphemerisException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		
+		Vector P1 = new Vector(), V1 = new Vector(), P2 = new Vector(), V2 = new Vector();
+		
+		String format = "%12.3f  %12.3f  %12.3f    %12.3f\n";
+		
+		while (true) {
+			System.out.print("> ");
+			
+			String line = br.readLine();
+			
+			if (line == null)
+				return;
+			
+			double jd = Double.parseDouble(line);
+			
+			nereid1.calculatePlanetocentricPositionAndVelocity(jd, P1, V1);
+			
+			nereid2.calculatePlanetocentricPositionAndVelocity(jd, P2, V2);
+			
+			System.out.printf(format, P1.getX(), P1.getY(), P1.getZ(), P1.magnitude());
+			System.out.printf(format, P2.getX(), P2.getY(), P2.getZ(), P2.magnitude());
+			
+			System.out.println();
+			
+			System.out.printf(format, V1.getX(), V1.getY(), V1.getZ(), V1.magnitude());
+			System.out.printf(format, V2.getX(), V2.getY(), V2.getZ(), V2.magnitude());
+			
+			System.out.println();
+		}
 	}
 
 	public static void showUsage() {
