@@ -167,7 +167,7 @@ public class NereidIntegration implements MovingPoint {
 		if (data == null)
 			throw new JPLEphemerisException("Failed to find Chebyshev data for date");
 		
-		double x = 1.0 * 2.0 * (time - data.jdStart)/(data.jdEnd - data.jdStart);
+		double x = 2.0 * (time - data.jdStart)/(data.jdEnd - data.jdStart) - 1.0;
 		
 		int nCoeffs = data.coeffs[0].length;
 		
@@ -200,6 +200,8 @@ public class NereidIntegration implements MovingPoint {
 				
 				for (int k = 1; k < nCoeffs; k++)
 					vel[i] += data.coeffs[i][k] * ChebyV[k];
+				
+				vel[i] *= 2.0/(data.jdEnd - data.jdStart);
 			}
 		}
 		
