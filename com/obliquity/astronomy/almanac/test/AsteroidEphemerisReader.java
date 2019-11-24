@@ -24,10 +24,10 @@
 
 package com.obliquity.astronomy.almanac.test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.List;
 import static java.lang.Math.*;
@@ -107,17 +107,25 @@ public class AsteroidEphemerisReader {
 	}
 	
 	private static AsteroidEphemerisRecord[] loadEphemerisRecords(InputStream is) throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		LineNumberReader lnr = new LineNumberReader(new InputStreamReader(is));
 		
 		List<AsteroidEphemerisRecord> recordList = new ArrayList<AsteroidEphemerisRecord>();
 		
 		while (true) {
-			String line = br.readLine();
+			String line = lnr.readLine();
 			
 			if (line == null)
 				break;
 			
-			AsteroidEphemerisRecord record = parseRecord(line);
+			AsteroidEphemerisRecord record = null;
+			
+			try {
+				record = parseRecord(line);
+			}
+			catch (NumberFormatException e) {
+				System.err.println("Caught NumberFormatException at line " + lnr.getLineNumber());
+				throw e;
+			}
 			
 			if (record != null)
 				recordList.add(record);
