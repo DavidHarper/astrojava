@@ -29,10 +29,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import static java.lang.Math.*;
 
+import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.AstronomicalDate;
+import com.obliquity.astronomy.almanac.EarthCentre;
+import com.obliquity.astronomy.almanac.EarthRotationModel;
+import com.obliquity.astronomy.almanac.HorizontalCoordinates;
+import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
+import com.obliquity.astronomy.almanac.LocalVisibility;
+import com.obliquity.astronomy.almanac.MoonCentre;
+import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.Place;
+import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.Vector;
 
 public class GreatCircleFlight {
@@ -169,7 +178,11 @@ public class GreatCircleFlight {
 	
 	private void run(JPLEphemeris ephemeris, Place startPlace,
 			AstronomicalDate startDate, Place endPlace,
-			AstronomicalDate endDate, int targetID) {
+			AstronomicalDate endDate, int targetID) throws JPLEphemerisException {
+		ApparentPlace ap = getApparentPlace(ephemeris, targetID);
+		
+		LocalVisibility lv = new LocalVisibility();
+		
 		double latitude1 = startPlace.getLatitude();
 		double longitude1 = startPlace.getLongitude();
 		
@@ -190,21 +203,66 @@ public class GreatCircleFlight {
 		
 		double theta = acos(q);
 		
+		double flightDuration = endDate.getJulianDate() - startDate.getJulianDate();
+		
+		double angularSpeed = theta/flightDuration;
+		
+		// Take 10-minute steps
+		double tStep = 1.0/144.0;
+		
+		double jd0 = startDate.getJulianDate();
+		
 		if (debug)
 			System.err.printf("Arc is %6.2f degrees, %6.0f km\n", theta * 180.0/PI, theta * EARTH_RADIUS);
 		
-		for (double t = 0.0; t < theta; t += 1.0/64.0) {
-			double x = cos(t);
-			double y = sin(t);
+		for (double t = 0.0; t < flightDuration; t += tStep) {
+			double arc = t * angularSpeed;
+			
+			double x = cos(arc);
+			double y = sin(arc);
+			
+			double jd = jd0 + t;
+			
+			AstronomicalDate ad = new AstronomicalDate(jd);
 			
 			Vector v = Vector.linearCombination(vStart, x, vY, y);
 			
-			double longitude = (longitude1 - atan2(v.getY(), v.getX())) * 180.0/PI;
+			double longitude = longitude1 - atan2(v.getY(), v.getX());
 			
-			double latitude = asin(v.getZ()) * 180.0/PI;
+			double latitude = asin(v.getZ());
 			
-			System.out.printf("%8.6f  %7.2f  %7.2f\n", t, longitude, latitude);
+			Place place = new Place(latitude, longitude, 0.0, 0.0);
+			
+			HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(ap,
+					place, jd);
+			
+			System.out.printf("%02d:%02d  %7.2f  %7.2f  %7.2f  %7.2f\n", ad.getHour(), ad.getMinute(),
+					longitude * 180.0/PI, latitude * 180.0/PI,
+					hc.altitude * 180.0/PI, hc.azimuth * 180.0/PI);
 		}
+	}
+
+	private ApparentPlace getApparentPlace(JPLEphemeris ephemeris,
+			int targetID) {
+		MovingPoint planet = null;
+
+		if (targetID == JPLEphemeris.MOON)
+			planet = new MoonCentre(ephemeris);
+		else
+			planet = new PlanetCentre(ephemeris, targetID);
+
+		EarthCentre earth = new EarthCentre(ephemeris);
+
+		MovingPoint sun = null;
+
+		if (targetID == JPLEphemeris.SUN)
+			sun = planet;
+		else
+			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+
+		EarthRotationModel erm = new IAUEarthRotationModel();
+
+		return new ApparentPlace(earth, planet, sun, erm);
 	}
 
 	public static void showUsage(String message) {
