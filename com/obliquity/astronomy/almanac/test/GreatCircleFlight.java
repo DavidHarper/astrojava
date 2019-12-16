@@ -27,11 +27,13 @@ package com.obliquity.astronomy.almanac.test;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.lang.Math.*;
 
 import com.obliquity.astronomy.almanac.AstronomicalDate;
 import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.Place;
+import com.obliquity.astronomy.almanac.Vector;
 
 public class GreatCircleFlight {
 	final double EARTH_RADIUS = 6378.14;
@@ -146,10 +148,6 @@ public class GreatCircleFlight {
 		int hour = Integer.parseInt(matcher.group(4));
 		int minute = Integer.parseInt(matcher.group(5));
 		
-		if (debug)
-			System.err.println("parseDate(" + strDateTime + ") => [" + year + ", " + month +
-					", " + day + ", " + hour + ", " + minute + "]");
-		
 		return new AstronomicalDate(year, month, day, hour, minute, 0.0);
 	}
 
@@ -159,8 +157,8 @@ public class GreatCircleFlight {
 		if (words.length != 2)
 			return null;
 		
-		double longitude = -Double.parseDouble(words[0]) * Math.PI/180.0;
-		double latitude = Double.parseDouble(words[1]) * Math.PI/180.0;
+		double longitude = -Double.parseDouble(words[0]) * PI/180.0;
+		double latitude = Double.parseDouble(words[1]) * PI/180.0;
 		
 		return new Place(latitude, longitude, 0.0, 0.0);
 	}
@@ -175,8 +173,38 @@ public class GreatCircleFlight {
 		double latitude1 = startPlace.getLatitude();
 		double longitude1 = startPlace.getLongitude();
 		
+		Vector vStart = new Vector(cos(latitude1) * cos(longitude1), cos(latitude1) * sin(longitude1), sin(latitude1));
+		
 		double latitude2 = endPlace.getLatitude();
 		double longitude2 = endPlace.getLongitude();
+		
+		Vector vEnd = new Vector(cos(latitude2) * cos(longitude2), cos(latitude2) * sin(longitude2), sin(latitude2));
+		
+		Vector vZ = vStart.vectorProduct(vEnd);
+		
+		vZ.normalise();
+		
+		Vector vY = vZ.vectorProduct(vStart);
+
+		double q = vStart.scalarProduct(vEnd);
+		
+		double theta = acos(q);
+		
+		if (debug)
+			System.err.printf("Arc is %6.2f degrees, %6.0f km\n", theta * 180.0/PI, theta * EARTH_RADIUS);
+		
+		for (double t = 0.0; t < theta; t += 1.0/64.0) {
+			double x = cos(t);
+			double y = sin(t);
+			
+			Vector v = Vector.linearCombination(vStart, x, vY, y);
+			
+			double longitude = (longitude1 - atan2(v.getY(), v.getX())) * 180.0/PI;
+			
+			double latitude = asin(v.getZ()) * 180.0/PI;
+			
+			System.out.printf("%8.6f  %7.2f  %7.2f\n", t, longitude, latitude);
+		}
 	}
 
 	public static void showUsage(String message) {
