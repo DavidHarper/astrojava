@@ -53,6 +53,7 @@ public class GreatCircleFlight {
 		String startPosition = null, endPosition = null;
 		String ephemerisFile = null, startDateTime = null, endDateTime = null;
 		String targetBody = null;
+		int step = 10;
 		
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i].toLowerCase()) {
@@ -78,6 +79,10 @@ public class GreatCircleFlight {
 				
 			case "-target":
 				targetBody = args[++i];
+				break;
+				
+			case "-step":
+				step = Integer.parseInt(args[++i]);
 				break;
 				
 			default:
@@ -107,7 +112,7 @@ public class GreatCircleFlight {
 		
 			int targetID = parseTarget(targetBody);
 		
-			gcf.run(ephemeris, startPlace, startDate, endPlace, endDate, targetID);
+			gcf.run(ephemeris, startPlace, startDate, endPlace, endDate, step, targetID);
 		}
 		catch (JPLEphemerisException | IOException e) {
 			e.printStackTrace();
@@ -178,7 +183,7 @@ public class GreatCircleFlight {
 	
 	private void run(JPLEphemeris ephemeris, Place startPlace,
 			AstronomicalDate startDate, Place endPlace,
-			AstronomicalDate endDate, int targetID) throws JPLEphemerisException {
+			AstronomicalDate endDate, int step, int targetID) throws JPLEphemerisException {
 		ApparentPlace ap = getApparentPlace(ephemeris, targetID);
 		
 		LocalVisibility lv = new LocalVisibility();
@@ -207,8 +212,7 @@ public class GreatCircleFlight {
 		
 		double angularSpeed = theta/flightDuration;
 		
-		// Take 10-minute steps
-		double tStep = 1.0/144.0;
+		double tStep = ((double)step)/1440.0;
 		
 		double jd0 = startDate.getJulianDate();
 		
