@@ -43,7 +43,7 @@ import com.obliquity.astronomy.almanac.PlanetCentre;
 
 public class PhenomenaFinder {
 	private enum Mode {
-		CONJUNCTION, OPPOSITION, QUADRATURE
+		CONJUNCTION, OPPOSITION, QUADRATURE_EAST, QUADRATURE_WEST
 	}
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
@@ -56,8 +56,7 @@ public class PhenomenaFinder {
 		datefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
 
 		String filename = null;
-		String body1name = null;
-		String body2name = null;
+		String bodyname = null;
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
@@ -71,14 +70,10 @@ public class PhenomenaFinder {
 				filename = args[++i];
 				break;
 				
-			case "-body1":
-				body1name = args[++i];
+			case "-body":
+				bodyname = args[++i];
 				break;
-				
-			case "-body2":
-				body2name = args[++i];
-				break;
-				
+								
 			case "-startdate":
 				startdate = args[++i];
 				break;
@@ -103,8 +98,12 @@ public class PhenomenaFinder {
 				mode = Mode.OPPOSITION;
 				break;
 				
-			case "-quadrature":
-				mode = Mode.QUADRATURE;
+			case "-quadrature-east":
+				mode = Mode.QUADRATURE_EAST;
+				break;
+				
+			case "-quadrature-west":
+				mode = Mode.QUADRATURE_WEST;
 				break;
 				
 			default:
@@ -114,28 +113,16 @@ public class PhenomenaFinder {
 			}
 		}
 
-		if (filename == null || body1name == null || startdate == null
+		if (filename == null || bodyname == null || startdate == null
 				|| enddate == null) {
 			showUsage();
 			System.exit(1);
 		}
 
-		int kBody1 = parseBody(body1name);
+		int kBody = parseBody(bodyname);
 
-		if (kBody1 < 0) {
-			System.err.println("Unknown name for -body1: \"" + body1name + "\"");
-			System.exit(1);
-		}
-
-		int kBody2 = body2name != null ? parseBody(body2name) : JPLEphemeris.SUN;
-
-		if (kBody2 < 0) {
-			System.err.println("Unknown name for -body2: \"" + body2name + "\"");
-			System.exit(1);
-		}
-		
-		if (kBody1 == kBody2) {
-			System.err.println("Target bodies are the same.");
+		if (kBody < 0) {
+			System.err.println("Unknown name for -body1: \"" + bodyname + "\"");
 			System.exit(1);
 		}
 
@@ -182,36 +169,18 @@ public class PhenomenaFinder {
 			System.exit(1);
 		}
 
-		MovingPoint planet1 = null;
-
-		if (kBody1 == JPLEphemeris.MOON)
-			planet1 = new MoonCentre(ephemeris);
-		else
-			planet1 = new PlanetCentre(ephemeris, kBody1);
-
-		MovingPoint planet2 = null;
-
-		if (kBody2 == JPLEphemeris.MOON)
-			planet2 = new MoonCentre(ephemeris);
-		else
-			planet2 = new PlanetCentre(ephemeris, kBody2);
+		MovingPoint planet = (kBody == JPLEphemeris.MOON) ?
+			new MoonCentre(ephemeris) : new PlanetCentre(ephemeris, kBody);
 
 		EarthCentre earth = new EarthCentre(ephemeris);
 
-		MovingPoint sun = null;
-
-		if (kBody1 == JPLEphemeris.SUN)
-			sun = planet1;
-		else if (kBody2 == JPLEphemeris.SUN)
-			sun = planet2;
-		else
-			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+		MovingPoint sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 
 		EarthRotationModel erm = new IAUEarthRotationModel();
 
-		ApparentPlace apTarget1 = new ApparentPlace(earth, planet1, sun, erm);
+		ApparentPlace apTarget1 = new ApparentPlace(earth, sun, sun, erm);
 
-		ApparentPlace apTarget2 = new ApparentPlace(earth, planet2, sun, erm);
+		ApparentPlace apTarget2 = new ApparentPlace(earth, planet, sun, erm);
 
 		LongitudeDifference ldiff = null;
 		
@@ -253,21 +222,22 @@ public class PhenomenaFinder {
 		switch (mode) {
 		case CONJUNCTION:
 			ldiff.setTargetDifference(0.0);
-			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
 			break;
 			
 		case OPPOSITION:
 			ldiff.setTargetDifference(Math.PI);
-			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
 			break;
 			
-		case QUADRATURE:
+		case QUADRATURE_EAST:
 			ldiff.setTargetDifference(0.5 * Math.PI);
-			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
+			break;
+			
+		case QUADRATURE_WEST:
 			ldiff.setTargetDifference(-0.5 * Math.PI);
-			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
 			break;
 		}
+		
+		findPhenomena(ldiff, jdstart, jdfinish, jdstep);
 	}
 	
 	public void findPhenomena(LongitudeDifference ldiff, double jdstart, double jdfinish,
@@ -325,12 +295,15 @@ public class PhenomenaFinder {
 	public static void showUsage() {
 		String[] lines = { "MANDATORY PARAMETERS",
 				"\t-ephemeris\tName of ephemeris file",
-				"\t-body1\t\tName of body 1",
+				"\t-body\t\tName of body 1",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
 				"",
 				"OPTIONAL PARAMETERS",
-				"\t-body2\t\tName of body 2 (Sun will be assumed if absent)",
+				"-conjunction\tFind dates of conjunction",
+				"-opposition\tFind dates of opposition",
+				"-quadrature-east\tFind dates of east quadrature",
+				"-quadrature-west\tFind dates of west quadrature"
 		};
 		
 		for (String line : lines)
