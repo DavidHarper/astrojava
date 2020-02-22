@@ -30,6 +30,11 @@ import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 
 public class LongitudeDifference implements TargetFunction {
+	public static final int IN_LONGITUDE = 1;
+	public static final int IN_RIGHT_ASCENSION = 2;
+	
+	private int mode = IN_LONGITUDE;
+	
 	private static final double TWO_PI = 2.0 * Math.PI;
 	
 	private ApparentPlace apTarget1 = null, apTarget2 = null;
@@ -49,6 +54,17 @@ public class LongitudeDifference implements TargetFunction {
 	
 	public LongitudeDifference(ApparentPlace apTarget1, ApparentPlace apTarget2) throws PhenomenaException {
 		this(apTarget1, apTarget2, 0.0);
+	}
+	
+	public void setMode(int mode) throws PhenomenaException {
+		if (mode != IN_LONGITUDE && mode != IN_RIGHT_ASCENSION)
+			throw new PhenomenaException("Invalid mode");
+		
+		this.mode = mode;
+	}
+	
+	public int getMode() {
+		return mode;
 	}
 	
 	private double calculateEclipticLongitude(double ra, double dec, double t) {
@@ -83,11 +99,14 @@ public class LongitudeDifference implements TargetFunction {
 		
 		double dec1 = apTarget1.getDeclinationOfDate();
 		
-		double lambda1 = calculateEclipticLongitude(ra1, dec1, t);
-		
 		double ra2 = apTarget2.getRightAscensionOfDate();
 		
 		double dec2 = apTarget2.getDeclinationOfDate();
+		
+		if (mode == IN_RIGHT_ASCENSION)
+			return reduceAngle(ra2 - ra1 - targetDifference);
+		
+		double lambda1 = calculateEclipticLongitude(ra1, dec1, t);
 		
 		double lambda2 = calculateEclipticLongitude(ra2, dec2, t);
 		

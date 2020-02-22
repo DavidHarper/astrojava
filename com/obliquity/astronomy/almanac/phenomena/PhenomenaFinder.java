@@ -57,6 +57,7 @@ public class PhenomenaFinder {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		boolean inRA = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -76,6 +77,9 @@ public class PhenomenaFinder {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-ra"))
+				inRA = true;
 		}
 
 		if (filename == null || body1name == null || body2name == null || startdate == null
@@ -181,6 +185,9 @@ public class PhenomenaFinder {
 		
 		try {
 			ldiff = new LongitudeDifference(apTarget1, apTarget2);
+			
+			if (inRA)
+				ldiff.setMode(LongitudeDifference.IN_RIGHT_ASCENSION);
 		} catch (PhenomenaException e1) {
 			e1.printStackTrace();
 			System.exit(1);
@@ -221,7 +228,7 @@ public class PhenomenaFinder {
 				if (changeOfSign(lastDX, dX)) {
 					double tLast = t - jdstep;
 					
-					double tExact = findExactInstant(ldiff, tLast, t);
+					double tExact = findZero(ldiff, tLast, t);
 					
 					AstronomicalDate ad = new AstronomicalDate(tExact);
 					
@@ -237,7 +244,7 @@ public class PhenomenaFinder {
 	// Limit of difference in RA for convergence
 	private final double EPSILON = 0.1 * (Math.PI/180.0)/3600.0;
 	
-	private double findExactInstant(LongitudeDifference ldiff, double t1, double t2) throws JPLEphemerisException {
+	private double findZero(LongitudeDifference ldiff, double t1, double t2) throws JPLEphemerisException {
 		while (true) {
 			double dX1 = ldiff.valueAtTime(t1);
 	
