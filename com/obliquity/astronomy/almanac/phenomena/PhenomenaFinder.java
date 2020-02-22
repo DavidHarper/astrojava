@@ -42,6 +42,10 @@ import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 
 public class PhenomenaFinder {
+	private enum Mode {
+		CONJUNCTION, OPPOSITION, QUADRATURE
+	}
+
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
@@ -58,31 +62,59 @@ public class PhenomenaFinder {
 		String enddate = null;
 		String stepsize = null;
 		boolean inRA = false;
+		
+		Mode mode = Mode.CONJUNCTION;
 
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equalsIgnoreCase("-ephemeris"))
+			switch (args[i].toLowerCase()) {
+			case "-ephemeris":
 				filename = args[++i];
-
-			if (args[i].equalsIgnoreCase("-body1"))
+				break;
+				
+			case "-body1":
 				body1name = args[++i];
-
-			if (args[i].equalsIgnoreCase("-body2"))
+				break;
+				
+			case "-body2":
 				body2name = args[++i];
-
-			if (args[i].equalsIgnoreCase("-startdate"))
+				break;
+				
+			case "-startdate":
 				startdate = args[++i];
+				break;
 
-			if (args[i].equalsIgnoreCase("-enddate"))
+			case "-enddate":
 				enddate = args[++i];
-
-			if (args[i].equalsIgnoreCase("-step"))
+				break;
+				
+			case "-step":
 				stepsize = args[++i];
-			
-			if (args[i].equalsIgnoreCase("-ra"))
+				break;
+				
+			case "-ra":
 				inRA = true;
+				break;
+				
+			case "-conjunction":
+				mode = Mode.CONJUNCTION;
+				break;
+				
+			case "-opposition":
+				mode = Mode.OPPOSITION;
+				break;
+				
+			case "-quadrature":
+				mode = Mode.QUADRATURE;
+				break;
+				
+			default:
+				System.err.println("Unrecognised keyword \"" + args[i] + "\"");
+				showUsage();
+				System.exit(1);
+			}
 		}
 
-		if (filename == null || body1name == null || body2name == null || startdate == null
+		if (filename == null || body1name == null || startdate == null
 				|| enddate == null) {
 			showUsage();
 			System.exit(1);
@@ -95,7 +127,7 @@ public class PhenomenaFinder {
 			System.exit(1);
 		}
 
-		int kBody2 = parseBody(body2name);
+		int kBody2 = body2name != null ? parseBody(body2name) : JPLEphemeris.SUN;
 
 		if (kBody2 < 0) {
 			System.err.println("Unknown name for -body2: \"" + body2name + "\"");
@@ -196,7 +228,7 @@ public class PhenomenaFinder {
 		PhenomenaFinder finder = new PhenomenaFinder();
 		
 		try {
-			finder.run(ldiff, jdstart, jdfinish, jdstep);
+			finder.findPhenomena(ldiff, jdstart, jdfinish, jdstep, mode);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -216,7 +248,29 @@ public class PhenomenaFinder {
 		return true;
 	}
 
-	private void run(LongitudeDifference ldiff, double jdstart, double jdfinish,
+	public void findPhenomena(LongitudeDifference ldiff, double jdstart, double jdfinish,
+			double jdstep, Mode mode) throws JPLEphemerisException {
+		switch (mode) {
+		case CONJUNCTION:
+			ldiff.setTargetDifference(0.0);
+			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
+			break;
+			
+		case OPPOSITION:
+			ldiff.setTargetDifference(Math.PI);
+			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
+			break;
+			
+		case QUADRATURE:
+			ldiff.setTargetDifference(0.5 * Math.PI);
+			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
+			ldiff.setTargetDifference(-0.5 * Math.PI);
+			findPhenomena(ldiff, jdstart, jdfinish, jdstep);
+			break;
+		}
+	}
+	
+	public void findPhenomena(LongitudeDifference ldiff, double jdstart, double jdfinish,
 			double jdstep) throws JPLEphemerisException {
 		double lastDX = Double.NaN;
 		boolean first = true;
@@ -272,9 +326,11 @@ public class PhenomenaFinder {
 		String[] lines = { "MANDATORY PARAMETERS",
 				"\t-ephemeris\tName of ephemeris file",
 				"\t-body1\t\tName of body 1",
-				"\t-body2\t\tName of body 2",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
+				"",
+				"OPTIONAL PARAMETERS",
+				"\t-body2\t\tName of body 2 (Sun will be assumed if absent)",
 		};
 		
 		for (String line : lines)

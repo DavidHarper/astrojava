@@ -67,6 +67,14 @@ public class LongitudeDifference implements TargetFunction {
 		return mode;
 	}
 	
+	public void setTargetDifference(double targetDifference) {
+		this.targetDifference = targetDifference;
+	}
+	
+	public double getTargetDifference() {
+		return targetDifference;
+	}
+	
 	private double calculateEclipticLongitude(double ra, double dec, double t) {
 		double xa = Math.cos(ra) * Math.cos(dec);
 		double ya = Math.sin(ra) * Math.cos(dec);
