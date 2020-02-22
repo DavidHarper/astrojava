@@ -1,6 +1,6 @@
 package com.obliquity.astronomy.almanac;
 
-public class AstronomicalDate {
+public class AstronomicalDate implements Comparable<AstronomicalDate> {
 	private int year, month, day, hour, minute;
 	double second;
 
@@ -208,5 +208,44 @@ public class AstronomicalDate {
 	public boolean equals(AstronomicalDate that) {
 		return this.year == that.year && this.month == that.month && this.day == that.day &&
 				this.hour == that.hour && this.minute == that.minute && Math.abs(this.second - that.second) < 0.01;
+	}
+
+	public int compareTo(AstronomicalDate that) {
+		int d = this.year - that.year;
+		
+		if (d != 0)
+			return d;
+		
+		d = this.month - that.month;
+		
+		if (d != 0)
+			return d;
+		
+		d = this.day - that.day;
+		
+		if (d != 0)
+			return d;
+		
+		d = this.hour - that.hour;
+		
+		if (d != 0)
+			return d;
+		
+		d = this.minute - that.minute;
+		
+		if (d != 0)
+			return d;
+		
+		if (this.second < that.second)
+			return -1;
+		
+		if (this.second > that.second)
+			return 1;
+		
+		return 0;
+	}
+	
+	public String toISO8601String() {
+		return String.format("%04d-%02d-%02dT%02d:%02d:%5.2f", year, month, day, hour, minute, second);
 	}
 }
