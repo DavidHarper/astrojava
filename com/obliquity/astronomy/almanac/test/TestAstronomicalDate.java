@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Random;
 
 import com.obliquity.astronomy.almanac.AstronomicalDate;
@@ -93,6 +94,22 @@ public class TestAstronomicalDate {
 					);
 			
 		}
+		
+		System.out.println();
+		
+		AstronomicalDate[] dates = new AstronomicalDate[100];
+		
+		System.out.println("TEST 3: Sort dates");
+		for (int i = 0; i < 100; i++) {
+			double jd = J2000 + 6.0 * (random.nextDouble() - 0.5) * JULIAN_MILLENNIUM;
+			
+			dates[i] = new AstronomicalDate(jd);
+		}
+		
+		Arrays.sort(dates);
+		
+		for (int i = 0; i < 100; i++)
+			System.out.println(dates[i].toISO8601String());
 	}
 	
 	private int getRandomDay(Random random, int year, int month) {
