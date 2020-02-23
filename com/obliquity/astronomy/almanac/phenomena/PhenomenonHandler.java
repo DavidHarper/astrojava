@@ -24,8 +24,6 @@
 
 package com.obliquity.astronomy.almanac.phenomena;
 
-import com.obliquity.astronomy.almanac.AstronomicalDate;
-
-public interface PhenomenaFinderListener {
-	public void processPhenomenon(AstronomicalDate date);
+public interface PhenomenonHandler {
+	public void handlePhenomenon(Phenomenon phenomenon);
 }
