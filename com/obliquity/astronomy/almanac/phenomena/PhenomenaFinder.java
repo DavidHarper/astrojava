@@ -111,6 +111,14 @@ public class PhenomenaFinder {
 				mode = Type.GREATEST_ELONGATION_WEST;
 				break;
 				
+			case "-stationary-east":
+				mode = Type.STATIONARY_EAST;
+				break;
+				
+			case "-stationary-west":
+				mode = Type.STATIONARY_WEST;
+				break;
+				
 			default:
 				System.err.println("Unrecognised keyword \"" + args[i] + "\"");
 				showUsage();
@@ -219,8 +227,8 @@ public class PhenomenaFinder {
 			break;
 			
 		case STATIONARY_EAST:
-			break;
 		case STATIONARY_WEST:
+			tf = new RightAscensionFunction(apTarget2);
 			break;
 			
 		default:
@@ -259,6 +267,9 @@ public class PhenomenaFinder {
 		} else if (tf instanceof Elongation) {
 			Elongation el = (Elongation)tf;
 			findPhenomena(el, jdstart, jdfinish, jdstep, mode);
+		} else if (tf instanceof RightAscensionFunction) {
+			RightAscensionFunction raf = (RightAscensionFunction)tf;
+			findPhenomena(raf, jdstart, jdfinish, jdstep, mode);
 		}
 	}
 
@@ -321,8 +332,7 @@ public class PhenomenaFinder {
 	
 	public void findPhenomena(Elongation el, double jdstart, double jdfinish,
 			double jdstep, Type mode) throws JPLEphemerisException, PhenomenaException {
-		TargetFunction tf = null;
-		
+	
 		switch (mode) {
 		case CONJUNCTION:
 		case OPPOSITION:
@@ -333,24 +343,16 @@ public class PhenomenaFinder {
 			throw new PhenomenaException("Invalid mode for elongation");
 			
 		case GREATEST_ELONGATION_EAST:
-			tf = el;
+			findPhenomenaFromMaximumOfTargetFunction(el, jdstart, jdfinish, jdstep);
 			break;
 			
 		case GREATEST_ELONGATION_WEST:
-			tf = new TargetFunction() {
-				public double valueAtTime(double t)
-						throws JPLEphemerisException {
-					return Math.abs(el.valueAtTime(t));
-				}				
-			};
-			
+			findPhenomenaFromMinimumOfTargetFunction(el, jdstart, jdfinish, jdstep);
 			break;
 			
 		default:
 			break;
 		}
-		
-		findPhenomenaFromMaximumOfTargetFunction(tf, jdstart, jdfinish, jdstep);
 	}
 	
 	private void findPhenomenaFromMaximumOfTargetFunction(TargetFunction tf, double jdstart, double jdfinish, double jdstep) throws JPLEphemerisException {
@@ -382,6 +384,62 @@ public class PhenomenaFinder {
 	private boolean isMidpointLargest(double[] values) {
 		return values[1] > values[0] && values[1] > values[2];
 	}
+	
+	private void findPhenomenaFromMinimumOfTargetFunction(TargetFunction tf, double jdstart, double jdfinish, double jdstep) throws JPLEphemerisException {
+		double values[] = new double[3];
+		
+		values[0] = tf.valueAtTime(jdstart);
+		values[1] = tf.valueAtTime(jdstart + jdstep);
+		
+		for (double t = jdstart + 2.0 * jdstep; t < jdfinish; t += jdstep) {
+			values[2] = tf.valueAtTime(t);
+			
+			if (isMidpointSmallest(values)) {
+				double ta = t - 2.0 * jdstep;
+				double tb = t - jdstep;
+				double tc = t;
+				
+				double tExact = ExtremumFinder.findMinimum(tf, ta, tb, tc, 1.0e-5);
+				
+				AstronomicalDate ad = new AstronomicalDate(tExact);
+				
+				System.out.printf("%5d %02d %02d %02d:%02d\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute());
+			}
+			
+			values[0] = values[1];
+			values[1] = values[2];
+		}
+	}
+	
+	private boolean isMidpointSmallest(double[] values) {
+		return values[1] < values[0] && values[1] < values[2];
+	}
+	
+	
+	public void findPhenomena(RightAscensionFunction raf, double jdstart, double jdfinish,
+			double jdstep, Type mode) throws JPLEphemerisException, PhenomenaException {		
+		switch (mode) {
+		case CONJUNCTION:
+		case OPPOSITION:
+		case QUADRATURE_EAST:
+		case QUADRATURE_WEST:
+		case GREATEST_ELONGATION_EAST:
+		case GREATEST_ELONGATION_WEST:
+			throw new PhenomenaException("Invalid mode for elongation");
+			
+		case STATIONARY_EAST:
+			findPhenomenaFromMaximumOfTargetFunction(raf, jdstart, jdfinish, jdstep);
+			break;
+			
+		case STATIONARY_WEST:
+			findPhenomenaFromMinimumOfTargetFunction(raf, jdstart, jdfinish, jdstep);
+			break;
+			
+		default:
+			break;
+		}
+	}
+
 
 	public static void showUsage() {
 		String[] lines = { "MANDATORY PARAMETERS",
@@ -396,7 +454,9 @@ public class PhenomenaFinder {
 				"-quadrature-east\tFind dates of east quadrature",
 				"-quadrature-west\tFind dates of west quadrature",
 				"-greatest-elongation-east\tFind dates of greatest elongation east",
-				"-greatest-elongation-west\tFind dates of greatest elongation west"
+				"-greatest-elongation-west\tFind dates of greatest elongation west",
+				"-stationary-west\tFind dates of west stationary points in RA",
+				"-stationary-east\tFind dates of east stationary points in RA"
 		};
 		
 		for (String line : lines)
