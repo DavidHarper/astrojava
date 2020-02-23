@@ -22,12 +22,14 @@
  * the archive of this library for complete text of license.
  */
 
-package com.obliquity.astronomy.almanac.phenomena;
+package com.obliquity.astronomy.almanac.phenomena.target;
 
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.EarthRotationModel;
 import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
+import com.obliquity.astronomy.almanac.phenomena.PhenomenaException;
+import com.obliquity.astronomy.almanac.phenomena.TargetFunction;
 
 public class LongitudeDifference implements TargetFunction {
 	public static final int IN_LONGITUDE = 1;

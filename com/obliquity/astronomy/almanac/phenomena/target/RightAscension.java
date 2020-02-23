@@ -22,15 +22,16 @@
  * the archive of this library for complete text of license.
  */
 
-package com.obliquity.astronomy.almanac.phenomena;
+package com.obliquity.astronomy.almanac.phenomena.target;
 
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
+import com.obliquity.astronomy.almanac.phenomena.TargetFunction;
 
-public class RightAscensionFunction implements TargetFunction {
+public class RightAscension implements TargetFunction {
 	private ApparentPlace apTarget = null;
 	
-	public RightAscensionFunction(ApparentPlace apTarget) {
+	public RightAscension(ApparentPlace apTarget) {
 		this.apTarget = apTarget;
 	}
 

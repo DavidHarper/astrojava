@@ -41,6 +41,9 @@ import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.phenomena.Phenomenon.Type;
+import com.obliquity.astronomy.almanac.phenomena.target.Elongation;
+import com.obliquity.astronomy.almanac.phenomena.target.LongitudeDifference;
+import com.obliquity.astronomy.almanac.phenomena.target.RightAscension;
 
 public class PhenomenaFinder {
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
@@ -228,7 +231,7 @@ public class PhenomenaFinder {
 			
 		case STATIONARY_EAST:
 		case STATIONARY_WEST:
-			tf = new RightAscensionFunction(apTarget2);
+			tf = new RightAscension(apTarget2);
 			break;
 			
 		default:
@@ -267,8 +270,8 @@ public class PhenomenaFinder {
 		} else if (tf instanceof Elongation) {
 			Elongation el = (Elongation)tf;
 			findPhenomena(el, jdstart, jdfinish, jdstep, mode);
-		} else if (tf instanceof RightAscensionFunction) {
-			RightAscensionFunction raf = (RightAscensionFunction)tf;
+		} else if (tf instanceof RightAscension) {
+			RightAscension raf = (RightAscension)tf;
 			findPhenomena(raf, jdstart, jdfinish, jdstep, mode);
 		}
 	}
@@ -416,7 +419,7 @@ public class PhenomenaFinder {
 	}
 	
 	
-	public void findPhenomena(RightAscensionFunction raf, double jdstart, double jdfinish,
+	public void findPhenomena(RightAscension raf, double jdstart, double jdfinish,
 			double jdstep, Type mode) throws JPLEphemerisException, PhenomenaException {		
 		switch (mode) {
 		case CONJUNCTION:

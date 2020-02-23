@@ -22,11 +22,13 @@
  * the archive of this library for complete text of license.
  */
 
-package com.obliquity.astronomy.almanac.phenomena;
+package com.obliquity.astronomy.almanac.phenomena.target;
 
 import com.obliquity.astronomy.almanac.ApparentPlace;
 
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
+import com.obliquity.astronomy.almanac.phenomena.PhenomenaException;
+import com.obliquity.astronomy.almanac.phenomena.TargetFunction;
 
 public class Elongation implements TargetFunction {
 	private ApparentPlace apTarget1 = null, apTarget2 = null;
