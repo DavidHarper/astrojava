@@ -298,7 +298,7 @@ public class PhenomenaFinder {
 				if (changeOfSign(lastDX, dX)) {
 					double tLast = t - jdstep;
 					
-					double tExact = findZero(ldiff, tLast, t);
+					double tExact = ZeroFinder.findZero(ldiff, tLast, t, 1.0e-5);
 					
 					AstronomicalDate ad = new AstronomicalDate(tExact);
 					
@@ -309,33 +309,6 @@ public class PhenomenaFinder {
 			lastDX = dX;
 			first = false;
 		}		
-	}
-	
-	// Limit of difference in RA for convergence
-	private final double EPSILON = 0.1 * (Math.PI/180.0)/3600.0;
-	
-	private double findZero(LongitudeDifference ldiff, double t1, double t2) throws JPLEphemerisException {
-		while (true) {
-			double dX1 = ldiff.valueAtTime(t1);
-	
-			double dX2 = ldiff.valueAtTime(t2);
-		
-			double dXchange = dX2 - dX1;
-		
-			double dXrate = dXchange/(t2 - t1);
-		
-			double tNew = t1 - dX1/dXrate;
-		
-			double dX3 = ldiff.valueAtTime(tNew);
-
-			if (Math.abs(dX3) < EPSILON)
-				return tNew;
-			
-			if (changeOfSign(dX1, dX3))
-				t2 = tNew;
-			else
-				t1 = tNew;
-		}
 	}
 	
 	public void findPhenomena(Elongation el, double jdstart, double jdfinish,
@@ -382,7 +355,7 @@ public class PhenomenaFinder {
 			values[2] = tf.valueAtTime(t);
 			
 			if (isMidpointLargest(values)) {
-				double tExact = findTimeOfMaximum(tf, t - 2.0 * jdstep, t);
+				double tExact = ExtremumFinder.findMaximum(tf, t - 2.0 * jdstep, t - jdstep, t, 1.0e-5);
 				
 				AstronomicalDate ad = new AstronomicalDate(tExact);
 				
@@ -396,10 +369,6 @@ public class PhenomenaFinder {
 	
 	private boolean isMidpointLargest(double[] values) {
 		return values[1] > values[0] && values[1] > values[2];
-	}
-	
-	private double findTimeOfMaximum(TargetFunction tf, double t1, double t2) throws JPLEphemerisException {
-		return 0.0;
 	}
 
 	public static void showUsage() {
