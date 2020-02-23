@@ -56,7 +56,7 @@ public class ExtremumFinder {
 		double f1 = fn.valueAtTime(x1);
 		double f2 = fn.valueAtTime(x2);
 		
-		while (Math.abs(x3-x0) > tol*(Math.abs(x1) + Math.abs(x2))) {
+		while (Math.abs(x3-x0) > tol) {
 			if (f2 < f1) {
 				x0 = x1;
 				x1 = x2;
