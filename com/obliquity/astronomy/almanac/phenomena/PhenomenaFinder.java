@@ -103,6 +103,14 @@ public class PhenomenaFinder {
 				mode = Type.QUADRATURE_WEST;
 				break;
 				
+			case "-greatest-elongation-east":
+				mode = Type.GREATEST_ELONGATION_EAST;
+				break;
+				
+			case "-greatest-elongation-west":
+				mode = Type.GREATEST_ELONGATION_WEST;
+				break;
+				
 			default:
 				System.err.println("Unrecognised keyword \"" + args[i] + "\"");
 				showUsage();
@@ -332,7 +340,7 @@ public class PhenomenaFinder {
 			tf = new TargetFunction() {
 				public double valueAtTime(double t)
 						throws JPLEphemerisException {
-					return -el.valueAtTime(jdstep);
+					return -el.valueAtTime(t);
 				}				
 			};
 			
@@ -382,7 +390,9 @@ public class PhenomenaFinder {
 				"-conjunction\tFind dates of conjunction",
 				"-opposition\tFind dates of opposition",
 				"-quadrature-east\tFind dates of east quadrature",
-				"-quadrature-west\tFind dates of west quadrature"
+				"-quadrature-west\tFind dates of west quadrature",
+				"-greatest-elongation-east\tFind dates of greatest elongation east",
+				"-greatest-elongation-west\tFind dates of greatest elongation west"
 		};
 		
 		for (String line : lines)
