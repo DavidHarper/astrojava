@@ -40,12 +40,9 @@ import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.phenomena.Phenomenon.Type;
 
 public class PhenomenaFinder {
-	private enum Mode {
-		CONJUNCTION, OPPOSITION, QUADRATURE_EAST, QUADRATURE_WEST
-	}
-
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
@@ -62,7 +59,7 @@ public class PhenomenaFinder {
 		String stepsize = null;
 		boolean inRA = false;
 		
-		Mode mode = Mode.CONJUNCTION;
+		Phenomenon.Type mode = Type.CONJUNCTION;
 
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i].toLowerCase()) {
@@ -91,19 +88,19 @@ public class PhenomenaFinder {
 				break;
 				
 			case "-conjunction":
-				mode = Mode.CONJUNCTION;
+				mode = Type.CONJUNCTION;
 				break;
 				
 			case "-opposition":
-				mode = Mode.OPPOSITION;
+				mode = Type.OPPOSITION;
 				break;
 				
 			case "-quadrature-east":
-				mode = Mode.QUADRATURE_EAST;
+				mode = Type.QUADRATURE_EAST;
 				break;
 				
 			case "-quadrature-west":
-				mode = Mode.QUADRATURE_WEST;
+				mode = Type.QUADRATURE_WEST;
 				break;
 				
 			default:
@@ -181,24 +178,53 @@ public class PhenomenaFinder {
 		ApparentPlace apTarget1 = new ApparentPlace(earth, sun, sun, erm);
 
 		ApparentPlace apTarget2 = new ApparentPlace(earth, planet, sun, erm);
-
-		LongitudeDifference ldiff = null;
 		
-		try {
-			ldiff = new LongitudeDifference(apTarget1, apTarget2);
+		TargetFunction tf = null;
+		
+		switch (mode) {
+		case CONJUNCTION:
+		case OPPOSITION:
+		case QUADRATURE_EAST:
+		case QUADRATURE_WEST:
+			try {
+				LongitudeDifference ldiff = new LongitudeDifference(apTarget1, apTarget2);
+				
+				if (inRA)
+					ldiff.setMode(LongitudeDifference.IN_RIGHT_ASCENSION);
+				
+				tf = ldiff;
+			} catch (PhenomenaException e1) {
+				e1.printStackTrace();
+				System.exit(1);
+			}			
+			break;
 			
-			if (inRA)
-				ldiff.setMode(LongitudeDifference.IN_RIGHT_ASCENSION);
-		} catch (PhenomenaException e1) {
-			e1.printStackTrace();
-			System.exit(1);
+		case GREATEST_ELONGATION_EAST:
+		case GREATEST_ELONGATION_WEST:
+			try {
+				Elongation el = new Elongation(apTarget1, apTarget2);
+				
+				tf = el;
+			} catch (PhenomenaException e1) {
+				e1.printStackTrace();
+			}			
+			break;
+			
+		case STATIONARY_EAST:
+			break;
+		case STATIONARY_WEST:
+			break;
+			
+		default:
+			break;
+		
 		}
 		
 		PhenomenaFinder finder = new PhenomenaFinder();
 		
 		try {
-			finder.findPhenomena(ldiff, jdstart, jdfinish, jdstep, mode);
-		} catch (JPLEphemerisException e) {
+			finder.findPhenomena(tf, jdstart, jdfinish, jdstep, mode);
+		} catch (JPLEphemerisException | PhenomenaException e) {
 			e.printStackTrace();
 		}
 	}
@@ -216,9 +242,20 @@ public class PhenomenaFinder {
 		
 		return true;
 	}
+	
+	public void findPhenomena(TargetFunction tf, double jdstart, double jdfinish,
+			double jdstep, Type mode) throws JPLEphemerisException, PhenomenaException {
+		if (tf instanceof LongitudeDifference) {
+			LongitudeDifference ldiff = (LongitudeDifference)tf;
+			findPhenomena(ldiff, jdstart, jdfinish, jdstep, mode);
+		} else if (tf instanceof Elongation) {
+			Elongation el = (Elongation)tf;
+			findPhenomena(el, jdstart, jdfinish, jdstep, mode);
+		}
+	}
 
 	public void findPhenomena(LongitudeDifference ldiff, double jdstart, double jdfinish,
-			double jdstep, Mode mode) throws JPLEphemerisException {
+			double jdstep, Type mode) throws JPLEphemerisException, PhenomenaException {
 		switch (mode) {
 		case CONJUNCTION:
 			ldiff.setTargetDifference(0.0);
@@ -235,12 +272,21 @@ public class PhenomenaFinder {
 		case QUADRATURE_WEST:
 			ldiff.setTargetDifference(-0.5 * Math.PI);
 			break;
+			
+		case GREATEST_ELONGATION_EAST:
+		case GREATEST_ELONGATION_WEST:
+		case STATIONARY_EAST:
+		case STATIONARY_WEST:
+			throw new PhenomenaException("Invalid mode for longitude difference");
+			
+		default:
+			break;
 		}
 		
-		findPhenomena(ldiff, jdstart, jdfinish, jdstep);
+		findPhenomenaFromZeroOfTargetFunction(ldiff, jdstart, jdfinish, jdstep);
 	}
 	
-	public void findPhenomena(LongitudeDifference ldiff, double jdstart, double jdfinish,
+	public void findPhenomenaFromZeroOfTargetFunction(LongitudeDifference ldiff, double jdstart, double jdfinish,
 			double jdstep) throws JPLEphemerisException {
 		double lastDX = Double.NaN;
 		boolean first = true;
@@ -290,6 +336,70 @@ public class PhenomenaFinder {
 			else
 				t1 = tNew;
 		}
+	}
+	
+	public void findPhenomena(Elongation el, double jdstart, double jdfinish,
+			double jdstep, Type mode) throws JPLEphemerisException, PhenomenaException {
+		TargetFunction tf = null;
+		
+		switch (mode) {
+		case CONJUNCTION:
+		case OPPOSITION:
+		case QUADRATURE_EAST:
+		case QUADRATURE_WEST:
+		case STATIONARY_EAST:
+		case STATIONARY_WEST:
+			throw new PhenomenaException("Invalid mode for elongation");
+			
+		case GREATEST_ELONGATION_EAST:
+			tf = el;
+			break;
+			
+		case GREATEST_ELONGATION_WEST:
+			tf = new TargetFunction() {
+				public double valueAtTime(double t)
+						throws JPLEphemerisException {
+					return -el.valueAtTime(jdstep);
+				}				
+			};
+			
+			break;
+			
+		default:
+			break;
+		}
+		
+		findPhenomenaFromMaximumOfTargetFunction(tf, jdstart, jdfinish, jdstep);
+	}
+	
+	private void findPhenomenaFromMaximumOfTargetFunction(TargetFunction tf, double jdstart, double jdfinish, double jdstep) throws JPLEphemerisException {
+		double values[] = new double[3];
+		
+		values[0] = tf.valueAtTime(jdstart);
+		values[1] = tf.valueAtTime(jdstart + jdstep);
+		
+		for (double t = jdstart + 2.0 * jdstep; t < jdfinish; t += jdstep) {
+			values[2] = tf.valueAtTime(t);
+			
+			if (isMidpointLargest(values)) {
+				double tExact = findTimeOfMaximum(tf, t - 2.0 * jdstep, t);
+				
+				AstronomicalDate ad = new AstronomicalDate(tExact);
+				
+				System.out.printf("%5d %02d %02d %02d:%02d\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute());
+			}
+			
+			values[0] = values[1];
+			values[1] = values[2];
+		}
+	}
+	
+	private boolean isMidpointLargest(double[] values) {
+		return values[1] > values[0] && values[1] > values[2];
+	}
+	
+	private double findTimeOfMaximum(TargetFunction tf, double t1, double t2) throws JPLEphemerisException {
+		return 0.0;
 	}
 
 	public static void showUsage() {
