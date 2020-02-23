@@ -64,7 +64,7 @@ public class Phenomenon implements Comparable<Phenomenon> {
 			return "quadrature east";
 			
 		case QUADRATURE_WEST:
-			return "quadrature_west";
+			return "quadrature west";
 			
 		case GREATEST_ELONGATION_EAST:
 			return "greatest elongation east";
