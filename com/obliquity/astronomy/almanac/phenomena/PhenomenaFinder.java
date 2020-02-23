@@ -340,7 +340,7 @@ public class PhenomenaFinder {
 			tf = new TargetFunction() {
 				public double valueAtTime(double t)
 						throws JPLEphemerisException {
-					return -el.valueAtTime(t);
+					return Math.abs(el.valueAtTime(t));
 				}				
 			};
 			
@@ -363,7 +363,11 @@ public class PhenomenaFinder {
 			values[2] = tf.valueAtTime(t);
 			
 			if (isMidpointLargest(values)) {
-				double tExact = ExtremumFinder.findMaximum(tf, t - 2.0 * jdstep, t - jdstep, t, 1.0e-5);
+				double ta = t - 2.0 * jdstep;
+				double tb = t - jdstep;
+				double tc = t;
+				
+				double tExact = ExtremumFinder.findMaximum(tf, ta, tb, tc, 1.0e-5);
 				
 				AstronomicalDate ad = new AstronomicalDate(tExact);
 				
