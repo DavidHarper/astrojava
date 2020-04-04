@@ -54,6 +54,8 @@ public class LocalVisibility {
 	
 	private final boolean verbose = Boolean.getBoolean("verbose");
 	
+	private EarthRotationModel defaultERM = new IAUEarthRotationModel();
+	
 	public RiseSetEvent[] findRiseSetEvents(ApparentPlace ap, Place place, double jd, RiseSetType rsType) throws JPLEphemerisException {
 		this.AU = ap.getTarget().getEphemeris().getAU();
 		
@@ -407,6 +409,16 @@ public class LocalVisibility {
 		return new HorizontalCoordinates(altitude, azimuth, parallacticAngle);
 	}
 	
+	public HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(double ra, double dec, Place place, double jd) {
+		double gmst = defaultERM.greenwichApparentSiderealTime(jd);
+		
+		double lha = reduceAngle(gmst - ra + place.getLongitude());
+		
+		double latitude = place.getLatitude();
+
+		return calculateGeometricAltitudeAndAzimuth(lha, dec, latitude);
+	}
+
 	public HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(ApparentPlace ap, Place place, double jd) 
 			 throws JPLEphemerisException {
 		double deltaT = ap.getEarthRotationModel().deltaT(jd);
@@ -424,6 +436,20 @@ public class LocalVisibility {
 		double latitude = place.getLatitude();
 
 		return calculateGeometricAltitudeAndAzimuth(lha, dec, latitude);
+	}
+	
+	public HorizontalCoordinates calculateApparentAltitudeAndAzimuth(double ra, double dec, Place place, double jd, double temperature, double pressure) {
+		HorizontalCoordinates data = calculateGeometricAltitudeAndAzimuth(ra, dec, place, jd);
+
+		double refraction = calculateRefraction(data.altitude, temperature, pressure, RefractionType.GEOMETRIC_TO_APPARENT);
+		
+		data.altitude += refraction;
+		
+		return data;
+	}
+	
+	public HorizontalCoordinates calculateApparentAltitudeAndAzimuth(double ra, double dec, Place place, double jd) {
+		return calculateApparentAltitudeAndAzimuth(ra, dec, place, jd, STANDARD_TEMPERATURE, STANDARD_PRESSURE);
 	}
 	
 	public HorizontalCoordinates calculateApparentAltitudeAndAzimuth(ApparentPlace ap, Place place, double jd, double temperature, double pressure) 
