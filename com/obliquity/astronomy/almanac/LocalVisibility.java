@@ -391,7 +391,7 @@ public class LocalVisibility {
 		return Math.asin(Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(ha));
 	}
 	
-	private HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(double lha, double dec, double latitude) {
+	public HorizontalCoordinates calculateGeometricAltitudeAndAzimuth(double lha, double dec, double latitude) {
 		double x = Math.cos(latitude) * Math.sin(dec) - Math.sin(latitude) * Math.cos(dec) * Math.cos(lha);
 		double y = -Math.cos(dec) * Math.sin(lha);
 		double z = Math.sin(latitude) * Math.sin(dec) + Math.cos(latitude) * Math.cos(dec) * Math.cos(lha);
