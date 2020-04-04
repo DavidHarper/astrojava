@@ -107,28 +107,19 @@ public class Comet2019Y4Apparition {
 			
 			RiseSetEvent[] events = lv.findRiseSetEvents(apSun,
 					place, jd, RiseSetType.UPPER_LIMB);
-			
-			RiseSetEvent sunset = null;
-			
+						
 			for (RiseSetEvent rse : events) {
-				if (rse.type == RiseSetEventType.SET)
-					sunset = rse;
+				HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(ra, dec, place, rse.date);
+			
+				HorizontalCoordinates hcSun = lv.calculateApparentAltitudeAndAzimuth(apSun, place, rse.date);
+			
+				date = new AstronomicalDate(rse.date);
+			
+				System.out.printf("%s %04d %02d %02d  %02d:%02d  %6.1f  %6.1f  %6.1f\n",
+						(rse.type == RiseSetEventType.RISE ? "R" : "S"),
+						date.getYear(), date.getMonth(), date.getDay(), date.getHour(), date.getMinute(), 
+						hcSun.azimuth * 180.0/Math.PI, hc.azimuth * 180.0/Math.PI, hc.altitude * 180.0/Math.PI);
 			}
-			
-			if (sunset == null) {
-				System.err.println("Failed to find sunset for " + date);
-				System.exit(2);
-			}
-			
-			HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(ra, dec, place, sunset.date);
-			
-			HorizontalCoordinates hcSun = lv.calculateApparentAltitudeAndAzimuth(apSun, place, sunset.date);
-			
-			date = new AstronomicalDate(sunset.date);
-			
-			System.out.printf("%04d %02d %02d  %02d:%02d  %6.1f  %6.1f  %6.1f\n", date.getYear(), date.getMonth(),
-					date.getDay(), date.getHour(), date.getMinute(), hcSun.azimuth * 180.0/Math.PI,
-					hc.azimuth * 180.0/Math.PI, hc.altitude * 180.0/Math.PI);
 		}
 	}
 }
