@@ -217,7 +217,7 @@ public class TwilightExplorer {
 				latest = lowerTransit.date;
 			}
 			
-			for (double t = sunset.date - 30.0/1440.0; t < latest; t += 10.0/1440.0) {
+			for (double t = sunset.date - 60.0/1440.0; t < latest; t += 10.0/1440.0) {
 				HorizontalCoordinates hc = (t <= sunset.date) ? lv.calculateApparentAltitudeAndAzimuth(ap, place, t) :
 					lv.calculateGeometricAltitudeAndAzimuth(ap, place, t);
 				
