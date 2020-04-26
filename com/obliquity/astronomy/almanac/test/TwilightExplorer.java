@@ -225,15 +225,21 @@ public class TwilightExplorer {
 			
 				if (lowerTransit != null) {
 					System.out.println("# LOWER TRANSIT: " + dateToString(lowerTransit.date));
-				
+					
 					if (Double.isNaN(latest) || latest > lowerTransit.date)
 						latest = lowerTransit.date;
 				}
-					
-				for (double t = sunset.date - 60.0/1440.0; t < latest; t += 10.0/1440.0) {
-					HorizontalCoordinates hc = (t <= sunset.date) ? lv.calculateApparentAltitudeAndAzimuth(ap, place, t) :
-						lv.calculateGeometricAltitudeAndAzimuth(ap, place, t);
+
+				double dt = 10.0/1440.0;
+			
+				int jMax = (int)((latest - sunset.date)/dt);
+			
+				for (int j = -6; j <= jMax; j++) {
+					double t = sunset.date + dt * (double)j;
 				
+					HorizontalCoordinates hc = (j >= 0) ? lv.calculateApparentAltitudeAndAzimuth(ap, place, t) :
+						lv.calculateGeometricAltitudeAndAzimuth(ap, place, t);
+					
 					System.out.printf("%s  %7.2f  %7.2f\n", dateToString(t), hc.azimuth * 180.0/Math.PI, hc.altitude * 180.0/Math.PI);
 				}
 			}
