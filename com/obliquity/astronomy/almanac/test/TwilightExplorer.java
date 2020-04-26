@@ -162,7 +162,7 @@ public class TwilightExplorer {
 	
 	public void run(JPLEphemeris ephemeris, Place place, double jdstart,
 			double jdfinish) throws JPLEphemerisException {
-		boolean hoursOfDarkness = Boolean.getBoolean("hoursofdarkness");
+		boolean showTwilightLengths = Boolean.getBoolean("twilightlengths");
 		
 		EarthCentre earth = new EarthCentre(ephemeris);
 
@@ -177,7 +177,7 @@ public class TwilightExplorer {
 		for (double jd = jdstart; jd < jdfinish; jd += 1.0) {
 			RiseSetEvent sunset = findSettingEvent(lv, ap, place, jd, RiseSetType.UPPER_LIMB);
 			
-			if (sunset != null && !hoursOfDarkness)
+			if (sunset != null)
 				System.out.println("# SUNSET: " + dateToString(sunset.date));
 			
 			double latest = Double.NaN;
@@ -185,30 +185,31 @@ public class TwilightExplorer {
 			RiseSetEvent civilTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.CIVIL_TWILIGHT);
 			
 			if (civilTwilight != null) {
-				if (!hoursOfDarkness)
-					System.out.println("# CIVIL: " + dateToString(civilTwilight.date));
+				System.out.println("# CIVIL: " + dateToString(civilTwilight.date));
 				
 				latest = civilTwilight.date;
 			}
 			
-			if (hoursOfDarkness) {
+			RiseSetEvent nauticalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.NAUTICAL_TWILIGHT);
+			
+			if (nauticalTwilight != null) {
+				System.out.println("# NAUTICAL: " + dateToString(nauticalTwilight.date));
+				
+				latest = nauticalTwilight.date;
+			}
+		
+			RiseSetEvent astronomicalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.ASTRONOMICAL_TWILIGHT);
+		
+			if (astronomicalTwilight != null) {
+				System.out.println("# ASTRONOMICAL: " + dateToString(astronomicalTwilight.date));
+				
+				latest = astronomicalTwilight.date;
+			}
+			
+			if (showTwilightLengths) {
 				if (sunset != null)
-					displayHoursOfDarkness(sunset, civilTwilight);
+					displayTwilightLengths(sunset, civilTwilight, nauticalTwilight, astronomicalTwilight);
 			} else {
-				RiseSetEvent nauticalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.NAUTICAL_TWILIGHT);
-			
-				if (nauticalTwilight != null) {
-					System.out.println("# NAUTICAL: " + dateToString(nauticalTwilight.date));
-					latest = nauticalTwilight.date;
-				}
-			
-				RiseSetEvent astronomicalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.ASTRONOMICAL_TWILIGHT);
-			
-				if (astronomicalTwilight != null) {
-					System.out.println("# ASTRONOMICAL: " + dateToString(astronomicalTwilight.date));
-					latest = astronomicalTwilight.date;
-				}
-			
 				if (!Double.isNaN(latest))
 					latest += 60.0/1440.0;
 			
@@ -279,31 +280,38 @@ public class TwilightExplorer {
 			return new Date();		
 	}
 	
-	private void displayHoursOfDarkness(RiseSetEvent sunset, RiseSetEvent civilTwilight) {
+	private void displayTwilightLengths(RiseSetEvent sunset, RiseSetEvent civilTwilight, RiseSetEvent nauticalTwilight,
+			RiseSetEvent astronomicalTwilight) {
 		AstronomicalDate ad = new AstronomicalDate(sunset.date);
 		ad.roundToNearestSecond();
 		
 		System.out.printf("%04d-%02d-%02d ", ad.getYear(), ad.getMonth(), ad.getDay());
 		
-		if (civilTwilight == null) {
-			System.out.println("NO CIVIL TWILIGHT");
+		showTwilightLength(sunset, civilTwilight);
+		
+		showTwilightLength(civilTwilight, nauticalTwilight);
+		
+		showTwilightLength(nauticalTwilight, astronomicalTwilight);
+		
+		System.out.println();
+	}
+	
+	private void showTwilightLength(RiseSetEvent event1, RiseSetEvent event2) {
+		if (event1 == null) {
+			System.out.print("  9999");
 			return;
 		}
 		
-		double dt = 86400.0 * (civilTwilight.date - sunset.date);
-		
-		int minutes = ((int)dt)/60;
-		
-		dt -= ((double)minutes) * 60.0;
-		
-		int seconds = (int)Math.round(dt);
-		
-		if (seconds == 60) {
-			minutes++;
-			seconds = 0;
+		if (event2 == null) {
+			System.out.print("  9999");
+			return;
 		}
 		
-		System.out.printf("%4d %02d\n", minutes, seconds);
+		double dt = 1440.0 * (event2.date - event1.date);
+				
+		int minutes = (int)Math.round(dt);
+				
+		System.out.printf("  %4d", minutes);
 	}
 
 	public static void showUsage() {
