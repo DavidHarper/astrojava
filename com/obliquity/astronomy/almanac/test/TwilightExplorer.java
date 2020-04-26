@@ -162,6 +162,8 @@ public class TwilightExplorer {
 	
 	public void run(JPLEphemeris ephemeris, Place place, double jdstart,
 			double jdfinish) throws JPLEphemerisException {
+		boolean hoursOfDarkness = Boolean.getBoolean("hoursofdarkness");
+		
 		EarthCentre earth = new EarthCentre(ephemeris);
 
 		MovingPoint sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
@@ -175,53 +177,65 @@ public class TwilightExplorer {
 		for (double jd = jdstart; jd < jdfinish; jd += 1.0) {
 			RiseSetEvent sunset = findSettingEvent(lv, ap, place, jd, RiseSetType.UPPER_LIMB);
 			
-			if (sunset != null)
+			if (sunset != null && !hoursOfDarkness)
 				System.out.println("# SUNSET: " + dateToString(sunset.date));
 			
-			double latest = sunset.date;
+			double latest = Double.NaN;
 			
 			RiseSetEvent civilTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.CIVIL_TWILIGHT);
 			
 			if (civilTwilight != null) {
-				System.out.println("# CIVIL: " + dateToString(civilTwilight.date));
+				if (!hoursOfDarkness)
+					System.out.println("# CIVIL: " + dateToString(civilTwilight.date));
+				
 				latest = civilTwilight.date;
 			}
 			
-			RiseSetEvent nauticalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.NAUTICAL_TWILIGHT);
+			if (hoursOfDarkness) {
+				if (sunset != null)
+					displayHoursOfDarkness(sunset, civilTwilight);
+			} else {
+				RiseSetEvent nauticalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.NAUTICAL_TWILIGHT);
 			
-			if (nauticalTwilight != null) {
-				System.out.println("# NAUTICAL: " + dateToString(nauticalTwilight.date));
-				latest = nauticalTwilight.date;
-			}
-			
-			RiseSetEvent astronomicalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.ASTRONOMICAL_TWILIGHT);
-			
-			if (astronomicalTwilight != null) {
-				System.out.println("# ASTRONOMICAL: " + dateToString(astronomicalTwilight.date));
-				latest = astronomicalTwilight.date;
-			}
-			
-			TransitEvent[] transits = lv.findTransitEvents(ap, place, sunset.date);
-			
-			TransitEvent lowerTransit = null;
-			
-			for (TransitEvent te : transits) {
-				if (te.type == TransitType.LOWER) {
-					lowerTransit = te;
-					break;
+				if (nauticalTwilight != null) {
+					System.out.println("# NAUTICAL: " + dateToString(nauticalTwilight.date));
+					latest = nauticalTwilight.date;
 				}
-			}
 			
-			if (lowerTransit != null) {
-				System.out.println("# LOWER TRANSIT: " + dateToString(lowerTransit.date));
-				latest = lowerTransit.date;
-			}
+				RiseSetEvent astronomicalTwilight = findSettingEvent(lv, ap, place, jd, RiseSetType.ASTRONOMICAL_TWILIGHT);
 			
-			for (double t = sunset.date - 60.0/1440.0; t < latest; t += 10.0/1440.0) {
-				HorizontalCoordinates hc = (t <= sunset.date) ? lv.calculateApparentAltitudeAndAzimuth(ap, place, t) :
-					lv.calculateGeometricAltitudeAndAzimuth(ap, place, t);
+				if (astronomicalTwilight != null) {
+					System.out.println("# ASTRONOMICAL: " + dateToString(astronomicalTwilight.date));
+					latest = astronomicalTwilight.date;
+				}
+			
+				if (!Double.isNaN(latest))
+					latest += 60.0/1440.0;
+			
+				TransitEvent[] transits = lv.findTransitEvents(ap, place, sunset.date);
+			
+				TransitEvent lowerTransit = null;
+			
+				for (TransitEvent te : transits) {
+					if (te.type == TransitType.LOWER) {
+						lowerTransit = te;
+						break;
+					}
+				}
+			
+				if (lowerTransit != null) {
+					System.out.println("# LOWER TRANSIT: " + dateToString(lowerTransit.date));
 				
-				System.out.printf("%s  %7.2f  %7.2f\n", dateToString(t), hc.azimuth * 180.0/Math.PI, hc.altitude * 180.0/Math.PI);
+					if (Double.isNaN(latest) || latest > lowerTransit.date)
+						latest = lowerTransit.date;
+				}
+					
+				for (double t = sunset.date - 60.0/1440.0; t < latest; t += 10.0/1440.0) {
+					HorizontalCoordinates hc = (t <= sunset.date) ? lv.calculateApparentAltitudeAndAzimuth(ap, place, t) :
+						lv.calculateGeometricAltitudeAndAzimuth(ap, place, t);
+				
+					System.out.printf("%s  %7.2f  %7.2f\n", dateToString(t), hc.azimuth * 180.0/Math.PI, hc.altitude * 180.0/Math.PI);
+				}
 			}
 		}		
 	}
@@ -257,6 +271,33 @@ public class TwilightExplorer {
 			}
 		} else
 			return new Date();		
+	}
+	
+	private void displayHoursOfDarkness(RiseSetEvent sunset, RiseSetEvent civilTwilight) {
+		AstronomicalDate ad = new AstronomicalDate(sunset.date);
+		ad.roundToNearestSecond();
+		
+		System.out.printf("%04d-%02d-%02d ", ad.getYear(), ad.getMonth(), ad.getDay());
+		
+		if (civilTwilight == null) {
+			System.out.println("NO CIVIL TWILIGHT");
+			return;
+		}
+		
+		double dt = 86400.0 * (civilTwilight.date - sunset.date);
+		
+		int minutes = ((int)dt)/60;
+		
+		dt -= ((double)minutes) * 60.0;
+		
+		int seconds = (int)Math.round(dt);
+		
+		if (seconds == 60) {
+			minutes++;
+			seconds = 0;
+		}
+		
+		System.out.printf("%4d %02d\n", minutes, seconds);
 	}
 
 	public static void showUsage() {
