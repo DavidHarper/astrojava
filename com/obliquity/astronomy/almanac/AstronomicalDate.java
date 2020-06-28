@@ -3,6 +3,8 @@ package com.obliquity.astronomy.almanac;
 public class AstronomicalDate implements Comparable<AstronomicalDate> {
 	private int year, month, day, hour, minute;
 	double second;
+	
+	private double julianDate = Double.NaN;
 
 	private static final int GREGORIAN_TRANSITION_JD = 2299160;
 	private static final int GREGORIAN_TRANSITION_DATE = 15821004;
@@ -26,6 +28,8 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 	private static final int JULIAN_CYCLES_OFFSET = 10000;
 
 	public AstronomicalDate(double djd) {
+		julianDate = djd;
+		
 		int K, L, N, I, J, D, M, Y;
 		int JD;
 		double t;
@@ -77,6 +81,9 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 	}
 
 	public double getJulianDate() {
+		if (!Double.isNaN(julianDate))
+			return julianDate;
+		
 		int D, M, Y, mu, JD;
 		int ThisDate;
 
@@ -107,8 +114,10 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 			JD = 367 * Y - mu + (275 * M) / 9 + D + 1729777;
 		}
 
-		return (double) JD - 0.5 + ((double) this.hour) / 24.0
+		julianDate = (double) JD - 0.5 + ((double) this.hour) / 24.0
 				+ ((double) this.minute) / 1440.0 + (this.second) / 86400.0;
+		
+		return julianDate;
 	}
 
 	public int getYear() {
@@ -170,6 +179,10 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 				}
 			}
 		}
+		
+		// Invalidate any pre-calculated Julian date.
+		julianDate = Double.NaN;
+		
 		return true;
 	}
 	
