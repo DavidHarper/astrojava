@@ -12,3 +12,11 @@ jar {
         attributes 'Main-Class': 'com.obliquity.astronomy.almanac.test.SimpleAlmanac'
     }
 }
+
+publishing {
+    publications {
+        myLibrary(MavenPublication) {
+            from components.java
+        }
+    }
+}
