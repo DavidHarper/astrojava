@@ -1,3 +1,6 @@
 *.class
 tmp
 *.out
+/.gradle/
+bin
+build
