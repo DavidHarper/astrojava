@@ -1,6 +1,9 @@
 apply plugin: 'java'
+apply plugin: 'maven-publish'
 
-version = 2.0
+version = '2.0'
+
+group = 'com.obliquity.astronomy'
 
 sourceCompatibility = 1.8
 
