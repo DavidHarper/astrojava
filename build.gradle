@@ -19,4 +19,11 @@ publishing {
             from components.java
         }
     }
+
+    repositories {
+        maven {
+            name = 'myRepo'
+            url = "file://${buildDir}/repo"
+        }
+    }
 }
