@@ -65,15 +65,32 @@ public class ConjunctionFinder {
 
 	private static final double TWO_PI = 2.0 * Math.PI;
 	
-	private ApparentPlace apTarget1 = null, apTarget2 = null, apSun = null;
+	private static final int WILDCARD = 999;
 	
-	private EarthRotationModel erm = null;
+	private JPLEphemeris ephemeris = null;
+	
+	private EarthCentre earth = null;
+	
+	private PlanetCentre sun = null;
+	
+	private ApparentPlace apSun = null;
+	
+	private ApparentPlace[] apPlanets = new ApparentPlace[JPLEphemeris.LAST_COMPONENT + 1];
+	
+	private EarthRotationModel erm = new IAUEarthRotationModel();
+	
+	private String[] bodyNames = { "Mercury", "Venus", "Earth-Moon Barycentre", "Mars", "Jupiter", "Saturn",
+			"Uranus", "Neptune", "Pluto", "Moon", "Sun"
+	};
 
-	public ConjunctionFinder(ApparentPlace apTarget1, ApparentPlace apTarget2, ApparentPlace apSun) {
-		this.apTarget1 = apTarget1;
-		this.apTarget2 = apTarget2;
-		this.apSun = apSun;
-		this.erm = apTarget1.getEarthRotationModel();
+	public ConjunctionFinder(JPLEphemeris ephemeris) {
+		this.ephemeris = ephemeris;
+
+		earth = new EarthCentre(ephemeris);
+		
+		sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+		
+		apSun = new ApparentPlace(earth, sun, sun, erm);
 	}
 
 	public static void main(String args[]) {
@@ -110,27 +127,27 @@ public class ConjunctionFinder {
 				inLongitude = true;
 		}
 
-		if (filename == null || body1name == null || body2name == null || startdate == null
+		if (filename == null || startdate == null
 				|| enddate == null) {
 			showUsage();
 			System.exit(1);
 		}
 
-		int kBody1 = parseBody(body1name);
+		int kBody1 = body1name == null ? WILDCARD : parseBody(body1name);
 
 		if (kBody1 < 0) {
 			System.err.println("Unknown name for -body1: \"" + body1name + "\"");
 			System.exit(1);
 		}
 
-		int kBody2 = parseBody(body2name);
+		int kBody2 = body2name == null ? WILDCARD : parseBody(body2name);
 
 		if (kBody2 < 0) {
 			System.err.println("Unknown name for -body2: \"" + body2name + "\"");
 			System.exit(1);
 		}
 		
-		if (kBody1 == kBody2) {
+		if (kBody1 == kBody2 && kBody1 != WILDCARD) {
 			System.err.println("Target bodies are the same.");
 			System.exit(1);
 		}
@@ -178,50 +195,10 @@ public class ConjunctionFinder {
 			System.exit(1);
 		}
 
-		MovingPoint planet1 = null;
-
-		if (kBody1 == JPLEphemeris.MOON)
-			planet1 = new MoonCentre(ephemeris);
-		else
-			planet1 = new PlanetCentre(ephemeris, kBody1);
-
-		MovingPoint planet2 = null;
-
-		if (kBody2 == JPLEphemeris.MOON)
-			planet2 = new MoonCentre(ephemeris);
-		else
-			planet2 = new PlanetCentre(ephemeris, kBody2);
-
-		EarthCentre earth = new EarthCentre(ephemeris);
-
-		MovingPoint sun = null;
-
-		if (kBody1 == JPLEphemeris.SUN)
-			sun = planet1;
-		else if (kBody2 == JPLEphemeris.SUN)
-			sun = planet2;
-		else
-			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
-
-		EarthRotationModel erm = new IAUEarthRotationModel();
-
-		ApparentPlace apTarget1 = new ApparentPlace(earth, planet1, sun, erm);
-
-		ApparentPlace apTarget2 = new ApparentPlace(earth, planet2, sun, erm);
-		
-		ApparentPlace apSun = null;
-		
-		if (kBody1 == JPLEphemeris.SUN)
-			apSun = apTarget1;
-		else if (kBody2 == JPLEphemeris.SUN)
-			apSun = apTarget2;
-		else
-			apSun = new ApparentPlace(earth, sun, sun, erm);
-
-		ConjunctionFinder finder = new ConjunctionFinder(apTarget1, apTarget2, apSun);
+		ConjunctionFinder finder = new ConjunctionFinder(ephemeris);
 		
 		try {
-			finder.run(jdstart, jdfinish, jdstep, inLongitude, System.out);
+			finder.run(kBody1, kBody2, jdstart, jdfinish, jdstep, inLongitude, System.out);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -230,12 +207,12 @@ public class ConjunctionFinder {
 	public static void showUsage() {
 		String[] lines = { "MANDATORY PARAMETERS",
 				"\t-ephemeris\tName of ephemeris file",
-				"\t-body1\t\tName of body 1",
-				"\t-body2\t\tName of body 2",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
 				"",
 				"OPTIONAL PARAMETERS",
+				"\t-body1\t\tName of body 1 [default: All planets, Sun, Moon]",
+				"\t-body2\t\tName of body 2 [default: All planets, Sun, Moon]",
 				"\t-longitude\tUse ecliptic longitude in place of Right Ascension",
 				"",
 				"OUTPUT FORMAT",
@@ -311,14 +288,99 @@ public class ConjunctionFinder {
 
 		return datefmt.format(date);
 	}
-
-	private void run(double jdstart, double jdfinish, double dt, boolean inLongitude,
+	
+	private ApparentPlace getApparentPlace(int kBody) {
+		if (apPlanets[kBody] != null)
+			return apPlanets[kBody];
+		
+		MovingPoint planet = null;
+		
+		switch (kBody) {
+		case JPLEphemeris.SUN:
+			planet = sun;
+			break;
+			
+		case JPLEphemeris.MOON:
+			planet = new MoonCentre(ephemeris);
+			break;
+			
+		default:
+			planet = new PlanetCentre(ephemeris, kBody);
+			break;
+		}
+		
+		ApparentPlace ap = new ApparentPlace(earth, planet, sun, erm);
+		
+		if (kBody >= 0 && kBody < apPlanets.length)
+			apPlanets[kBody] = ap;
+		
+		return ap;
+	}
+	
+	private void runAllAgainstAll(double jdstart, double jdfinish, double dt, boolean inLongitude,
 			PrintStream ps) throws JPLEphemerisException {
+		for (int kBody1 = JPLEphemeris.MERCURY; kBody1 < JPLEphemeris.SUN; kBody1++) {
+			if (kBody1 == JPLEphemeris.EARTHMOONBARYCENTRE)
+				continue;
+			
+			for (int kBody2 = kBody1 + 1; kBody2 <= JPLEphemeris.SUN; kBody2++) {
+				if (kBody2 == JPLEphemeris.EARTHMOONBARYCENTRE)
+					continue;
+				
+				ps.println(bodyNames[kBody1] + " -- " + bodyNames[kBody2]);
+				
+				run(kBody1, kBody2, jdstart, jdfinish, dt, inLongitude, ps);
+				
+				ps.println();
+			}
+		}
+	}
+	
+	private void runOneAgainstAll(int kBody1, boolean wildcardFirst, double jdstart, double jdfinish, double dt, boolean inLongitude,
+			PrintStream ps) throws JPLEphemerisException {
+		for (int kBody2 = JPLEphemeris.MERCURY; kBody2 < JPLEphemeris.SUN; kBody2++) {
+			if (kBody1 == kBody2 || kBody2 == JPLEphemeris.EARTHMOONBARYCENTRE)
+				continue;
+			
+			ps.println(bodyNames[wildcardFirst ? kBody2 : kBody1] + " -- " + bodyNames[wildcardFirst ? kBody1: kBody2]);
+			
+			if (wildcardFirst)
+				run(kBody2, kBody1, jdstart, jdfinish, dt, inLongitude, ps);
+			else
+				run(kBody1, kBody2, jdstart, jdfinish, dt, inLongitude, ps);
+			
+			ps.println();
+		}
+	}
+
+	private void run(int kBody1, int kBody2, double jdstart, double jdfinish, double dt, boolean inLongitude,
+			PrintStream ps) throws JPLEphemerisException {
+		if (kBody1 == WILDCARD && kBody2 == WILDCARD) {
+			runAllAgainstAll(jdstart, jdfinish, dt, inLongitude, ps);
+			return;
+		}
+		
+		if (kBody1 == WILDCARD) {
+			runOneAgainstAll(kBody2, true, jdstart, jdfinish, dt, inLongitude, ps);
+			return;
+		}
+		
+		if (kBody2 == WILDCARD) {
+			runOneAgainstAll(kBody1, false, jdstart, jdfinish, dt, inLongitude, ps);
+			return;
+		}
+			
 		double lastDX = Double.NaN;
 		boolean first = true;
 		
+		ApparentPlace apTarget1 = getApparentPlace(kBody1);
+		
+		ApparentPlace apTarget2 = getApparentPlace(kBody2);
+		
 		for (double t = jdstart; t <= jdfinish; t += dt) {
-			double dX = inLongitude ? calculateDifferenceInLongitude(t) : calculateDifferenceInRightAscension(t);
+			double dX = inLongitude ?
+					calculateDifferenceInLongitude(apTarget1, apTarget2, t) :
+					calculateDifferenceInRightAscension(apTarget1, apTarget2, t);
 			
 			if (!first) {
 				if (changeOfSign(lastDX, dX)) {
@@ -327,7 +389,7 @@ public class ConjunctionFinder {
 					debug("Sign change between " + tLast + "(" + julianDateToCalendarDate(tLast) + ") and " + t + 
 							" (" + julianDateToCalendarDate(t) + ") : " + lastDX + " vs " + dX);
 					
-					double tExact = findExactInstant(tLast, t, inLongitude);
+					double tExact = findExactInstant(apTarget1, apTarget2, tLast, t, inLongitude);
 					
 					apTarget1.calculateApparentPlace(tExact);
 					
@@ -383,7 +445,7 @@ public class ConjunctionFinder {
 		return new EclipticCoordinates(atan2(ye, xe), asin(ze));
 	}
 
-	private double calculateDifferenceInRightAscension(double t) throws JPLEphemerisException {
+	private double calculateDifferenceInRightAscension(ApparentPlace apTarget1, ApparentPlace apTarget2, double t) throws JPLEphemerisException {
 		apTarget1.calculateApparentPlace(t);
 		
 		apTarget2.calculateApparentPlace(t);
@@ -395,7 +457,7 @@ public class ConjunctionFinder {
 		return reduceAngle(ra2 - ra1);	
 	}
 	
-	private double calculateDifferenceInLongitude(double t) throws JPLEphemerisException {
+	private double calculateDifferenceInLongitude(ApparentPlace apTarget1, ApparentPlace apTarget2, double t) throws JPLEphemerisException {
 		apTarget1.calculateApparentPlace(t);
 		
 		apTarget2.calculateApparentPlace(t);
@@ -418,11 +480,11 @@ public class ConjunctionFinder {
 	// Limit of difference in RA for convergence
 	private final double EPSILON = 0.1 * (Math.PI/180.0)/3600.0;
 	
-	private double findExactInstant(double t1, double t2, boolean inLongitude) throws JPLEphemerisException {
+	private double findExactInstant(ApparentPlace apTarget1, ApparentPlace apTarget2, double t1, double t2, boolean inLongitude) throws JPLEphemerisException {
 		while (true) {
-			double dX1 = inLongitude ? calculateDifferenceInLongitude(t1) : calculateDifferenceInRightAscension(t1);
+			double dX1 = inLongitude ? calculateDifferenceInLongitude(apTarget1, apTarget2, t1) : calculateDifferenceInRightAscension(apTarget1, apTarget2, t1);
 	
-			double dX2 = inLongitude ? calculateDifferenceInLongitude(t2) : calculateDifferenceInRightAscension(t2);
+			double dX2 = inLongitude ? calculateDifferenceInLongitude(apTarget1, apTarget2, t2) : calculateDifferenceInRightAscension(apTarget1, apTarget2, t2);
 		
 			double dXchange = dX2 - dX1;
 		
@@ -430,7 +492,7 @@ public class ConjunctionFinder {
 		
 			double tNew = t1 - dX1/dXrate;
 		
-			double dX3 = inLongitude ? calculateDifferenceInLongitude(tNew) : calculateDifferenceInRightAscension(tNew);
+			double dX3 = inLongitude ? calculateDifferenceInLongitude(apTarget1, apTarget2, tNew) : calculateDifferenceInRightAscension(apTarget1, apTarget2, tNew);
 		
 			debug("\tImproved t = " + tNew + " (" + julianDateToCalendarDate(tNew) + ") => " + dX3);
 
