@@ -2,11 +2,11 @@
 
 SCRIPT_DIR=`dirname $0`
 
-JAR_FILE=${SCRIPT_DIR}/almanac.jar
+JAR_FILE=${SCRIPT_DIR}/build/libs/astrojava-2.0.jar
 
 if [ ! -f ${JAR_FILE} ]
 then
-  echo "Cannot find JAR file ${JAR_FILE}. Run the build script."
+  echo "Cannot find JAR file ${JAR_FILE}. Run 'gradle build' to create it."
   exit 1
 fi
 
