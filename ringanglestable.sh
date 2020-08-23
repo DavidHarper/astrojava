@@ -2,19 +2,6 @@
 
 SCRIPT_DIR=`dirname $0`
 
-JAR_FILE=${SCRIPT_DIR}/almanac.jar
+export APPCLASS=com.obliquity.astronomy.almanac.test.SaturnRingAnglesTabulator
 
-APPCLASS=com.obliquity.astronomy.almanac.test.SaturnRingAnglesTabulator
-
-if [ ! -f ${JAR_FILE} ]
-then
-  echo "Cannot find JAR file ${JAR_FILE}. Run the build script."
-  exit 1
-fi
-
-if [ ! -z "${EPHEMERIS_FILE}" -a -f "${EPHEMERIS_FILE}" ]
-then
-  EPHEMERIS_OPTS="-ephemeris ${EPHEMERIS_FILE}"
-fi
-
-java ${JAVA_OPTS} -classpath ${JAR_FILE} ${APPCLASS} ${EPHEMERIS_OPTS} "$@"
+exec ${SCRIPT_DIR}/runapp.sh "$@"

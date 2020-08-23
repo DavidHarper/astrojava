@@ -1,16 +1,17 @@
 #!/bin/bash
 
-if [ ! -z "${EPHEMERIS_FILE}" -a -f "${EPHEMERIS_FILE}" ]
-then
-  EPHEMERIS_OPTS="-ephemeris ${EPHEMERIS_FILE}"
-fi
+SCRIPT_DIR=`dirname $0`
 
-java -Ddebug=true com.obliquity.astronomy.almanac.test.GreatCircleFlight ${EPHEMERIS_OPTS} \
+export APPCLASS=com.obliquity.astronomy.almanac.test.GreatCircleFlight
+
+export JAVA_OPTS="-Ddebug=true"
+
+${SCRIPT_DIR}/runapp.sh \
     -startdate '2013-12-18 15:30' -startpos 0,51.5 -enddate '2013-12-19 01:00' -endpos -120,48 \
     -target venus \
     "$@"
 
-java -Ddebug=true com.obliquity.astronomy.almanac.test.GreatCircleFlight ${EPHEMERIS_OPTS} \
+${SCRIPT_DIR}/runapp.sh \
     -startdate '2013-12-18 15:30' -startpos 0,51.5 -enddate '2013-12-19 01:00' -endpos -120,48 \
     -target sun \
     "$@"
