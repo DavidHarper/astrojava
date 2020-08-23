@@ -327,11 +327,7 @@ public class ConjunctionFinder {
 				if (kBody2 == JPLEphemeris.EARTHMOONBARYCENTRE)
 					continue;
 				
-				ps.println(bodyNames[kBody1] + " -- " + bodyNames[kBody2]);
-				
 				run(kBody1, kBody2, jdstart, jdfinish, dt, inLongitude, ps);
-				
-				ps.println();
 			}
 		}
 	}
@@ -342,14 +338,10 @@ public class ConjunctionFinder {
 			if (kBody1 == kBody2 || kBody2 == JPLEphemeris.EARTHMOONBARYCENTRE)
 				continue;
 			
-			ps.println(bodyNames[wildcardFirst ? kBody2 : kBody1] + " -- " + bodyNames[wildcardFirst ? kBody1: kBody2]);
-			
 			if (wildcardFirst)
 				run(kBody2, kBody1, jdstart, jdfinish, dt, inLongitude, ps);
 			else
 				run(kBody1, kBody2, jdstart, jdfinish, dt, inLongitude, ps);
-			
-			ps.println();
 		}
 	}
 
@@ -376,6 +368,8 @@ public class ConjunctionFinder {
 		ApparentPlace apTarget1 = getApparentPlace(kBody1);
 		
 		ApparentPlace apTarget2 = getApparentPlace(kBody2);
+		
+		boolean printCaption = true;
 		
 		for (double t = jdstart; t <= jdfinish; t += dt) {
 			double dX = inLongitude ?
@@ -421,6 +415,12 @@ public class ConjunctionFinder {
 					
 					AstronomicalDate ad = new AstronomicalDate(tExact);
 					
+					if (printCaption) {
+						ps.println(bodyNames[kBody1] + " -- " + bodyNames[kBody2]);
+						
+						printCaption = false;
+					}
+					
 					ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %6.1f  %7.4f  %7.4f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
 							dY, dLambda, apTarget1.getGeometricDistance(), apTarget2.getGeometricDistance());
 				}
@@ -429,6 +429,9 @@ public class ConjunctionFinder {
 			lastDX = dX;
 			first = false;
 		}
+		
+		if (!printCaption)
+			ps.println();
 	}
 	
 	private EclipticCoordinates calculateEclipticCoordinates(double ra, double dec, double t) {
