@@ -48,16 +48,14 @@ public class LunarEclipses {
 	private static final double RADIANS_TO_ARCSEC = 3600.0 * 180.0/Math.PI;
 
 	private final DecimalFormat dfmta = new DecimalFormat("#0.000");
-	private final DecimalFormat dfmtb = new DecimalFormat("##0.0");
-
-	private final DecimalFormat fmtYear = new DecimalFormat(" 0000;-0000");
-	private final DecimalFormat fmtTwoDigits = new DecimalFormat("00");
 
 	private final SimpleDateFormat datefmt = new SimpleDateFormat("G yyyy-MM-dd HH:mm:ss");
 	private final SimpleDateFormat prefixfmt = new SimpleDateFormat("yyyyMMdd: ");
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
+	
+	public static final int ALL_ECLIPSES = 0, ONLY_CENTRAL = 1, ONLY_TOTAL = 2;
 	
 	private final double AU;
 	
@@ -72,7 +70,7 @@ public class LunarEclipses {
 		String filename = null;
 		String startdate = null;
 		String enddate = null;
-		boolean onlyTotal = false;
+		int runMode = ALL_ECLIPSES;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -85,7 +83,10 @@ public class LunarEclipses {
 				enddate = args[++i];
 			
 			if (args[i].equalsIgnoreCase("-only-total"))
-				onlyTotal = true;
+				runMode = ONLY_TOTAL;
+			
+			if (args[i].equalsIgnoreCase("-only-central"))
+				runMode = ONLY_CENTRAL;
 		}
 
 		if (filename == null || startdate == null || enddate == null) {
@@ -145,7 +146,7 @@ public class LunarEclipses {
 			}
 			
 			try {
-				le.testForLunarEclipse(t, onlyTotal);
+				le.testForLunarEclipse(t, runMode);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -192,7 +193,7 @@ public class LunarEclipses {
 
 	// Reference: Explanatory Supplement to the Astronomical Almanac, first edition (1961),
 	// fourth impression (1977).  Section 9E, "Lunar Eclipses"
-	public void testForLunarEclipse(double t0, boolean onlyTotal) throws JPLEphemerisException {
+	public void testForLunarEclipse(double t0, int runMode) throws JPLEphemerisException {
 		boolean debug = Boolean.getBoolean("debug");
 		
 		if (debug)
@@ -287,23 +288,33 @@ public class LunarEclipses {
 		if (debug)
 			System.out.println("DEBUG: L1 = " + L1 + ", L2 = " + L2 + ", L3 = " + L3);
 		
+		String eclipseType = null;
+		
 		double q1 = L1 * L1 - delta * delta;
 		
 		// Test for no eclipse
 		if (q1 < 0.0)
 			return;
 		
+		eclipseType = "PENUMBRAL";
+		
 		double q2 = L2 * L2 - delta * delta;
 		
-		// Test for penumbral eclipse
-		if (q2 < 0.0)
+		if (q2 < 0.0 && runMode != ALL_ECLIPSES)
 			return;
+		
+		// Test for partial eclipse
+		if (q2 > 0.0)
+			eclipseType = "PARTIAL";
 		
 		double q3 = L3 * L3 - delta * delta;
 		
 		// Test for total eclipse
-		if (q3 < 0.0 && onlyTotal)
+		if (q3 < 0.0 && runMode == ONLY_TOTAL)
 			return;
+		
+		if (q3 > 0)
+			eclipseType = "TOTAL";
 		
 		double mMin = sqrt(xMin * xMin + yMin * yMin);
 		
@@ -312,9 +323,9 @@ public class LunarEclipses {
 		if (debug)
 			System.out.println("DEBUG: q2 = " + q2 + ", q3 = " + q3 + ", mMin = " + mMin + ", max magnitude = " + dfmta.format(maxMag));
 		
-		String eclipseType = q3 < 0.0 ? "PARTIAL" : "TOTAL";
+		double penumbralDuration = 2.0 * sqrt(q1)/n;
 		
-		double partialDuration = 2.0 * sqrt(q2)/n;
+		double partialDuration = q2 < 0.0 ? 0.0 : 2.0 * sqrt(q2)/n;
 		
 		double totalDuration = q3 < 0.0 ? 0.0 : 2.0 * sqrt(q3)/n;
 		
@@ -323,12 +334,9 @@ public class LunarEclipses {
 		
 		AstronomicalDate date = new AstronomicalDate(tMin);
 		
-		String dateString = fmtYear.format(date.getYear()) + " " + fmtTwoDigits.format(date.getMonth()) +
-				" " + fmtTwoDigits.format(date.getDay()) + " " + fmtTwoDigits.format(date.getHour()) +
-				":" + fmtTwoDigits.format(date.getMinute()) + ":" + fmtTwoDigits.format(date.getSecond());
-		
-		System.out.println(dateString + " " + eclipseType + " " + dfmta.format(maxMag) +
-				" " + dfmtb.format(partialDuration) +
-				" " + dfmtb.format(totalDuration));
+		System.out.printf("%4d %02d %02d %02d:%02d:%02d %-9s %6.3f %5.1f %5.1f %5.1f\n",
+				date.getYear(), date.getMonth(), date.getDay(),
+				date.getHour(), date.getMinute(), (int)date.getSecond(),
+				eclipseType, maxMag, penumbralDuration, partialDuration, totalDuration);
 	}
 }
