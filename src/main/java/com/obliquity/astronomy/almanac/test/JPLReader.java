@@ -93,10 +93,17 @@ public class JPLReader {
 		}
 
 		double tEarliest = ephemeris.getEarliestDate();
+		
+		AstronomicalDate adEarliest = new AstronomicalDate(tEarliest);
+		
 		double tLatest = ephemeris.getLatestDate();
+		
+		AstronomicalDate adLatest = new AstronomicalDate(tLatest);
+		
 		System.out.println("Ephemeris has number "
 				+ ephemeris.getEphemerisNumber());
-		System.out.println("Date range is " + tEarliest + " to " + tLatest);
+		
+		System.out.println("Date range is " + tEarliest + " (" + adEarliest + ") "+ " to " + tLatest + " (" + adLatest + ")");
 
 		System.out.println("The ephemeris has "
 				+ ephemeris.getNumberOfDataRecords()
