@@ -258,7 +258,11 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 		return 0;
 	}
 	
+	public String toString() {
+		return String.format("%04d-%02d-%02d %02d:%02d:%05.2f", year, month, day, hour, minute, second);
+	}
+	
 	public String toISO8601String() {
-		return String.format("%04d-%02d-%02dT%02d:%02d:%5.2f", year, month, day, hour, minute, second);
+		return String.format("%04d-%02d-%02dT%02d:%02d:%05.2f", year, month, day, hour, minute, second);
 	}
 }
