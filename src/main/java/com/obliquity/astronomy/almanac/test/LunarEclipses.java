@@ -61,6 +61,12 @@ public class LunarEclipses {
 	
 	private EarthRotationModel erm = new IAUEarthRotationModel();
 	
+	JPLEphemeris ephemeris = null;
+	
+	MovingPoint moon = null;
+	MovingPoint earth = null;
+	MovingPoint sun = null;
+	
 	private ApparentPlace apSun, apMoon;
 	
 	public static void main(String args[]) {
@@ -167,11 +173,13 @@ public class LunarEclipses {
 	}
 
 	public LunarEclipses(JPLEphemeris ephemeris) {
-		MovingPoint moon = new MoonCentre(ephemeris);
+		this.ephemeris = ephemeris;
+
+		moon = new MoonCentre(ephemeris);
 		
-		MovingPoint earth = new EarthCentre(ephemeris);
+		earth = new EarthCentre(ephemeris);
 		
-		MovingPoint sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+		sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 		
 		apSun = new ApparentPlace(earth, sun, sun, erm);
 
@@ -329,14 +337,60 @@ public class LunarEclipses {
 		
 		double totalDuration = q3 < 0.0 ? 0.0 : 2.0 * sqrt(q3)/n;
 		
+		// Calculate distance of Moon from node of orbit on ecliptic.
+		
+		StateVector pve = earth.getStateVector(tMin);
+		
+		Vector pe = pve.getPosition();
+		pe.normalise();
+		
+		Vector ve = pve.getVelocity();
+		ve.normalise();
+		
+		Vector we = pe.vectorProduct(ve);
+		we.normalise();
+		
+		Vector te = we.vectorProduct(pe);
+		te.normalise();
+		
+		Vector pm  = new Vector();
+		Vector vm = new Vector();
+		
+		ephemeris.calculatePositionAndVelocity(tMin, JPLEphemeris.MOON,
+				pm, vm);
+
+		pm.normalise();
+		
+		vm.normalise();
+		
+		Vector wm = pm.vectorProduct(vm);
+		wm.normalise();
+
+		double a = pe.scalarProduct(wm);
+		double b = te.scalarProduct(wm);
+		
+		double theta = Math.atan2(a, b);
+		
+		theta *= 180.0/Math.PI;
+		
+		if (theta < -90.0)
+			theta += 180.0;
+		
+		if (theta > 90.0)
+			theta -= 180.0;
+
 		if (debug)
 			System.out.println("DEBUG: partial duration = " + partialDuration + ", total duration = " + totalDuration);
 		
 		AstronomicalDate date = new AstronomicalDate(tMin);
 		
-		System.out.printf("%4d %02d %02d %02d:%02d:%02d %-9s %6.3f %5.1f %5.1f %5.1f\n",
+		f1 *= 180.0/Math.PI;
+		f2 *= 180.0/Math.PI;
+		semiDiameterMoon *= 180.0/Math.PI;
+		
+		System.out.printf("%4d %02d %02d %02d:%02d:%02d %-9s %6.3f %5.1f %5.1f %5.1f %6.2f %f %f %f\n",
 				date.getYear(), date.getMonth(), date.getDay(),
 				date.getHour(), date.getMinute(), (int)date.getSecond(),
-				eclipseType, maxMag, penumbralDuration, partialDuration, totalDuration);
+				eclipseType, maxMag, penumbralDuration, partialDuration, totalDuration, theta, f1, f2, semiDiameterMoon);
 	}
 }
