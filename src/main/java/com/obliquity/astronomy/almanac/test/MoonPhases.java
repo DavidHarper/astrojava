@@ -48,6 +48,8 @@ public class MoonPhases {
 	
 	private ApparentPlace apSun, apMoon;
 	
+	private static final String[] dayOfWeek = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+	
 	public static void main(String args[]) {
 		SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -131,9 +133,11 @@ public class MoonPhases {
 			
 			AstronomicalDate ad = new AstronomicalDate(t);
 			
+			int dow = ((int)(t + 3500000.5)) % 7;
+			
 			String dateString = fmtYear.format(ad.getYear()) + " " + fmtTwoDigits.format(ad.getMonth()) +
 					" " + fmtTwoDigits.format(ad.getDay()) + " " + fmtTwoDigits.format(ad.getHour()) +
-					":" + fmtTwoDigits.format(ad.getMinute()) + ":" + fmtTwoDigits.format(ad.getSecond());
+					":" + fmtTwoDigits.format(ad.getMinute()) + ":" + fmtTwoDigits.format(ad.getSecond()) + " " + dayOfWeek[dow];
 			
 			System.out.println(dateString);
 			
