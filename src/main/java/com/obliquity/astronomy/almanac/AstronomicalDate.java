@@ -144,7 +144,7 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 		return second;
 	}
 	
-	public boolean roundToNearestSecond() {
+	public boolean roundToNearestMinute() {
 		if (second < 30.0)
 			return false;
 		

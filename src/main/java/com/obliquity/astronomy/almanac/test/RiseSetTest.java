@@ -241,7 +241,7 @@ public class RiseSetTest {
 	
 	private static String dateToString(double t) {
 		AstronomicalDate ad = new AstronomicalDate(t);
-		ad.roundToNearestSecond();
+		ad.roundToNearestMinute();
 		return dfmt1.format(ad.getYear()) + "-" + dfmt2.format(ad.getMonth()) + "-" + dfmt2.format(ad.getDay()) 
 				+ " " + dfmt2.format(ad.getHour()) + ":" + dfmt2.format(ad.getMinute());
 	}

@@ -347,7 +347,7 @@ public class InferiorPlanetApparition {
 
 	private String dateToString(double t) {
 		AstronomicalDate ad = new AstronomicalDate(t);
-		ad.roundToNearestSecond();
+		ad.roundToNearestMinute();
 		return dfmt1.format(ad.getYear()) + "-" + dfmt2.format(ad.getMonth())
 				+ "-" + dfmt2.format(ad.getDay()) + " "
 				+ dfmt2.format(ad.getHour()) + ":"

@@ -264,7 +264,7 @@ public class TwilightExplorer {
 	
 	private static String dateToString(double t) {
 		AstronomicalDate ad = new AstronomicalDate(t);
-		ad.roundToNearestSecond();
+		ad.roundToNearestMinute();
 		return dfmt1.format(ad.getYear()) + "-" + dfmt2.format(ad.getMonth()) + "-" + dfmt2.format(ad.getDay()) 
 				+ " " + dfmt2.format(ad.getHour()) + ":" + dfmt2.format(ad.getMinute());
 	}
@@ -283,7 +283,7 @@ public class TwilightExplorer {
 	private void displayTwilightLengths(RiseSetEvent sunset, RiseSetEvent civilTwilight, RiseSetEvent nauticalTwilight,
 			RiseSetEvent astronomicalTwilight) {
 		AstronomicalDate ad = new AstronomicalDate(sunset.date);
-		ad.roundToNearestSecond();
+		ad.roundToNearestMinute();
 		
 		System.out.printf("%04d-%02d-%02d ", ad.getYear(), ad.getMonth(), ad.getDay());
 		
