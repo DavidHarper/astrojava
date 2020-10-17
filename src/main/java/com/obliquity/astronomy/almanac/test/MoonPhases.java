@@ -60,6 +60,7 @@ public class MoonPhases {
 		String filename = null;
 		String startdate = null;
 		String enddate = null;
+		boolean useUT = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -70,6 +71,9 @@ public class MoonPhases {
 
 			if (args[i].equalsIgnoreCase("-enddate"))
 				enddate = args[++i];
+			
+			if (args[i].equalsIgnoreCase("-ut"))
+				useUT = true;
 		}
 
 		if (filename == null || startdate == null || enddate == null) {
@@ -125,11 +129,12 @@ public class MoonPhases {
 		
 		while (t < jdfinish) {
 			try {
-				t = mp.getDateOfNextPhase(t, FULL_MOON);
+				t = mp.getDateOfNextPhase(t, FULL_MOON, useUT);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
+			
 			
 			AstronomicalDate ad = new AstronomicalDate(t);
 			
@@ -150,6 +155,10 @@ public class MoonPhases {
 		System.err.println("\t-ephemeris\tName of ephemeris file");
 		System.err.println("\t-startdate\tStart date");
 		System.err.println("\t-enddate\tEnd date");
+		System.err.println();
+		System.err.println("OPTIONAL PARAMETERS");
+		System.err.println("\t-ut\tDisplay times in UT instead of TT");
+		
 	}
 
 	public MoonPhases(JPLEphemeris ephemeris) {
@@ -201,7 +210,7 @@ public class MoonPhases {
 		return elong;
 	}
 	
-	public double getDateOfNextPhase(double t0, int phase) throws JPLEphemerisException {
+	public double getDateOfNextPhase(double t0, int phase, boolean useUT) throws JPLEphemerisException {
 		double d = getLunarElongation(t0);
 		
 		double dWanted = 0.5 * PI * (double)(phase % 4);
@@ -223,6 +232,9 @@ public class MoonPhases {
 			
 			t += dt;
 		}
+		
+		if (useUT)
+			t -= erm.deltaT(t);
 		
 		return t;
 	}
