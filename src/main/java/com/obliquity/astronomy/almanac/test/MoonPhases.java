@@ -27,7 +27,6 @@ package com.obliquity.astronomy.almanac.test;
 import static java.lang.Math.*;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -61,6 +60,7 @@ public class MoonPhases {
 		String startdate = null;
 		String enddate = null;
 		boolean useUT = false;
+		boolean showSeconds = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -74,6 +74,9 @@ public class MoonPhases {
 			
 			if (args[i].equalsIgnoreCase("-ut"))
 				useUT = true;
+			
+			if (args[i].equalsIgnoreCase("-seconds"))
+				showSeconds = true;
 		}
 
 		if (filename == null || startdate == null || enddate == null) {
@@ -124,9 +127,6 @@ public class MoonPhases {
 		
 		datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		
-		DecimalFormat fmtYear = new DecimalFormat(" 0000;-0000");
-		DecimalFormat fmtTwoDigits = new DecimalFormat("00");
-		
 		while (t < jdfinish) {
 			try {
 				t = mp.getDateOfNextPhase(t, FULL_MOON, useUT);
@@ -135,16 +135,20 @@ public class MoonPhases {
 				System.exit(1);
 			}
 			
-			
 			AstronomicalDate ad = new AstronomicalDate(t);
+			
+			if (!showSeconds)
+				ad.roundToNearestMinute();
 			
 			int dow = ((int)(t + 3500000.5)) % 7;
 			
-			String dateString = fmtYear.format(ad.getYear()) + " " + fmtTwoDigits.format(ad.getMonth()) +
-					" " + fmtTwoDigits.format(ad.getDay()) + " " + fmtTwoDigits.format(ad.getHour()) +
-					":" + fmtTwoDigits.format(ad.getMinute()) + ":" + fmtTwoDigits.format(ad.getSecond()) + " " + dayOfWeek[dow];
+			System.out.printf("%4d %2d %2d %02d:%02d", ad.getYear(), ad.getMonth(), ad.getDay(),
+					ad.getHour(), ad.getMinute());
 			
-			System.out.println(dateString);
+			if (showSeconds)
+				System.out.printf(":%02d", (int)ad.getSecond());
+			
+			System.out.printf(" %s\n", dayOfWeek[dow]);
 			
 			t += 29.0;
 		}
@@ -157,8 +161,8 @@ public class MoonPhases {
 		System.err.println("\t-enddate\tEnd date");
 		System.err.println();
 		System.err.println("OPTIONAL PARAMETERS");
-		System.err.println("\t-ut\tDisplay times in UT instead of TT");
-		
+		System.err.println("\t-ut\t\tDisplay times in UT instead of TT");
+		System.err.println("\t-seconds\tDisplay time to nearest second");
 	}
 
 	public MoonPhases(JPLEphemeris ephemeris) {
