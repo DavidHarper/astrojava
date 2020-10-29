@@ -72,14 +72,23 @@ public class Analemma {
 				time = 60 * Integer.parseInt(words[0]) + Integer.parseInt(words[1]);
 				break;
 				
+			case "-help":
+				showUsage(null);
+				System.exit(0);
+				
 			default:	
 				showUsage("Unknown option: " + args[i]);
-				break;
+				System.exit(1);
 			}
 		}
 
 		if (filename == null) {
 			showUsage("No ephemeris filename specified");
+			System.exit(1);
+		}
+		
+		if (Double.isNaN(latitude)) {
+			showUsage("No latitude specified");
 			System.exit(1);
 		}
 		
