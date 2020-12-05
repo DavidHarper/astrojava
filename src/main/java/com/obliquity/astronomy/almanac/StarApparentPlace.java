@@ -153,19 +153,21 @@ public class StarApparentPlace {
 		if (verbose)
 			displayVector("p2", p2);
 		
-		Matrix precession = erm.precessionMatrix(fixedEpoch, jd);
+		if (erm != null) {
+			Matrix precession = erm.precessionMatrix(fixedEpoch, jd);
 		
-		Matrix nutation = erm.nutationMatrix(jd);
+			Matrix nutation = erm.nutationMatrix(jd);
 
-		precession.rightMultiplyBy(nutation);
+			precession.rightMultiplyBy(nutation);
 		
-		if (verbose)
-			displayMatrix("PRECESSION-NUTATION", precession);
+			if (verbose)
+				displayMatrix("PRECESSION-NUTATION", precession);
 		
-		p2.multiplyBy(precession);
+			p2.multiplyBy(precession);
 		
-		if (verbose)
-			displayVector("p3", p2);
+			if (verbose)
+				displayVector("p3", p2);
+		}
 		
 		p2.normalise();
 		
