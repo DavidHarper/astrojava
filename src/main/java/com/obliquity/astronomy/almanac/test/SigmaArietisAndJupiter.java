@@ -50,6 +50,7 @@ public class SigmaArietisAndJupiter {
 	private JPLEphemeris ephemeris = null;
 	private StarApparentPlace sap = null;
 	private ApparentPlace apJupiter = null;
+	private boolean useJ2000 = Boolean.getBoolean("sigmaarietisandjupiter.usej2000");
 		
 	public SigmaArietisAndJupiter(JPLEphemeris ephemeris) {
 		this.ephemeris = ephemeris;
@@ -60,7 +61,7 @@ public class SigmaArietisAndJupiter {
 		
 		MovingPoint jupiter = new PlanetCentre(ephemeris, JPLEphemeris.JUPITER);
 		
-		EarthRotationModel erm = new IAUEarthRotationModel();
+		EarthRotationModel erm = useJ2000 ? null : new IAUEarthRotationModel();
 		
 		apJupiter = new ApparentPlace(earth, jupiter, sun, erm);
 		
@@ -114,9 +115,9 @@ public class SigmaArietisAndJupiter {
 		for (int i = 0; i < 144; i++) {
 			apJupiter.calculateApparentPlace(jd);
 			
-			double raJupiter = apJupiter.getRightAscensionOfDate();
+			double raJupiter = useJ2000 ? apJupiter.getRightAscensionJ2000() : apJupiter.getRightAscensionOfDate();
 			
-			double decJupiter = apJupiter.getDeclinationOfDate();
+			double decJupiter = useJ2000 ? apJupiter.getDeclinationJ2000() : apJupiter.getDeclinationOfDate();
 			
 			double gd = apJupiter.getGeometricDistance();
 			
