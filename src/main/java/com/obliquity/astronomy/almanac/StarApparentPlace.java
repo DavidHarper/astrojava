@@ -38,13 +38,13 @@ public class StarApparentPlace {
 	}
 	
 	public Vector calculateApparentPlace(double ra, double dec, double parallax, double pmRA, double pmDec, double rv,
-			double fixedEpoch, double jd) throws JPLEphemerisException {
+			double positionEpoch, double fixedEpoch, double jd) throws JPLEphemerisException {
 		Vector q = new Vector(Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec));
 		
 		if (verbose)
 			displayVector("CATALOGUE POSITION", q);
 		
-		double T = (jd - fixedEpoch)/36525.0;
+		double T = (jd - positionEpoch)/36525.0;
 		
 		// Convert proper motions and parallax from mas/yr and mas to radians/cy and radians.
 		pmRA *= Math.PI/(180.0 * 3600.0 * 1000.0) * 100.0;

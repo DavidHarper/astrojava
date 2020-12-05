@@ -94,7 +94,7 @@ public class TestStarApparentPlace {
 		
 		double jd = 2451179.5;
 		
-		Vector p = sap.calculateApparentPlace(ra, dec, parallax, pmRA, pmDec, rv, fixedEpoch, jd);
+		Vector p = sap.calculateApparentPlace(ra, dec, parallax, pmRA, pmDec, rv, fixedEpoch, fixedEpoch, jd);
 		
 		displayEquatorialCoordinates(p);
 	}
