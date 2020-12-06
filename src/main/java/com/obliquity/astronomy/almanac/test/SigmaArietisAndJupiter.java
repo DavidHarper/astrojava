@@ -81,25 +81,52 @@ public class SigmaArietisAndJupiter {
 			System.exit(1);
 		}
 		
+		String[] dates = new String[args.length - 2];
+		
+		for (int i = 2; i < args.length; i++)
+			dates[i-2] = args[i];
+		
 		try {
 			JPLEphemeris ephemeris = new JPLEphemeris(filename);
 			
 			SigmaArietisAndJupiter runner = new SigmaArietisAndJupiter(ephemeris);
 			
-			runner.run();
+			runner.run(dates);
 		} catch (IOException | JPLEphemerisException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
 	}
 
-	private void run() throws JPLEphemerisException {
-		runForDate(new AstronomicalDate(1952, 11, 20));
+	private void run(String[] args) throws JPLEphemerisException {
+		if (args.length == 0) {
+			runForDate(new AstronomicalDate(1952, 11, 20));
 		
-		runForDate(new AstronomicalDate(2023, 8, 21));
+			runForDate(new AstronomicalDate(2023, 8, 21));
+		} else {
+			for (String datestr: args) {
+				AstronomicalDate ad = parseDate(datestr);
+				
+				runForDate(ad);
+			}
+		}
+	}
+	
+	private AstronomicalDate parseDate(String datestr) {
+		String[] words = datestr.split("-");
+		
+		if (words.length != 3)
+			throw new IllegalArgumentException("Date string \"" + datestr + "\" is invalid");
+		
+		int year = Integer.parseInt(words[0]);
+		int month = Integer.parseInt(words[1]);
+		int day = Integer.parseInt(words[2]);
+		
+		return new AstronomicalDate(year, month, day);
 	}
 	
 	private void runForDate(AstronomicalDate ad) throws JPLEphemerisException {
+		System.out.println("================================================================================");
 		System.out.printf("RUNNING FOR %04d-%02d-%02d\n", ad.getYear(), ad.getMonth(), ad.getDay());
 		
 		double jd = ad.getJulianDate();
