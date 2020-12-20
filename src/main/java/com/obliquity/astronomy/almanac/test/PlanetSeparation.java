@@ -337,7 +337,7 @@ public class PlanetSeparation {
 			AstronomicalDate ad = new AstronomicalDate(t);
 
 					
-			ps.printf("%5d %02d %02d %02d:%02d  %9.3f  %9.3f  %9.3f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
+			ps.printf("%5d %02d %02d %02d:%02d  %7.1f  %7.1f  %7.1f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
 							dX, dY, d);
 		}
 	}
