@@ -204,22 +204,22 @@ public class VenusTabletExplorer {
 					
 					apVenus.calculateApparentPlace(tExact);
 					
-					double ra2 = apVenus.getRightAscensionOfDate();
+					double raVenus = apVenus.getRightAscensionOfDate();
 					
-					double dec2 = apVenus.getDeclinationOfDate();
+					double decVenus = apVenus.getDeclinationOfDate();
 					
-					EclipticCoordinates ec2 = calculateEclipticCoordinates(ra2, dec2, tExact);
+					EclipticCoordinates ecVenus = calculateEclipticCoordinates(raVenus, decVenus, tExact);
 					
-					double dY =  ec2.latitude * 180.0/Math.PI;
+					double dY =  ecVenus.latitude * 180.0/Math.PI;
 										
 					double venusDistance = apVenus.getGeometricDistance();
 					
 					if (venusDistance < 1.0) {
 						double tNewMoon = findPreviousNewMoon(tExact);
 						
-						AstronomicalDate ad = new AstronomicalDate(tExact);
+						AstronomicalDate ad = new AstronomicalDate(tExact, true);
 						
-						AstronomicalDate adNewMoon = new AstronomicalDate(tNewMoon);
+						AstronomicalDate adNewMoon = new AstronomicalDate(tNewMoon, true);
 						
 						ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %5d %02d %02d %02d:%02d  %10.2f  %10.2f  %5.2f\n",
 								ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), dY,
