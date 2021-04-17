@@ -24,7 +24,6 @@
 
 package com.obliquity.astronomy.almanac.test;
 
-import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.asin;
 import static java.lang.Math.atan2;
@@ -47,7 +46,6 @@ import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
-import com.obliquity.astronomy.almanac.NutationAngles;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 
 public class VenusTabletExplorer {
@@ -204,8 +202,6 @@ public class VenusTabletExplorer {
 					
 					double tExact = findExactInstant(apSun, apVenus, tLast, t);
 					
-					apSun.calculateApparentPlace(tExact);
-					
 					apVenus.calculateApparentPlace(tExact);
 					
 					double ra2 = apVenus.getRightAscensionOfDate();
@@ -215,13 +211,7 @@ public class VenusTabletExplorer {
 					EclipticCoordinates ec2 = calculateEclipticCoordinates(ra2, dec2, tExact);
 					
 					double dY =  ec2.latitude * 180.0/Math.PI;
-
-					apSun.calculateApparentPlace(tExact);
-					
-					double raSun = apSun.getRightAscensionOfDate();
-					
-					double decSun = apSun.getDeclinationOfDate();
-					
+										
 					double venusDistance = apVenus.getGeometricDistance();
 					
 					if (venusDistance < 1.0) {
