@@ -26,8 +26,12 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 	// This is a nasty hack to enable the routine to handle
 	// negative Julian Day numbers.
 	private static final int JULIAN_CYCLES_OFFSET = 10000;
-
+	
 	public AstronomicalDate(double djd) {
+		this(djd, false);
+	}
+
+	public AstronomicalDate(double djd, boolean useProlepticGregorianCalendar) {
 		julianDate = djd;
 		
 		int K, L, N, I, J, D, M, Y;
@@ -36,7 +40,7 @@ public class AstronomicalDate implements Comparable<AstronomicalDate> {
 
 		JD = (int) Math.floor(djd + 0.5);
 
-		if (JD > GREGORIAN_TRANSITION_JD) {
+		if (JD > GREGORIAN_TRANSITION_JD || useProlepticGregorianCalendar) {
 			// Gregorian calendar
 			L = JD + 68569;
 			N = (4 * L) / 146097;
