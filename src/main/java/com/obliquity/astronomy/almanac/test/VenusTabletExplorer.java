@@ -103,6 +103,7 @@ public class VenusTabletExplorer {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		boolean useGregorianCalendar = true;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -116,6 +117,9 @@ public class VenusTabletExplorer {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+
+			if (args[i].equalsIgnoreCase("-julian"))
+				useGregorianCalendar = false;
 		}
 
 		if (filename == null || startdate == null
@@ -170,7 +174,7 @@ public class VenusTabletExplorer {
 		VenusTabletExplorer explorer = new VenusTabletExplorer(ephemeris);
 		
 		try {
-			explorer.run(jdstart, jdfinish, jdstep, System.out);
+			explorer.run(jdstart, jdfinish, jdstep, useGregorianCalendar, System.out);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -181,18 +185,19 @@ public class VenusTabletExplorer {
 				"\t-ephemeris\tName of ephemeris file",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
-
+				"",
+				"OPTIONAL PARAMETERS",
+				"\t-julian\t\tConvert dates to proleptic Julian calendar [default is proleptic Gregorian calendar]"
 		};
 		
 		for (String line : lines)
 			System.err.println(line);
 	}
-	private void run(double jdstart, double jdfinish, double dt, PrintStream ps) throws JPLEphemerisException {			
+	private void run(double jdstart, double jdfinish, double dt, boolean useGregorianCalendar, PrintStream ps) throws JPLEphemerisException {			
 		double lastDX = Double.NaN;
 		boolean first = true;
-		
-		boolean printCaption = true;
-		
+		char calType = useGregorianCalendar ? 'G' : 'J';
+				
 		for (double t = jdstart; t <= jdfinish; t += dt) {
 			double dX = calculateDifferenceInLongitude(apSun, apVenus, t);
 			
@@ -217,14 +222,15 @@ public class VenusTabletExplorer {
 					if (venusDistance < 1.0) {
 						double tNewMoon = findPreviousNewMoon(tExact);
 						
-						AstronomicalDate ad = new AstronomicalDate(tExact, true);
+						AstronomicalDate ad = new AstronomicalDate(tExact, useGregorianCalendar);
 						
-						AstronomicalDate adNewMoon = new AstronomicalDate(tNewMoon, true);
+						AstronomicalDate adNewMoon = new AstronomicalDate(tNewMoon, useGregorianCalendar);
 						
-						ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %5d %02d %02d %02d:%02d  %10.2f  %10.2f  %5.2f\n",
-								ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), dY,
+						ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %5d %02d %02d %02d:%02d %c %10.2f  %10.2f  %5.2f\n",
+								ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
+								dY,
 								adNewMoon.getYear(), adNewMoon.getMonth(), adNewMoon.getDay(), adNewMoon.getHour(), adNewMoon.getMinute(),
-								tExact, tNewMoon, tExact-tNewMoon);
+								calType, tExact, tNewMoon, tExact-tNewMoon);
 					}
 				}
 			}
@@ -232,9 +238,6 @@ public class VenusTabletExplorer {
 			lastDX = dX;
 			first = false;
 		}
-		
-		if (!printCaption)
-			ps.println();
 	}
 	
 	private double reduceAngle(double x) {
