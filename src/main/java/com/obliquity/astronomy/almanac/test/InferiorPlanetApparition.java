@@ -349,7 +349,7 @@ public class InferiorPlanetApparition {
 	private final String ISO_DATE_FORMAT = "%04d-%02d-%02d %02d:%02d";
 	
 	private void printDate(double t, boolean useISODate, PrintStream ps) {
-		AstronomicalDate ad = new AstronomicalDate(t);
+		AstronomicalDate ad = new AstronomicalDate(t, true);
 		ad.roundToNearestMinute();
 		
 		ps.printf(useISODate ? ISO_DATE_FORMAT : NORMAL_DATE_FORMAT,
