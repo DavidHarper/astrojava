@@ -26,7 +26,6 @@ package com.obliquity.astronomy.almanac.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -71,6 +70,7 @@ public class InferiorPlanetApparition {
 		boolean civil = false;
 		boolean graph = false;
 		Horizon horizon = Horizon.BOTH;
+		boolean useISODate = false;
 
 		int kBody = -1;
 
@@ -101,6 +101,9 @@ public class InferiorPlanetApparition {
 
 			if (args[i].equalsIgnoreCase("-graph"))
 				graph = true;
+			
+			if (args[i].equalsIgnoreCase("-isodate"))
+				useISODate = true;
 
 			if (args[i].equalsIgnoreCase("-east"))
 				horizon = Horizon.EAST;
@@ -184,7 +187,7 @@ public class InferiorPlanetApparition {
 		
 		if (graph) {
 			try {
-				final InferiorPlanetApparitionData[] data = ipa.calculateInferiorPlanetApparitionData(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
+				final InferiorPlanetApparitionData[] data = ipa.calculateInferiorPlanetApparitionData(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon, false);
 				
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
@@ -198,7 +201,7 @@ public class InferiorPlanetApparition {
 
 		} else {
 			try {
-				ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
+				ipa.run(apPlanet, apSun, place, jdstart, jdfinish, civil, horizon, useISODate);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
@@ -217,18 +220,18 @@ public class InferiorPlanetApparition {
 	}
 
 	public void run(ApparentPlace apPlanet, ApparentPlace apSun, Place place,
-			double jdstart, double jdfinish, boolean civil, Horizon horizon)
+			double jdstart, double jdfinish, boolean civil, Horizon horizon, boolean useISODate)
 			throws JPLEphemerisException {
 		InferiorPlanetApparitionData[] data = calculateInferiorPlanetApparitionData(
-				apPlanet, apSun, place, jdstart, jdfinish, civil, horizon);
+				apPlanet, apSun, place, jdstart, jdfinish, civil, horizon, useISODate);
 
 		for (InferiorPlanetApparitionData ipaData : data)
-			displayAspect(ipaData, System.out);
+			displayAspect(ipaData, useISODate, System.out);
 	}
 
 	public InferiorPlanetApparitionData[] calculateInferiorPlanetApparitionData(
 			ApparentPlace apPlanet, ApparentPlace apSun, Place place,
-			double jdstart, double jdfinish, boolean civil, Horizon horizon)
+			double jdstart, double jdfinish, boolean civil, Horizon horizon, boolean useISODate)
 			throws JPLEphemerisException {
 		LocalVisibility lv = new LocalVisibility();
 
@@ -284,11 +287,11 @@ public class InferiorPlanetApparition {
 
 	private final String SEPARATOR = " ";
 
-	private void displayAspect(InferiorPlanetApparitionData ipaData,
+	private void displayAspect(InferiorPlanetApparitionData ipaData, boolean useISODate,
 			PrintStream ps) {
 		String prefix = eventPrefix(ipaData);
 
-		displayAspect(prefix, ipaData.almanacData.julianDate,
+		displayAspect(prefix, ipaData.almanacData.julianDate, useISODate,
 				ipaData.horizontalCoordinates, ipaData.almanacData, ipaData.sunAzimuth, ps);
 	}
 
@@ -307,7 +310,7 @@ public class InferiorPlanetApparition {
 		}
 	}
 
-	private void displayAspect(String prefix, double date,
+	private void displayAspect(String prefix, double date, boolean useISODate,
 			HorizontalCoordinates hc, AlmanacData data, double sunAzimuth, PrintStream ps) {
 		double positionAngle = reduceAngle(
 				data.positionAngleOfBrightLimb - hc.parallacticAngle) * 180.0
@@ -322,7 +325,7 @@ public class InferiorPlanetApparition {
 		ps.print(SEPARATOR);		
 		ps.printf(fmt3, date);
 		ps.print(SEPARATOR);
-		ps.print(dateToString(date));		
+		printDate(date, useISODate, ps);
 		ps.print(SEPARATOR);
 		ps.printf(fmt1, 180.0 * hc.altitude / Math.PI);
 		ps.print(SEPARATOR);
@@ -341,17 +344,16 @@ public class InferiorPlanetApparition {
 		ps.printf(fmt1, 180.0 * sunAzimuth / Math.PI);
 		ps.println();
 	}
-
-	private final DecimalFormat dfmt1 = new DecimalFormat("0000");
-	private final DecimalFormat dfmt2 = new DecimalFormat("00");
-
-	private String dateToString(double t) {
+	
+	private final String NORMAL_DATE_FORMAT = "%04d %02d %02d %02d:%02d";
+	private final String ISO_DATE_FORMAT = "%04d-%02d-%02d %02d:%02d";
+	
+	private void printDate(double t, boolean useISODate, PrintStream ps) {
 		AstronomicalDate ad = new AstronomicalDate(t);
 		ad.roundToNearestMinute();
-		return dfmt1.format(ad.getYear()) + "-" + dfmt2.format(ad.getMonth())
-				+ "-" + dfmt2.format(ad.getDay()) + " "
-				+ dfmt2.format(ad.getHour()) + ":"
-				+ dfmt2.format(ad.getMinute());
+		
+		ps.printf(useISODate ? ISO_DATE_FORMAT : NORMAL_DATE_FORMAT,
+				ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute());
 	}
 
 	private static Date parseDate(String str) throws ParseException {
@@ -396,6 +398,7 @@ public class InferiorPlanetApparition {
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
 		System.err.println("\t-civil\tShow altitude at start/end of civil twilight");
 		System.err.println("\t-graph\tDisplay the apparition graphically");
+		System.err.println("\t-isodate\tUse ISO-8859 date output format");
 		
 		System.err.println("\t-east\tShow only events at sunrise/morning civil twilight");
 		System.err.println("\t-west\tShow only events at sunset/evening civil twilight");
