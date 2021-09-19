@@ -269,7 +269,7 @@ public class JPLEphemeris implements Serializable {
 
 			double cval = buffer.getDouble();
 
-			mapConstants.put(cname, new Double(cval));
+			mapConstants.put(cname, cval);
 		}
 
 		long offset = (firstrec + 2) * reclen;
