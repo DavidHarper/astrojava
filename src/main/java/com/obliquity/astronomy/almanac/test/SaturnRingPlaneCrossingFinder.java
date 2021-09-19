@@ -26,6 +26,7 @@ package com.obliquity.astronomy.almanac.test;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -55,6 +56,8 @@ public class SaturnRingPlaneCrossingFinder {
 	
 	private final SimpleDateFormat datefmtOut = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm");
+	
+	private final DecimalFormat dfmt = new DecimalFormat("###.0");
 	
 	private boolean debug = Boolean.getBoolean("debug");
 
@@ -287,8 +290,8 @@ public class SaturnRingPlaneCrossingFinder {
 		long ticks = (long) dticks;
 
 		Date date = new Date(ticks);
-		
+				
 		ps.println(datefmtOut.format(date) + " " + ((dbdt > 0.0) ? '+' : '-') + " " +
-				(target == EARTH ? "Earth" : "Sun"));
+				(target == EARTH ? "Earth" : "Sun  ") + " " + dfmt.format(data.elongation));
 	}
 }
