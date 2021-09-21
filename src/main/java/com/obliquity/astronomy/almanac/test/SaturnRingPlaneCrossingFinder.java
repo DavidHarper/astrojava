@@ -33,6 +33,7 @@ import java.util.TimeZone;
 
 import com.obliquity.astronomy.almanac.AlmanacData;
 import com.obliquity.astronomy.almanac.ApparentPlace;
+import com.obliquity.astronomy.almanac.AstronomicalDate;
 import com.obliquity.astronomy.almanac.EarthCentre;
 import com.obliquity.astronomy.almanac.EarthRotationModel;
 import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
@@ -56,8 +57,9 @@ public class SaturnRingPlaneCrossingFinder {
 	private final SimpleDateFormat datefmtOut = new SimpleDateFormat(
 			"yyyy-MM-dd HH:mm");
 	
-	
 	private boolean debug = Boolean.getBoolean("debug");
+	
+	private boolean useJavaDateConversion = Boolean.getBoolean("usejavadateconversion");
 
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
@@ -283,13 +285,20 @@ public class SaturnRingPlaneCrossingFinder {
 			t += dt;
 		} while (Math.abs(B) > EPSILON);
 		
-		double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
+		if (useJavaDateConversion) {
+			double dticks = MILLISECONDS_PER_DAY * (t - UNIX_EPOCH_AS_JD);
 
-		long ticks = (long) dticks;
+			long ticks = (long) dticks;
 
-		Date date = new Date(ticks);
+			Date date = new Date(ticks);
 		
-		ps.print(datefmtOut.format(date));
+			ps.print(datefmtOut.format(date));
+		} else {
+			AstronomicalDate ad = new AstronomicalDate(t);
+			ad.roundToNearestMinute();
+			ps.printf("%04d-%02d-%02d %02d:%02d", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute());
+		}
+		
 		ps.printf("  %1s  %-5s  %3.0f %1s\n", ((dbdt > 0.0) ? '+' : '-'),
 				(target == EARTH ? "Earth" : "Sun"),
 				data.elongation,
