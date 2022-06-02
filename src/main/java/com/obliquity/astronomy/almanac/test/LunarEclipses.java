@@ -387,10 +387,11 @@ public class LunarEclipses {
 		f1 *= 180.0/Math.PI;
 		f2 *= 180.0/Math.PI;
 		semiDiameterMoon *= 180.0/Math.PI;
+		mMin *= 180.0/Math.PI;
 		
-		System.out.printf("%4d %02d %02d %02d:%02d:%02d %-9s %6.3f %5.1f %5.1f %5.1f %6.2f %f %f %f\n",
+		System.out.printf("%4d %02d %02d %02d:%02d:%02d %-9s %6.3f %5.1f %5.1f %5.1f %6.2f %f %f %f %f\n",
 				date.getYear(), date.getMonth(), date.getDay(),
 				date.getHour(), date.getMinute(), (int)date.getSecond(),
-				eclipseType, maxMag, penumbralDuration, partialDuration, totalDuration, theta, f1, f2, semiDiameterMoon);
+				eclipseType, maxMag, penumbralDuration, partialDuration, totalDuration, theta, f1, f2, semiDiameterMoon, mMin);
 	}
 }
