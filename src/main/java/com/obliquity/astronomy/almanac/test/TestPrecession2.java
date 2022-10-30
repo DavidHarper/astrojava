@@ -38,7 +38,7 @@ public class TestPrecession2 {
 
 	public void run(String[] args) {
 		double epoch = Double.NaN, ra = Double.NaN, dec = Double.NaN,
-				pmra = 0.0, pmdec = 0.0, startYear = Double.NaN,
+				pmra = 0.0, pmdec = 0.0, epmra = 0.0, epmdec = 0.0, startYear = Double.NaN,
 				endYear = Double.NaN, stepYear = 1.0;
 
 		for (int i = 0; i < args.length; i++) {
@@ -62,6 +62,14 @@ public class TestPrecession2 {
 			case "-pmdec":
 				pmdec = Double.parseDouble(args[++i]);
 				break;
+				
+			case "-epmra":
+				epmra = Double.parseDouble(args[++i]);
+				break;
+				
+			case "-epmdec":
+				epmdec = Double.parseDouble(args[++i]);
+				break;
 
 			case "-start":
 				startYear = Double.parseDouble(args[++i]);
@@ -81,11 +89,11 @@ public class TestPrecession2 {
 			}
 		}
 
-		run(epoch, ra, dec, pmra, pmdec, startYear, endYear, stepYear);
+		run(epoch, ra, dec, pmra, epmra, pmdec, epmdec, startYear, endYear, stepYear);
 	}
 
-	private void run(double epoch, double ra, double dec, double pmra,
-			double pmdec, double startYear, double endYear, double stepYear) {
+	private void run(double epoch, double ra, double dec, double pmra, double epmra,
+			double pmdec, double epmdec, double startYear, double endYear, double stepYear) {
 		ra *= Math.PI / 12.0;
 		dec *= Math.PI / 180.0;
 		pmra *= Math.PI / (180.0 * 3600.0 * 100.0);
@@ -94,11 +102,11 @@ public class TestPrecession2 {
 		pmra /= Math.cos(dec);
 
 		for (double year = startYear; year <= endYear; year += stepYear)
-			precess(epoch, year, ra, dec, pmra, pmdec);
+			precess(epoch, year, ra, dec, pmra, epmra, pmdec, epmdec);
 	}
 
 	private void precess(double epoch, double year, double ra, double dec,
-			double pmra, double pmdec) {
+			double pmra, double epmra, double pmdec, double epmdec) {
 		ra += (year - epoch) * pmra;
 		dec += (year - epoch) * pmdec;
 		
@@ -142,7 +150,12 @@ public class TestPrecession2 {
 		
 		char signum = isSouth ? '-' : '+';
 		
-		System.out.printf("%7.3f  %2d %02d %6.3f  %s %2d %02d %6.2f\n", year, rah, ram, ras, signum, decd, decm, decs);
+		epmra *= (year - epoch);
+		epmdec *= (year - epoch);
+		
+		double epos = Math.sqrt(epmra*epmra + epmdec*epmdec);
+		
+		System.out.printf("%7.3f  %2d %02d %6.3f  %s %2d %02d %6.2f  %6.2f\n", year, rah, ram, ras, signum, decd, decm, decs, epos);
 	}
 
 	private double parseRA(String str) {
