@@ -46,6 +46,7 @@ import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.TerrestrialObserver;
 
 public class PlanetSeparation {
 	private static final SimpleDateFormat datefmtIn = new SimpleDateFormat(
@@ -70,7 +71,15 @@ public class PlanetSeparation {
 		earth = new EarthCentre(ephemeris);
 		
 		sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
-		}
+	}
+
+	public PlanetSeparation(JPLEphemeris ephemeris, double latitude, double longitude) {
+		this.ephemeris = ephemeris;
+
+		earth = (EarthCentre)new TerrestrialObserver(ephemeris, erm, latitude, longitude, 0.0);
+		
+		sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
+	}
 
 	public static void main(String args[]) {
 		datefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -81,6 +90,8 @@ public class PlanetSeparation {
 		String startdate = null;
 		String enddate = null;
 		String stepsize = null;
+		String longitude = null;
+		String latitude = null;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -100,6 +111,12 @@ public class PlanetSeparation {
 
 			if (args[i].equalsIgnoreCase("-step"))
 				stepsize = args[++i];
+
+			if (args[i].equalsIgnoreCase("-latitude"))
+				latitude = args[++i];
+
+			if (args[i].equalsIgnoreCase("-longitude"))
+				longitude = args[++i];
 		}
 
 		if (filename == null || startdate == null
@@ -170,7 +187,16 @@ public class PlanetSeparation {
 			System.exit(1);
 		}
 
-		PlanetSeparation runner = new PlanetSeparation(ephemeris);
+		PlanetSeparation runner;
+		
+		if (latitude != null && longitude != null) {
+			double lat = Double.parseDouble(latitude) * Math.PI / 180.0;
+			double lon = Double.parseDouble(longitude) * Math.PI / 180.0;
+			
+			runner = new PlanetSeparation(ephemeris, lat, lon);
+		} else {
+			runner = new PlanetSeparation(ephemeris);
+		}
 		
 		try {
 			runner.run(kBody1, kBody2, jdstart, jdfinish, jdstep, System.out);
@@ -193,6 +219,9 @@ public class PlanetSeparation {
 				"",
 				"Valid step size formats are an integer or an integer followed by a single letter (d, h, m, s) to indicate",
 				"units.  If no units are specified, days are asssumed.",
+				"",
+				"\t-latitude\tThe latitude of the observer, in degrees.",
+				"\t-longitude\tThe longitude of the observer, in degrees.",
 				"",
 				"OUTPUT FORMAT",
 				"",
