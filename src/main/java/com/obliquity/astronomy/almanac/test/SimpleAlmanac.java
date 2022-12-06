@@ -44,7 +44,9 @@ import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.Matrix;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
+import com.obliquity.astronomy.almanac.Place;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.TerrestrialObserver;
 import com.obliquity.astronomy.almanac.Vector;
 import com.obliquity.astronomy.almanac.saturnpole.DourneauSaturnPoleModel;
 import com.obliquity.astronomy.almanac.saturnpole.HarperTaylorSaturnPoleModel;
@@ -115,6 +117,9 @@ public class SimpleAlmanac {
 		String enddate = null;
 		String stepsize = null;
 		String poleModelName = null;
+		String longitude = null;
+		String latitude = null;
+
 		int targetEpoch = AlmanacData.TRUE_OF_DATE;
 		boolean elongationDeltas = false;
 
@@ -154,6 +159,13 @@ public class SimpleAlmanac {
 			
 			if (args[i].equalsIgnoreCase("-saturnpolemodel"))
 				poleModelName = args[++i];
+
+			if (args[i].equalsIgnoreCase("-latitude"))
+				latitude = args[++i];
+
+			if (args[i].equalsIgnoreCase("-longitude"))
+				longitude = args[++i];
+
 		}
 
 		if (filename == null || bodyname == null) {
@@ -228,7 +240,18 @@ public class SimpleAlmanac {
 		else
 			planet = new PlanetCentre(ephemeris, kBody);
 
-		EarthCentre earth = new EarthCentre(ephemeris);
+		EarthCentre earth;
+
+		EarthRotationModel erm = new IAUEarthRotationModel();
+
+		if (latitude != null && longitude != null) {
+			double lat = Double.parseDouble(latitude) * Math.PI / 180.0;
+			double lon = Double.parseDouble(longitude) * Math.PI / 180.0;
+
+			earth = (EarthCentre)new TerrestrialObserver(ephemeris, erm, lat, lon, 0.0);
+		} else {
+			earth = new EarthCentre(ephemeris);
+		}
 
 		MovingPoint sun = null;
 
@@ -236,8 +259,6 @@ public class SimpleAlmanac {
 			sun = planet;
 		else
 			sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
-
-		EarthRotationModel erm = new IAUEarthRotationModel();
 
 		ApparentPlace apTarget = new ApparentPlace(earth, planet, sun, erm);
 
@@ -569,6 +590,9 @@ public class SimpleAlmanac {
 				"units.  If no units are specified, days are asssumed.",
 				"",
 				"\t-elongationdeltas\tDisplay change in elongation between output lines (prefixed with #)",
+				"",
+				"\t-latitude\tThe latitude of the observer, in degrees.",
+				"\t-longitude\tThe longitude of the observer, in degrees.",
 				"",
 				"COORDINATE SYSTEM FOR RIGHT ASCENSION AND DECLINATION",
 				"\t-true\t\tCalculate true position for epoch of date [this is the default]",
