@@ -64,6 +64,7 @@ public class MoonPhenomena {
 		boolean phases = false;
 		boolean apsides = false;
 		boolean nodes = false;
+		boolean dow = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -81,6 +82,9 @@ public class MoonPhenomena {
 			if (args[i].equalsIgnoreCase("-seconds"))
 				showSeconds = true;
 			
+			if (args[i].equalsIgnoreCase("-dow"))
+				dow = true;
+		
 			if (args[i].equalsIgnoreCase("-phases"))
 				phases = true;
 			
@@ -137,21 +141,21 @@ public class MoonPhenomena {
 		
 		if (phases)
 			try {
-				showMoonPhases(mp, jdstart, jdfinish, useUT, showSeconds);
+				showMoonPhases(mp, jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
 		
 		if (apsides)
 			try {
-				showMoonApsides(mp, jdstart, jdfinish, useUT, showSeconds);
+				showMoonApsides(mp, jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
 		
 		if (nodes)
 			try {
-				showMoonNodes(mp, jdstart, jdfinish, useUT, showSeconds);
+				showMoonNodes(mp, jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
@@ -159,7 +163,29 @@ public class MoonPhenomena {
 	
 	public static final char phaseCodes[] = { 'N', 'Q', 'F', 'L' };
 	
-	public static void showMoonPhases(MoonPhenomena mp, double jdstart, double jdfinish, boolean useUT, boolean showSeconds) throws JPLEphemerisException {
+	private static void displayDateAndTime(double t, char code,  boolean useUT, boolean showSeconds, boolean showDayOfWeek) {
+		AstronomicalDate ad = new AstronomicalDate(t);
+		
+		if (!showSeconds)
+			ad.roundToNearestMinute();
+		
+		System.out.printf("%c %4d %2d %2d %02d:%02d", code, ad.getYear(), ad.getMonth(), ad.getDay(),
+				ad.getHour(), ad.getMinute());
+		
+		if (showSeconds)
+			System.out.printf(":%02d", (int)ad.getSecond());
+		
+		if (showDayOfWeek) {
+			int dow = ((int)(t + 3500000.5)) % 7;
+		
+			System.out.printf(" %s", dayOfWeek[dow]);
+		}
+		
+		System.out.println();
+
+	}
+	
+	public static void showMoonPhases(MoonPhenomena mp, double jdstart, double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		double t = jdstart;
 		
 		int nextPhase = mp.getNextPhase(t);
@@ -172,20 +198,7 @@ public class MoonPhenomena {
 				System.exit(1);
 			}
 			
-			AstronomicalDate ad = new AstronomicalDate(t);
-			
-			if (!showSeconds)
-				ad.roundToNearestMinute();
-			
-			int dow = ((int)(t + 3500000.5)) % 7;
-			
-			System.out.printf("%c %4d %2d %2d %02d:%02d", phaseCodes[nextPhase], ad.getYear(), ad.getMonth(), ad.getDay(),
-					ad.getHour(), ad.getMinute());
-			
-			if (showSeconds)
-				System.out.printf(":%02d", (int)ad.getSecond());
-			
-			System.out.printf(" %s\n", dayOfWeek[dow]);
+			displayDateAndTime(t, phaseCodes[nextPhase], useUT, showSeconds, showDayOfWeek);
 			
 			nextPhase = (1 + nextPhase) % 4;
 			
@@ -194,13 +207,13 @@ public class MoonPhenomena {
 	}
 	
 	private static void showMoonNodes(MoonPhenomena mp, double jdstart,
-			double jdfinish, boolean useUT, boolean showSeconds) throws JPLEphemerisException {
+			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	private static void showMoonApsides(MoonPhenomena mp, double jdstart,
-			double jdfinish, boolean useUT, boolean showSeconds) throws JPLEphemerisException {
+			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -219,6 +232,7 @@ public class MoonPhenomena {
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-ut\t\tDisplay times in UT instead of TT");
 		System.err.println("\t-seconds\tDisplay time to nearest second");
+		System.err.println("\t-dow\t\tDisplay day of week");
 	}
 
 	public MoonPhenomena(JPLEphemeris ephemeris) {
