@@ -61,6 +61,9 @@ public class MoonPhenomena {
 		String enddate = null;
 		boolean useUT = false;
 		boolean showSeconds = false;
+		boolean phases = false;
+		boolean apsides = false;
+		boolean nodes = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -77,6 +80,15 @@ public class MoonPhenomena {
 			
 			if (args[i].equalsIgnoreCase("-seconds"))
 				showSeconds = true;
+			
+			if (args[i].equalsIgnoreCase("-phases"))
+				phases = true;
+			
+			if (args[i].equalsIgnoreCase("-apsides"))
+				apsides = true;
+			
+			if (args[i].equalsIgnoreCase("-nodes"))
+				nodes = true;
 		}
 
 		if (filename == null || startdate == null || enddate == null) {
@@ -104,7 +116,7 @@ public class MoonPhenomena {
 			System.exit(1);
 		}
 		
-		double jdfinish = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY + LUNAR_MONTH;
+		double jdfinish = UNIX_EPOCH_AS_JD + ((double)date.getTime())/MILLISECONDS_PER_DAY;
 		
 		JPLEphemeris ephemeris = null;
 
@@ -123,13 +135,38 @@ public class MoonPhenomena {
 
 		MoonPhenomena mp = new MoonPhenomena(ephemeris);
 		
+		if (phases)
+			try {
+				showMoonPhases(mp, jdstart, jdfinish, useUT, showSeconds);
+			} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+			}
+		
+		if (apsides)
+			try {
+				showMoonApsides(mp, jdstart, jdfinish, useUT, showSeconds);
+			} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+			}
+		
+		if (nodes)
+			try {
+				showMoonNodes(mp, jdstart, jdfinish, useUT, showSeconds);
+			} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+			}
+	}
+	
+	public static final char phaseCodes[] = { 'N', 'Q', 'F', 'L' };
+	
+	public static void showMoonPhases(MoonPhenomena mp, double jdstart, double jdfinish, boolean useUT, boolean showSeconds) throws JPLEphemerisException {
 		double t = jdstart;
 		
-		datefmt = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+		int nextPhase = mp.getNextPhase(t);
 		
 		while (t < jdfinish) {
 			try {
-				t = mp.getDateOfNextPhase(t, FULL_MOON, useUT);
+				t = mp.getDateOfNextPhase(t, nextPhase, useUT);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -142,7 +179,7 @@ public class MoonPhenomena {
 			
 			int dow = ((int)(t + 3500000.5)) % 7;
 			
-			System.out.printf("%4d %2d %2d %02d:%02d", ad.getYear(), ad.getMonth(), ad.getDay(),
+			System.out.printf("%c %4d %2d %2d %02d:%02d", phaseCodes[nextPhase], ad.getYear(), ad.getMonth(), ad.getDay(),
 					ad.getHour(), ad.getMinute());
 			
 			if (showSeconds)
@@ -150,8 +187,22 @@ public class MoonPhenomena {
 			
 			System.out.printf(" %s\n", dayOfWeek[dow]);
 			
-			t += 29.0;
+			nextPhase = (1 + nextPhase) % 4;
+			
+			t += 6.0;
 		}
+	}
+	
+	private static void showMoonNodes(MoonPhenomena mp, double jdstart,
+			double jdfinish, boolean useUT, boolean showSeconds) throws JPLEphemerisException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private static void showMoonApsides(MoonPhenomena mp, double jdstart,
+			double jdfinish, boolean useUT, boolean showSeconds) throws JPLEphemerisException {
+		// TODO Auto-generated method stub
+		
 	}
 
 	public static void showUsage() {
@@ -159,6 +210,11 @@ public class MoonPhenomena {
 		System.err.println("\t-ephemeris\tName of ephemeris file");
 		System.err.println("\t-startdate\tStart date");
 		System.err.println("\t-enddate\tEnd date");
+		System.err.println();
+		System.err.println("MODE PARAMETERS");
+		System.err.println("\t-phases\t\tCalculate the phases of the Moon");
+		System.err.println("\t-apsides\tCalculate the apsides of the Moon");
+		System.err.println("\t-nodes\t\tCalculate the node crossings of the Moon");
 		System.err.println();
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-ut\t\tDisplay times in UT instead of TT");
@@ -214,24 +270,34 @@ public class MoonPhenomena {
 		return elong;
 	}
 	
+	public int getNextPhase(double t) throws JPLEphemerisException {
+		double x = 4.0 * getLunarElongation(t) / TWO_PI;
+
+		return (1 + (int)x) % 4;
+	}
+	
 	public double getDateOfNextPhase(double t0, int phase, boolean useUT) throws JPLEphemerisException {
 		double d = getLunarElongation(t0);
 		
 		double dWanted = 0.5 * PI * (double)(phase % 4);
 		
 		double dt = dWanted - d;
-		
+				
 		while (dt < 0.0)
 			dt += TWO_PI;
-				
+						
 		dt *= LUNAR_MONTH/TWO_PI;
 				
 		double t = t0 + dt;
-		
+				
 		while (abs(dt) > EPSILON) {
 			d = getLunarElongation(t);
 			
 			dt = (dWanted - d) % TWO_PI;
+			if (dt > PI)
+				dt -= TWO_PI;
+			if (dt < -PI)
+				dt += TWO_PI;
 			dt *= LUNAR_MONTH/TWO_PI;
 			
 			t += dt;
