@@ -43,6 +43,10 @@ public class MoonPhenomena {
 	
 	public static final int NEW_MOON = 0, FIRST_QUARTER = 1, FULL_MOON = 2, LAST_QUARTER = 3;
 	
+	public static final int ASCENDING = 0, DESCENDING = 1;
+	
+	public static final int PERIGEE = 0, APOGEE = 1;
+	
 	private EarthRotationModel erm = new IAUEarthRotationModel();
 	
 	private ApparentPlace apSun, apMoon;
@@ -163,7 +167,7 @@ public class MoonPhenomena {
 	
 	public static final char phaseCodes[] = { 'N', 'Q', 'F', 'L' };
 	
-	private static void displayDateAndTime(double t, char code,  boolean useUT, boolean showSeconds, boolean showDayOfWeek) {
+	private static void displayDateAndTime(double t, char code, boolean showSeconds, boolean showDayOfWeek) {
 		AstronomicalDate ad = new AstronomicalDate(t);
 		
 		if (!showSeconds)
@@ -182,7 +186,6 @@ public class MoonPhenomena {
 		}
 		
 		System.out.println();
-
 	}
 	
 	public static void showMoonPhases(MoonPhenomena mp, double jdstart, double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
@@ -191,14 +194,9 @@ public class MoonPhenomena {
 		int nextPhase = mp.getNextPhase(t);
 		
 		while (t < jdfinish) {
-			try {
-				t = mp.getDateOfNextPhase(t, nextPhase, useUT);
-			} catch (JPLEphemerisException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+			t = mp.getDateOfNextPhase(t, nextPhase, useUT);
 			
-			displayDateAndTime(t, phaseCodes[nextPhase], useUT, showSeconds, showDayOfWeek);
+			displayDateAndTime(t, phaseCodes[nextPhase], showSeconds, showDayOfWeek);
 			
 			nextPhase = (1 + nextPhase) % 4;
 			
@@ -208,14 +206,40 @@ public class MoonPhenomena {
 	
 	private static void showMoonNodes(MoonPhenomena mp, double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
-		// TODO Auto-generated method stub
+		double t = jdstart;
 		
+		double beta0 = mp.getLunarEclipticLatitude(t);
+		
+		int direction = beta0 < 0.0 ? ASCENDING : DESCENDING;
+		
+		while (t < jdfinish) {
+			t = mp.getDateOfNextNodeCrossing(t, direction);
+			
+			displayDateAndTime(t, direction == ASCENDING ? 'G' : 'H', showSeconds, showDayOfWeek);
+			
+			direction = 1 - direction;
+			
+			t += 13.0;
+		}
 	}
 
 	private static void showMoonApsides(MoonPhenomena mp, double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
-		// TODO Auto-generated method stub
+		double t = jdstart;
 		
+		double rdot = mp.getLunarRadialVelocity(t);
+		
+		int type = rdot > 0.0 ? APOGEE : PERIGEE;
+		
+		while (t < jdfinish) {
+			t = mp.getDateOfNextApsidesEvent(t, type);
+			
+			displayDateAndTime(t, type == APOGEE ? 'A' : 'P', showSeconds, showDayOfWeek);
+			
+			type = 1 - type;
+			
+			t += 13.0;
+		}
 	}
 
 	public static void showUsage() {
@@ -321,5 +345,37 @@ public class MoonPhenomena {
 			t -= erm.deltaT(t);
 		
 		return t;
+	}
+	
+	public double getLunarEclipticLatitude(double t) throws JPLEphemerisException {
+		apMoon.calculateApparentPlace(t);
+		
+		double raMoon = apMoon.getRightAscensionOfDate();
+		
+		double decMoon = apMoon.getDeclinationOfDate();
+		
+		double eps = erm.meanObliquity(t);
+		
+		NutationAngles na = erm.nutationAngles(t);
+		
+		eps += na.getDeps();
+		
+		double zMoon = -cos(decMoon) * sin(raMoon) * sin(eps) + sin(decMoon) * cos(eps);
+
+		return asin(zMoon);
+	}
+
+	public double getDateOfNextNodeCrossing(double t0, int direction) throws JPLEphemerisException {
+		return 0.0;
+	}
+	
+	public double getLunarRadialVelocity(double t) throws JPLEphemerisException {
+		apMoon.calculateApparentPlace(t);
+		
+		return apMoon.getRadialVelocity();
+	}
+	
+	public double getDateOfNextApsidesEvent(double t, int type)  throws JPLEphemerisException {
+		return 0.0;
 	}
 }
