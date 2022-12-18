@@ -34,6 +34,7 @@ public class AlmanacData {
 	public double julianDate = Double.NaN;
 	public double rightAscension= Double.NaN, declination = Double.NaN;
 	public double geometricDistance = Double.NaN, lightPathDistance = Double.NaN, heliocentricDistance = Double.NaN;
+	public double radialVelocity = Double.NaN;
 	public double elongation = Double.NaN, eclipticElongation = Double.NaN;
 	public double phaseAngle = Double.NaN, illuminatedFraction = Double.NaN;
 	public double magnitude = Double.NaN, semiDiameter = Double.NaN;
@@ -174,10 +175,12 @@ public class AlmanacData {
 		
 		if (lambda < 0.0)
 			lambda += 360.0;
-		
+
 		data.eclipticLongitude = lambda;
-		
+
 		data.eclipticLatitude = beta * 180.0/PI;
+
+		data.radialVelocity = apTarget.getRadialVelocity();
 
 		if (iBody != JPLEphemeris.SUN) {
 			apSun.calculateApparentPlace(t);

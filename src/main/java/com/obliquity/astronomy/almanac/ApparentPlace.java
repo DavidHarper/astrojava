@@ -33,6 +33,7 @@ public class ApparentPlace {
 	protected double pl = 0.0;
 	protected double gd = 0.0;
 	protected double hd = 0.0;
+	protected double radialVelocity = 0.0;
 
 	protected Vector dcOfDate = null;
 	protected double raOfDate;
@@ -52,6 +53,8 @@ public class ApparentPlace {
 	protected boolean isValid = false;
 	protected boolean isValidOfDate = false;
 	
+	private final double KM_PER_SECOND;
+	
 	protected final String NO_POSITION_OF_DATE = "The position referred to the equator and equinox of date is not available.";
 	protected final String NO_POSITION_CALCULATED = "The apparent place has not yet been calculated.";
 
@@ -67,6 +70,8 @@ public class ApparentPlace {
 		this.target = target;
 		this.sun = sun;
 		this.erm = erm;
+		
+		KM_PER_SECOND = target.getEphemeris().getAU() / 86400.0;
 	}
 
 	public Vector getDirectionCosinesOfDate() throws IllegalStateException {
@@ -152,7 +157,14 @@ public class ApparentPlace {
 		else
 			throw new IllegalStateException(NO_POSITION_CALCULATED);
 	}
-	
+
+	public double getRadialVelocity() throws IllegalStateException {
+		if (isValid)
+			return radialVelocity;
+		else
+			throw new IllegalStateException(NO_POSITION_CALCULATED);
+	}
+
 	public MovingPoint getTarget() {
 		return target;
 	}
@@ -253,6 +265,12 @@ public class ApparentPlace {
 		}
 
 		Vector V = svObserver.getVelocity();
+
+		StateVector svTarget = target.getStateVector(t - tau);
+		Vector vRelative= svTarget.getVelocity();
+		vRelative.subtract(V);
+		vRelative.multiplyBy(KM_PER_SECOND);
+		
 		V.multiplyBy(1.0 / SPEED_OF_LIGHT);
 
 		double VV = V.magnitude();
@@ -281,7 +299,9 @@ public class ApparentPlace {
 
 		raJ2000 = Math.atan2(y, x);
 		decJ2000 = Math.atan2(z, Math.sqrt(x * x + y * y));
-		
+
+		radialVelocity = P.scalarProduct(vRelative);
+
 		isValid = true;
 
 		if (erm != null) {

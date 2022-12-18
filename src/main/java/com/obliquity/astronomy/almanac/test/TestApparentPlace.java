@@ -36,7 +36,7 @@ public class TestApparentPlace {
 	private static final DecimalFormat dfmtb = new DecimalFormat("00.00");
 	private static final DecimalFormat ifmta = new DecimalFormat("00");
 	private static final DecimalFormat ifmtb = new DecimalFormat("000");
-	private static final DecimalFormat dfmtc = new DecimalFormat("0.0000000");
+	private static final DecimalFormat dfmtc = new DecimalFormat("0.000000000");
 	
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -329,6 +329,10 @@ public class TestApparentPlace {
 		
 		ps.print(dfmtc.format(ap.getLightPathDistance()));
 		
+		ps.print(" ");
+		
+		ps.print(dfmta.format(ap.getRadialVelocity()));
+		
 		ps.println();
 	}
 	
@@ -391,8 +395,11 @@ public class TestApparentPlace {
 		
 		ps.print(dfmtc.format(ap.getLightPathDistance()));
 		
-		ps.println();
+		ps.print(" ");
 		
+		ps.print(dfmta.format(ap.getRadialVelocity()));
+		
+		ps.println();		
 	}
 
 	public static void showUsage() {
