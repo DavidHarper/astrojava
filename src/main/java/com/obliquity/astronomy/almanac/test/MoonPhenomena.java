@@ -34,7 +34,7 @@ import java.util.TimeZone;
 
 import com.obliquity.astronomy.almanac.*;
 
-public class MoonPhases {
+public class MoonPhenomena {
 	private static final double TWO_PI = 2.0 * PI;
 	
 	private static final double LUNAR_MONTH = 29.53059;
@@ -121,7 +121,7 @@ public class MoonPhases {
 			System.exit(1);
 		}
 
-		MoonPhases mp = new MoonPhases(ephemeris);
+		MoonPhenomena mp = new MoonPhenomena(ephemeris);
 		
 		double t = jdstart;
 		
@@ -165,7 +165,7 @@ public class MoonPhases {
 		System.err.println("\t-seconds\tDisplay time to nearest second");
 	}
 
-	public MoonPhases(JPLEphemeris ephemeris) {
+	public MoonPhenomena(JPLEphemeris ephemeris) {
 		MovingPoint moon = new MoonCentre(ephemeris);
 		
 		MovingPoint earth = new EarthCentre(ephemeris);

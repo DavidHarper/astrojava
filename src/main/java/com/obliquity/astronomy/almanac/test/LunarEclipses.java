@@ -137,7 +137,7 @@ public class LunarEclipses {
 			System.exit(1);
 		}
 
-		MoonPhases mp = new MoonPhases(ephemeris);
+		MoonPhenomena mp = new MoonPhenomena(ephemeris);
 		
 		LunarEclipses le = new LunarEclipses(ephemeris);
 		
@@ -145,7 +145,7 @@ public class LunarEclipses {
 		
 		while (t < jdfinish) {
 			try {
-				t = mp.getDateOfNextPhase(t, MoonPhases.FULL_MOON, false);
+				t = mp.getDateOfNextPhase(t, MoonPhenomena.FULL_MOON, false);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 				System.exit(1);
