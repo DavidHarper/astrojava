@@ -45,7 +45,8 @@ public class MoonPhenomena {
 	
 	private EarthRotationModel erm = new IAUEarthRotationModel();
 	
-	private ApparentPlace apSun, apMoon;
+	private final ApparentPlace apSun, apMoon;
+	private final double AU;
 	
 	private static final String[] dayOfWeek = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
 	
@@ -173,7 +174,7 @@ public class MoonPhenomena {
 	
 	public static final char phaseCodes[] = { 'N', 'Q', 'F', 'L' };
 	
-	private static void displayDateAndTime(double t, char code, boolean showSeconds, boolean showDayOfWeek) {
+	private void displayDateAndTime(double t, char code, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		AstronomicalDate ad = new AstronomicalDate(t);
 		
 		if (!showSeconds)
@@ -181,16 +182,22 @@ public class MoonPhenomena {
 		
 		System.out.printf("%c %4d %2d %2d %02d:%02d", code, ad.getYear(), ad.getMonth(), ad.getDay(),
 				ad.getHour(), ad.getMinute());
-		
+			
 		if (showSeconds)
 			System.out.printf(":%02d", (int)ad.getSecond());
-		
+
 		if (showDayOfWeek) {
 			int dow = ((int)(t + 3500000.5)) % 7;
 		
 			System.out.printf(" %s", dayOfWeek[dow]);
 		}
+
+		apMoon.calculateApparentPlace(t);
 		
+		double distance = apMoon.getGeometricDistance() * AU;
+		
+		System.out.printf(" %6.0f", distance);
+	
 		System.out.println();
 	}
 	
@@ -325,6 +332,8 @@ public class MoonPhenomena {
 		apSun = new ApparentPlace(earth, sun, sun, erm);
 
 		apMoon = new ApparentPlace(earth, moon, sun, erm);
+		
+		AU = ephemeris.getAU();
 	}
 	
 	private double getLunarElongation(double t) throws JPLEphemerisException {
