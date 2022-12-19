@@ -226,7 +226,7 @@ public class MoonPhenomena {
 				if (useUT)
 					tExact -= erm.deltaT(tExact);
 				
-				displayDateAndTime(tExact, beta0 < 0.0 ? 'G' : 'H', showSeconds, showDayOfWeek);
+				displayDateAndTime(tExact, beta0 < 0.0 ? '\u2197' : '\u2198', showSeconds, showDayOfWeek);
 			}	
 			
 			t += dt;
