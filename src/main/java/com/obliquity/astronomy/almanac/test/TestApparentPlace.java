@@ -331,7 +331,7 @@ public class TestApparentPlace {
 		
 		ps.print(" ");
 		
-		ps.print(dfmta.format(ap.getRadialVelocity()));
+		ps.print(dfmtc.format(ap.getRadialVelocity()));
 		
 		ps.println();
 	}
@@ -397,7 +397,7 @@ public class TestApparentPlace {
 		
 		ps.print(" ");
 		
-		ps.print(dfmta.format(ap.getRadialVelocity()));
+		ps.print(dfmtc.format(ap.getRadialVelocity()));
 		
 		ps.println();		
 	}
