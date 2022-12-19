@@ -141,21 +141,21 @@ public class MoonPhenomena {
 		
 		if (phases)
 			try {
-				showMoonPhases(mp, jdstart, jdfinish, useUT, showSeconds, dow);
+				mp.showMoonPhases(jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
 		
 		if (apsides)
 			try {
-				showMoonApsides(mp, jdstart, jdfinish, useUT, showSeconds, dow);
+				mp.showMoonApsides(jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
 		
 		if (nodes)
 			try {
-				showMoonNodes(mp, jdstart, jdfinish, useUT, showSeconds, dow);
+				mp.showMoonNodes(jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
@@ -184,13 +184,13 @@ public class MoonPhenomena {
 		System.out.println();
 	}
 	
-	public static void showMoonPhases(MoonPhenomena mp, double jdstart, double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
+	public void showMoonPhases( double jdstart, double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		double t = jdstart;
 		
-		int nextPhase = mp.getNextPhase(t);
+		int nextPhase = getNextPhase(t);
 		
 		while (t < jdfinish) {
-			t = mp.getDateOfNextPhase(t, nextPhase, useUT);
+			t = getDateOfNextPhase(t, nextPhase, useUT);
 			
 			displayDateAndTime(t, phaseCodes[nextPhase], showSeconds, showDayOfWeek);
 			
@@ -200,18 +200,22 @@ public class MoonPhenomena {
 		}
 	}
 	
-	private static void showMoonNodes(MoonPhenomena mp, double jdstart,
+	private void showMoonNodes(double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		double t = jdstart;
 		double dt = 1.0;
 						
 		while (t < jdfinish) {
 			double t0 = t, t1 = t + dt;
-			double beta0 = mp.getLunarEclipticLatitude(t0);
-			double beta1 = mp.getLunarEclipticLatitude(t1);
+			double beta0 = getLunarEclipticLatitude(t0);
+			double beta1 = getLunarEclipticLatitude(t1);
 			
 			if (signum(beta0) != signum(beta1)) {
-				double tExact = calculateExactTimeOfNodeCrossing(mp, t0, beta0, t1, beta1);
+				double tExact = calculateExactTimeOfNodeCrossing(t0, beta0, t1, beta1);
+				
+				if (useUT)
+					tExact -= erm.deltaT(tExact);
+				
 				displayDateAndTime(tExact, beta0 < 0.0 ? 'G' : 'H', showSeconds, showDayOfWeek);
 			}	
 			
@@ -219,13 +223,13 @@ public class MoonPhenomena {
 		}
 	}
 	
-	private static double calculateExactTimeOfNodeCrossing(MoonPhenomena mp, double t0, double beta0, double t1, double beta1) throws JPLEphemerisException {
+	private double calculateExactTimeOfNodeCrossing(double t0, double beta0, double t1, double beta1) throws JPLEphemerisException {
 		while(true) {
 			double dbeta = beta1 - beta0;
 			double dt = t1 - t0;
 			
 			double t2 = t0 - beta0 * dt/dbeta;
-			double beta2 = mp.getLunarEclipticLatitude(t2);
+			double beta2 = getLunarEclipticLatitude(t2);
 			
 			if (abs(beta2) < 0.000001)
 				return t2;
@@ -240,18 +244,22 @@ public class MoonPhenomena {
 		}
 	}
 
-	private static void showMoonApsides(MoonPhenomena mp, double jdstart,
+	private void showMoonApsides(double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		double t = jdstart;
 		double dt = 1.0;
 						
 		while (t < jdfinish) {
 			double t0 = t, t1 = t + dt;
-			double rv0 = mp.getLunarRadialVelocity(t0);
-			double rv1 = mp.getLunarRadialVelocity(t1);
+			double rv0 = getLunarRadialVelocity(t0);
+			double rv1 = getLunarRadialVelocity(t1);
 			
 			if (signum(rv0) != signum(rv1)) {
-				double tExact = calculateExactTimeOfApseEvent(mp, t0, rv0, t1, rv1);
+				double tExact = calculateExactTimeOfApseEvent(t0, rv0, t1, rv1);
+				
+				if (useUT)
+					tExact -= erm.deltaT(tExact);
+				
 				displayDateAndTime(tExact, rv0 < 0.0 ? 'P' : 'A', showSeconds, showDayOfWeek);
 			}
 	
@@ -259,14 +267,13 @@ public class MoonPhenomena {
 		}
 	}
 
-	private static double calculateExactTimeOfApseEvent(MoonPhenomena mp,
-			double t0, double rv0, double t1, double rv1) throws JPLEphemerisException {
+	private double calculateExactTimeOfApseEvent(double t0, double rv0, double t1, double rv1) throws JPLEphemerisException {
 		while (true) {
 			double drv = rv1 - rv0;
 			double dt = t1 - t0;
 			
 			double t2 = t0 - rv0 * dt/drv;
-			double rv2 = mp.getLunarRadialVelocity(t2);
+			double rv2 = getLunarRadialVelocity(t2);
 			
 			if (abs(rv2) < 0.000001)
 				return t2;
