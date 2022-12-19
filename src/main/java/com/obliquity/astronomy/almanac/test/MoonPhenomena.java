@@ -100,6 +100,11 @@ public class MoonPhenomena {
 			System.exit(1);
 		}
 		
+		if (!(phases || apsides || nodes)) {
+			System.err.println("You should specify at least one of -phases or -apsides or -nodes");
+			System.exit(1);
+		}
+		
 		Date date = null;
 		
 		try {
