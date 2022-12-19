@@ -1,3 +1,3 @@
 #!/bin/bash
 
-git pull --all
+git pull --all && gradle build
