@@ -93,6 +93,11 @@ public class MoonPhenomena {
 			
 			if (args[i].equalsIgnoreCase("-nodes"))
 				nodes = true;
+			
+			if (args[i].equalsIgnoreCase("-help")) {
+				showUsage();
+				System.exit(0);
+			}
 		}
 
 		if (filename == null || startdate == null || enddate == null) {
