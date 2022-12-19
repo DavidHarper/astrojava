@@ -200,7 +200,7 @@ public class MoonPhenomena {
 		}
 	}
 	
-	private void showMoonNodes(double jdstart,
+	public void showMoonNodes(double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		double t = jdstart;
 		double dt = 1.0;
@@ -244,7 +244,7 @@ public class MoonPhenomena {
 		}
 	}
 
-	private void showMoonApsides(double jdstart,
+	public void showMoonApsides(double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
 		double t = jdstart;
 		double dt = 1.0;
