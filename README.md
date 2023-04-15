@@ -36,6 +36,8 @@ to understand how the library works.
 
 ### Prerequisites
 
+**No data files are bundled with this project!**
+
 You **must** download a JPL Development Ephemeris file from the
 JPL Solar System Dynamics FTP server before you can use any of the
 example programs.  The base URL is
