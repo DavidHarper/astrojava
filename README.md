@@ -42,6 +42,10 @@ example programs.  The base URL is
 
 `ftp://ssd.jpl.nasa.gov/pub/eph/planets/Linux`
 
+Note that these data files can be used on Windows or macOS as well
+as on Linux.  The directory name simply denotes that the binary
+data files are in little-endian format.
+
 The DE430 ephemeris is a good first choice, as it covers the period
 from 1550 CE to 2650 CE.
 
