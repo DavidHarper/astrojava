@@ -44,7 +44,6 @@ import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.Matrix;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
-import com.obliquity.astronomy.almanac.Place;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.TerrestrialObserver;
 import com.obliquity.astronomy.almanac.Vector;
@@ -535,10 +534,13 @@ public class SimpleAlmanac {
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 			
 			if (data.saturnRingAnglesForEarth != null)
-				ps.printf("  %8.5f", data.saturnRingAnglesForEarth.B);
+				ps.printf("  %8.4f", data.saturnRingAnglesForEarth.B);
 			
 			if (data.saturnRingAnglesForSun != null)
-				ps.printf("  %8.5f", data.saturnRingAnglesForSun.B);
+				ps.printf("  %8.4f", data.saturnRingAnglesForSun.B);
+			
+			if (data.saturnRingAnglesForEarth != null)
+				ps.printf("  %8.4f", data.saturnRingAnglesForEarth.P);
 		} else if (targetIsSun()) {
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 		}
@@ -627,6 +629,7 @@ public class SimpleAlmanac {
 				"23\tEcliptic latitude (in same reference frame as RA and Dec)",
 				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane",
 				"25\t[Saturn only] Saturnicentric latitude of Sun referred to ring plane",
+				"26\t[Saturn only] Position angle of Saturn's pole as seen from Earth",
 				"",
 				"[For Sun]",
 				"17\tEcliptic longitude (in same reference frame as RA and Dec)",
