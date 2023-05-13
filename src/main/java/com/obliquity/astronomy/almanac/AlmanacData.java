@@ -371,9 +371,6 @@ public class AlmanacData {
 		
 		sra.P = atan2(p4, p5) * 180.0/PI;
 		
-		if (sra.P < 0.0)
-			sra.P += 360.0;
-		
 		return sra;		
 	}
 	
