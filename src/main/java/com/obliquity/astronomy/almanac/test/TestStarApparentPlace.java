@@ -37,6 +37,7 @@ import com.obliquity.astronomy.almanac.Vector;
 
 public class TestStarApparentPlace {
 	private StarApparentPlace sap = null;
+	private static final double J2000 = 2451545.0;
 	
 	public TestStarApparentPlace(StarApparentPlace sap) {
 		this.sap = sap;
@@ -44,16 +45,32 @@ public class TestStarApparentPlace {
 
 	public static void main(String[] args) {
 		String filename = null;
+		String strJD = null;
 		
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].equalsIgnoreCase("-ephemeris"))
+			switch (args[i].toLowerCase()) {
+			case "-ephemeris":
 				filename = args[++i];
+				break;
+				
+			case "-jd":
+				strJD = args[++i];
+				break;
+			}
+
 		}
 		
 		if (filename == null) {
-			System.err.println("You MUST specify an ephemeris filewith the -ephemeris option.");
+			System.err.println("You MUST specify an ephemeris file with the -ephemeris option.");
 			System.exit(1);
 		}
+		
+		if (strJD == null) {
+			System.err.println("you MUST specify a target date with the -jd option.");
+			System.exit(1);
+		}
+		
+		double jd = Double.parseDouble(strJD);
 		
 		try {
 			JPLEphemeris ephemeris = new JPLEphemeris(filename);
@@ -66,7 +83,7 @@ public class TestStarApparentPlace {
 			
 			TestStarApparentPlace runner = new TestStarApparentPlace(sap);
 			
-			runner.run();
+			runner.run(jd);
 
 		} catch (IOException | JPLEphemerisException e) {
 			e.printStackTrace();
@@ -74,8 +91,8 @@ public class TestStarApparentPlace {
 		}
 	}
 	
-	public void run() throws JPLEphemerisException {
-		// The Astronomical Almanac 1999, page B40
+	public void run(double jd) throws JPLEphemerisException {
+		// The Astronomical Almanac, page B40
 		double ra = 14.0 + 39.0/60.0 + 36.087/3600.0;
 		ra *= Math.PI/12.0;
 		
@@ -90,11 +107,10 @@ public class TestStarApparentPlace {
 		
 		double rv = -22.2;
 		
-		double fixedEpoch = 2451545.0;
+		double fixedEpoch = J2000;
+		double positionEpoch = J2000;
 		
-		double jd = 2451179.5;
-		
-		Vector p = sap.calculateApparentPlace(ra, dec, parallax, pmRA, pmDec, rv, fixedEpoch, fixedEpoch, jd);
+		Vector p = sap.calculateApparentPlace(ra, dec, parallax, pmRA, pmDec, rv, positionEpoch, fixedEpoch, jd);
 		
 		displayEquatorialCoordinates(p);
 	}
