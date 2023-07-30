@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.obliquity.astronomy.almanac.AlmanacData;
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.AstronomicalDate;
 import com.obliquity.astronomy.almanac.EarthCentre;
@@ -161,12 +163,14 @@ public class OppositionFinder {
 				"OUTPUT FORMAT",
 				"\tEach line gives the date and time at opposition in this format:",
 				"",
-				"\tYYYY MM DD hh:mm beta gd",
+				"\tYYYY MM DD hh:mm dec beta gd mag",
 				"",
 				"where",
 				"",
-				"\tbeta\tEcliptic latitude at opposition",
-				"\tgd\tGeometric distance at opposition"
+				"\tdec\tDeclination at opposition (degrees)",
+				"\tbeta\tEcliptic latitude at opposition (degrees)",
+				"\tgd\tGeometric distance at opposition (AU)",
+				"\tmag\tApparent magnitude at opposition"
 		};
 		
 		for (String line : lines)
@@ -266,6 +270,7 @@ public class OppositionFinder {
 			PrintStream ps) throws JPLEphemerisException {
 		double lastDX = Double.NaN;
 		boolean first = true;
+		AlmanacData data = new AlmanacData();
 		
 		for (double t = jdstart; t <= jdfinish; t += jdstep) {
 			double dX = calculateOppositionAngle(t);
@@ -285,9 +290,14 @@ public class OppositionFinder {
 					EclipticCoordinates ecTarget = calculateEclipticCoordinates(raTarget, decTarget, tExact);
 				
 					AstronomicalDate ad = new AstronomicalDate(tExact);
+					
+					AlmanacData.calculateAlmanacData(apTarget, apSun, tExact, AlmanacData.TRUE_OF_DATE, data);
 				
-					ps.printf("%5d %02d %02d %02d:%02d  %6.3f  %7.4f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
-						ecTarget.latitude * 180.0/Math.PI, apTarget.getGeometricDistance());
+					ps.printf("%5d %02d %02d %02d:%02d  %6.2f  %6.2f  %7.4f  %6.2f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
+						decTarget * 180.0/Math.PI,
+						ecTarget.latitude * 180.0/Math.PI,
+						apTarget.getGeometricDistance(),
+						data.magnitude);
 				}
 			}
 		
