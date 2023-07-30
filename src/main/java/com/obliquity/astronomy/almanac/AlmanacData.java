@@ -191,7 +191,9 @@ public class AlmanacData {
 			double raSun = apSun.getRightAscensionOfDate();
 			double decSun = apSun.getDeclinationOfDate();
 
-			data.elongation = 180.0/PI * calculateElongation(ra, dec, raSun, decSun);
+			double elongation = calculateElongation(ra, dec, raSun, decSun);
+
+			data.elongation = 180.0/PI * elongation;
 			
 			double eclipticElongation = calculateEclipticElongation(ra, dec, raSun, decSun, obliquity);
 			
@@ -200,10 +202,10 @@ public class AlmanacData {
 			double dEarthSun = apSun.getGeometricDistance();
 
 			double dPlanetSun = calculatePlanetSunDistance(dEarthSun,
-					dEarthPlanet, eclipticElongation);
+					dEarthPlanet, elongation);
 
 			double phaseAngle = calculatePhaseAngle(dEarthSun, dEarthPlanet,
-					dPlanetSun);
+					elongation);
 
 			data.phaseAngle = phaseAngle * 180.0 / PI;
 
@@ -274,11 +276,11 @@ public class AlmanacData {
 	}
 
 	private static double calculatePhaseAngle(double dEarthSun, double dEarthPlanet,
-			double dPlanetSun) {
-		double x = (dEarthPlanet * dEarthPlanet + dPlanetSun * dPlanetSun
-				- dEarthSun * dEarthSun) / (2.0 * dEarthPlanet * dPlanetSun);
+			double elongation) {
+		double x = dEarthPlanet - dEarthSun * cos(elongation);
+		double y = dEarthSun * sin(elongation);
 
-		return acos(x);
+		return atan2(y, x);
 	}
 
 	private static double calculateMagnitude(int targetCode, double dEarthPlanet, double dPlanetSun,
