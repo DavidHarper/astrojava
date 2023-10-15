@@ -182,8 +182,19 @@ public class RiseSetTest {
 			for (double jd = jdstart; jd < jdfinish; jd += 1.0) {
 				RiseSetEvent[] events = lv.findRiseSetEvents(ap, place, jd, rsType);
 				
-				for (int i = 0; i < events.length; i++)
-					System.out.println((events[i].type == RiseSetEventType.RISE ? "RISE " : "SET  ") + dateToString(events[i].date));
+				for (int i = 0; i < events.length; i++) {
+					System.out.print((events[i].type == RiseSetEventType.RISE ? "RISE " : "SET  ") + dateToString(events[i].date));
+					
+					HorizontalCoordinates hc = lv.calculateApparentAltitudeAndAzimuth(ap, place, events[i].date);
+					double azi = (180.0/Math.PI) * hc.azimuth;
+					if (azi < 0.0)
+						azi += 360.0;
+					
+					hc = lv.calculateGeometricAltitudeAndAzimuth(ap, place, events[i].date);
+					double alt = (180.0/Math.PI)* hc.altitude;
+					
+					System.out.printf("  %6.2f  %6.2f\n", azi, alt);
+				}
 			}
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
