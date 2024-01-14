@@ -24,7 +24,7 @@
 
 package com.obliquity.astronomy.almanac.test;
 
-import static java.lang.Math.atan2;
+import static java.lang.Math.acos;
 import static java.lang.Math.cos;
 import static java.lang.Math.sin;
 
@@ -46,7 +46,6 @@ import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.LocalVisibility;
 import com.obliquity.astronomy.almanac.MoonCentre;
 import com.obliquity.astronomy.almanac.MovingPoint;
-import com.obliquity.astronomy.almanac.NutationAngles;
 import com.obliquity.astronomy.almanac.Place;
 import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.RiseSetEvent;
@@ -56,7 +55,7 @@ import com.obliquity.astronomy.almanac.RiseSetType;
 public class MoonVisibility {
 	public static final double TWOPI = 2.0 * Math.PI;
 	
-	private static final double MOON_RADIUS = 1738.0;
+	private static final double EARTH_RADIUS = 6378.137;
 	
 	private static final SimpleDateFormat datefmt = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -74,6 +73,15 @@ public class MoonVisibility {
 	
 	private static final double UNIX_EPOCH_AS_JD = 2440587.5;
 	private static final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
+
+	private static final String[] yallopCode = {
+			"A (Easily visible)",
+			"B (Visible under perfect conditions)",
+			"C (May need optical aid to find crescent)",
+			"D (Will need optical aid to find crescent)",
+			"E (Not visible with a telescope)",
+			"F (Not visible, below Danjon limit)"
+	};
 
 	public static void main(String[] args) {
 		String filename = null;
@@ -220,11 +228,7 @@ public class MoonVisibility {
 		
 		double jd = tNewMoon;
 		
-		int count = 0;
-		
 		while (! moonIsVisible) {
-			count++;
-			
 			RiseSetEvent[] events = lv.findRiseSetEvents(apSun, place, jd, RiseSetType.UPPER_LIMB);
 			
 			double tSunset = findSettingTime(events);
@@ -237,7 +241,12 @@ public class MoonVisibility {
 			ps.println("\tSUNSET: " + dateToString(tSunset));
 
 			HorizontalCoordinates hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoon, place, tSunset);
-
+			
+			double elong = getLunarElongation(apMoon, apSun, tSunset);
+			
+			ps.printf("\t\tMoon's elongation = %4.1f degrees, altitude = %4.1f degrees, age = %4.1f hours\n", toDegrees(elong),
+					toDegrees(hcMoon.altitude), 24.0*(tSunset-tNewMoon));
+			
 			if (hcMoon.altitude > 0.0) {
 				events = lv.findRiseSetEvents(apMoon, place, tSunset, RiseSetType.UPPER_LIMB);
 				
@@ -252,11 +261,11 @@ public class MoonVisibility {
 				
 				double tBest = (5.0 * tSunset + 4.0 * tMoonset)/9.0;
 				
-				hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoon, place, tBest);
+				hcMoon = lv.calculateGeometricAltitudeAndAzimuth(apMoon, place, tBest);
 				
-				HorizontalCoordinates hcSun = lv.calculateApparentAltitudeAndAzimuth(apSun, place, tBest);
+				HorizontalCoordinates hcSun = lv.calculateGeometricAltitudeAndAzimuth(apSun, place, tBest);
 
-				double elong = getLunarElongation(apMoon, apSun, tBest);
+				elong = getLunarElongation(apMoon, apSun, tBest);
 				
 				double hpMoon = getLunarHorizontalParallax(apMoon, tBest);
 
@@ -266,13 +275,11 @@ public class MoonVisibility {
 				
 				ps.println("\tBEST TIME: " + dateToString(tBest));
 				
-				ps.printf("\t\telong = %10.8f, HP = %10.8f\n", elong, hpMoon);
+				ps.printf("\t\tq = %6.3f, code = %s\n", q, yallopCode[code]);
 				
-				ps.printf("\t\tq = %6.3f, code = %d\n", q, code);
-				
-				moonIsVisible = code < 4 || count > 4;
+				moonIsVisible = code < 2 || elong > 1.0;
 			} else {
-				ps.println("\t\tMOON IS BELOW THE HORIZON");
+				ps.println("\t\tMOON IS BELOW THE HORIZON AT SUNSET");
 			}
 			
 			ps.println();
@@ -287,7 +294,7 @@ public class MoonVisibility {
 		
 		double gd = apMoon.getGeometricDistance() * apMoon.getTarget().getEphemeris().getAU();
 		
-		double hpMoon = Math.asin(MOON_RADIUS/gd);
+		double hpMoon = Math.asin(EARTH_RADIUS/gd);
 
 		return hpMoon;
 	}
@@ -295,7 +302,7 @@ public class MoonVisibility {
 	private double calculateYallopCriterion(double elong, double hpMoon,
 			HorizontalCoordinates hcMoon, HorizontalCoordinates hcSun) {
 		// Arc of vision i.e. geocentric difference in altitudes
-		double arcv = (hcMoon.altitude - hcSun.altitude)* 180.0/Math.PI; 
+		double arcv = toDegrees(hcMoon.altitude - hcSun.altitude); 
 		
 		// Geocentric semi-diameter of Moon
 		double sdMoon = 0.27245 * hpMoon;
@@ -306,8 +313,8 @@ public class MoonVisibility {
 		// Topocentric width of crescent
 		w *= (1.0 - Math.cos(elong));
 		
-		// Convert to degrees for Yallop's Formulae
-		w *= 180.0/Math.PI;
+		// Convert to arc-minutes for Yallop's Formulae
+		w *= 60.0 * 180.0/Math.PI;
 		
 		// Yallop's q Criterion
 		double q = 0.1 * (arcv - (11.8371 - 6.3226 * w + 0.7319 * w * w
@@ -342,6 +349,10 @@ public class MoonVisibility {
 		return String.format("%04d-%02d-%02d %02d:%02d", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute());
 	}
 	
+	private double toDegrees(double x) {
+		return x * 180.0/Math.PI;
+	}
+	
 	private double getLunarElongation(ApparentPlace apMoon, ApparentPlace apSun, double t) throws JPLEphemerisException {
 		apSun.calculateApparentPlace(t);
 		
@@ -355,30 +366,10 @@ public class MoonVisibility {
 		
 		double decMoon = apMoon.getDeclinationOfDate();
 		
-		EarthRotationModel erm = apMoon.getEarthRotationModel();
-		
-		double eps = erm.meanObliquity(t);
-		
-		NutationAngles na = erm.nutationAngles(t);
-		
-		eps += na.getDeps();
-		
-		double xMoon = cos(decMoon) * cos(raMoon);
-		double yMoon = cos(decMoon) * sin(raMoon) * cos(eps) + sin(decMoon) * sin(eps);
+		double x = sin(decMoon) * sin(decSun)
+				+ cos(decMoon) * cos(decSun) * cos(raMoon - raSun);
 
-		double xSun = cos(decSun) * cos(raSun);
-		double ySun = cos(decSun) * sin(raSun) * cos(eps) + sin(decSun) * sin(eps);
-
-		double lMoon = atan2(yMoon, xMoon);
-		
-		double lSun = atan2(ySun, xSun);
-
-		double elong = (lMoon - lSun) % TWOPI;
-		
-		if (elong < 0.0)
-			elong += TWOPI;
-		
-		return elong;
+		return acos(x);
 	}
 
 }
