@@ -51,6 +51,7 @@ import com.obliquity.astronomy.almanac.PlanetCentre;
 import com.obliquity.astronomy.almanac.RiseSetEvent;
 import com.obliquity.astronomy.almanac.RiseSetEventType;
 import com.obliquity.astronomy.almanac.RiseSetType;
+import com.obliquity.astronomy.almanac.TerrestrialObserver;
 
 public class MoonVisibility {
 	public static final double TWOPI = 2.0 * Math.PI;
@@ -164,19 +165,23 @@ public class MoonVisibility {
 
 		EarthRotationModel erm = new IAUEarthRotationModel();
 
-		ApparentPlace apMoon = new ApparentPlace(earth, moon, sun, erm);
+		ApparentPlace apMoonGeocentric = new ApparentPlace(earth, moon, sun, erm);
 		
-		ApparentPlace apSun = new ApparentPlace(earth, sun, sun, erm);
+		ApparentPlace apSunGeocentric = new ApparentPlace(earth, sun, sun, erm);
 
 		double lat = Double.parseDouble(latitude) * Math.PI / 180.0;
 		double lon = Double.parseDouble(longitude) * Math.PI / 180.0;
 
 		Place place = new Place(lat, lon, 0.0, 0.0);
 		
+		TerrestrialObserver observer = new TerrestrialObserver(ephemeris, erm, place);
+		
+		ApparentPlace apMoonTopocentric = new ApparentPlace(observer, moon, sun, erm);
+		
 		MoonVisibility runner = new MoonVisibility();
 		
 		try {
-			runner.run(apMoon, apSun, place, jdstart, jdfinish, System.out);
+			runner.run(apMoonGeocentric, apSunGeocentric, apMoonTopocentric, place, jdstart, jdfinish, System.out);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -209,9 +214,9 @@ public class MoonVisibility {
 	private static final String SEPARATOR1 = "================================================================================";
 	private static final String SEPARATOR2 = "----------------------------------------";
 
-	private void run(ApparentPlace apMoon, ApparentPlace apSun, Place place,
+	private void run(ApparentPlace apMoonGeocentric, ApparentPlace apSunGeocentric, ApparentPlace apMoonTopocentric, Place place,
 			double jdstart, double jdfinish, PrintStream ps) throws JPLEphemerisException {
-		MoonPhenomena mp = new MoonPhenomena(apMoon, apSun);
+		MoonPhenomena mp = new MoonPhenomena(apMoonGeocentric, apSunGeocentric);
 		
 		double tNewMoon = mp.getDateOfNextPhase(jdstart, MoonPhenomena.NEW_MOON, true);
 				
@@ -219,13 +224,14 @@ public class MoonVisibility {
 			ps.println(SEPARATOR1);
 			ps.println("NEW MOON: " + dateToString(tNewMoon));
 			
-			calculateMoonVisibility(apMoon, apSun, place, tNewMoon, ps);
+			calculateMoonVisibility(apMoonGeocentric, apSunGeocentric, apMoonTopocentric, place, tNewMoon, ps);
 			
 			tNewMoon = mp.getDateOfNextPhase(tNewMoon + 1.0, MoonPhenomena.NEW_MOON, true);
 		}
 	}
 	
-	private void calculateMoonVisibility(ApparentPlace apMoon, ApparentPlace apSun, Place place, double tNewMoon, PrintStream ps) throws JPLEphemerisException {
+	private void calculateMoonVisibility(ApparentPlace apMoonGeocentric, ApparentPlace apSunGeocentric, ApparentPlace apMoonTopocentric, Place place,
+			double tNewMoon, PrintStream ps) throws JPLEphemerisException {
 		boolean moonIsVisible = false;
 		
 		LocalVisibility lv = new LocalVisibility();
@@ -235,7 +241,7 @@ public class MoonVisibility {
 		int evening = 1;
 
 		while (! moonIsVisible) {
-			RiseSetEvent[] events = lv.findRiseSetEvents(apSun, place, jd, RiseSetType.UPPER_LIMB);
+			RiseSetEvent[] events = lv.findRiseSetEvents(apSunGeocentric, place, jd, RiseSetType.UPPER_LIMB);
 			
 			double tSunset = findSettingTime(events);
 			
@@ -251,15 +257,15 @@ public class MoonVisibility {
 
 			ps.println("  SUNSET: " + dateToString(tSunset));
 
-			HorizontalCoordinates hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoon, place, tSunset);
+			HorizontalCoordinates hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoonTopocentric, place, tSunset);
 			
-			double elong = getLunarElongation(apMoon, apSun, tSunset);
+			double elong = getLunarElongation(apMoonGeocentric, apSunGeocentric, tSunset);
 			
 			ps.printf("    Moon's elongation = %4.1f degrees\n    Moon's altitude = %4.1f degrees\n    Moon's age = %4.1f hours\n", toDegrees(elong),
 					toDegrees(hcMoon.altitude), 24.0*(tSunset-tNewMoon));
 			
 			if (hcMoon.altitude > 0.0) {
-				events = lv.findRiseSetEvents(apMoon, place, tSunset, RiseSetType.UPPER_LIMB);
+				events = lv.findRiseSetEvents(apMoonGeocentric, place, tSunset, RiseSetType.UPPER_LIMB);
 				
 				double tMoonset = findSettingTime(events);
 				
@@ -272,13 +278,13 @@ public class MoonVisibility {
 				
 				double tBest = (5.0 * tSunset + 4.0 * tMoonset)/9.0;
 				
-				hcMoon = lv.calculateGeometricAltitudeAndAzimuth(apMoon, place, tBest);
+				hcMoon = lv.calculateGeometricAltitudeAndAzimuth(apMoonGeocentric, place, tBest);
 				
-				HorizontalCoordinates hcSun = lv.calculateGeometricAltitudeAndAzimuth(apSun, place, tBest);
+				HorizontalCoordinates hcSun = lv.calculateGeometricAltitudeAndAzimuth(apSunGeocentric, place, tBest);
 
-				elong = getLunarElongation(apMoon, apSun, tBest);
+				elong = getLunarElongation(apMoonGeocentric, apSunGeocentric, tBest);
 				
-				double hpMoon = getLunarHorizontalParallax(apMoon, tBest);
+				double hpMoon = getLunarHorizontalParallax(apMoonGeocentric, tBest);
 
 				double q = calculateYallopCriterion(elong, hpMoon, hcMoon, hcSun);
 
