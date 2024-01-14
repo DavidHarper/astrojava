@@ -206,6 +206,9 @@ public class MoonVisibility {
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
 	}
 	
+	private static final String SEPARATOR1 = "================================================================================";
+	private static final String SEPARATOR2 = "----------------------------------------";
+
 	private void run(ApparentPlace apMoon, ApparentPlace apSun, Place place,
 			double jdstart, double jdfinish, PrintStream ps) throws JPLEphemerisException {
 		MoonPhenomena mp = new MoonPhenomena(apMoon, apSun);
@@ -213,6 +216,7 @@ public class MoonVisibility {
 		double tNewMoon = mp.getDateOfNextPhase(jdstart, MoonPhenomena.NEW_MOON, true);
 				
 		while (tNewMoon < jdfinish) {
+			ps.println(SEPARATOR1);
 			ps.println("NEW MOON: " + dateToString(tNewMoon));
 			
 			calculateMoonVisibility(apMoon, apSun, place, tNewMoon, ps);
@@ -228,6 +232,8 @@ public class MoonVisibility {
 		
 		double jd = tNewMoon;
 		
+		int evening = 1;
+
 		while (! moonIsVisible) {
 			RiseSetEvent[] events = lv.findRiseSetEvents(apSun, place, jd, RiseSetType.UPPER_LIMB);
 			
@@ -238,13 +244,18 @@ public class MoonVisibility {
 				return;
 			}
 
-			ps.println("\tSUNSET: " + dateToString(tSunset));
+			if (evening > 1)
+				ps.println(SEPARATOR2);
+
+			ps.println("\nEVENING " + evening + " AFTER NEW MOON");
+
+			ps.println("  SUNSET: " + dateToString(tSunset));
 
 			HorizontalCoordinates hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoon, place, tSunset);
 			
 			double elong = getLunarElongation(apMoon, apSun, tSunset);
 			
-			ps.printf("\t\tMoon's elongation = %4.1f degrees, altitude = %4.1f degrees, age = %4.1f hours\n", toDegrees(elong),
+			ps.printf("    Moon's elongation = %4.1f degrees\n    Moon's altitude = %4.1f degrees\n    Moon's age = %4.1f hours\n", toDegrees(elong),
 					toDegrees(hcMoon.altitude), 24.0*(tSunset-tNewMoon));
 			
 			if (hcMoon.altitude > 0.0) {
@@ -257,7 +268,7 @@ public class MoonVisibility {
 					return;
 				}
 				
-				ps.println("\tMOONSET: " + dateToString(tMoonset));
+				ps.println("  MOONSET: " + dateToString(tMoonset));
 				
 				double tBest = (5.0 * tSunset + 4.0 * tMoonset)/9.0;
 				
@@ -273,18 +284,20 @@ public class MoonVisibility {
 
 				int code = getYallopCode(q);
 				
-				ps.println("\tBEST TIME: " + dateToString(tBest));
+				ps.println("  BEST TIME: " + dateToString(tBest));
 				
-				ps.printf("\t\tq = %6.3f, code = %s\n", q, yallopCode[code]);
+				ps.printf("    Yallop's q = %6.3f\n    Visibility code = %s\n", q, yallopCode[code]);
 				
 				moonIsVisible = code < 2 || elong > 1.0;
 			} else {
-				ps.println("\t\tMOON IS BELOW THE HORIZON AT SUNSET");
+				ps.println("    MOON IS BELOW THE HORIZON AT SUNSET");
 			}
 			
 			ps.println();
 			
 			jd = jd + 1.0;
+
+			evening++;
 		}
 	}
 
