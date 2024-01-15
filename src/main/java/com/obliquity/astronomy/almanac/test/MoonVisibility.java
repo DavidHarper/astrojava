@@ -280,7 +280,7 @@ public class MoonVisibility {
 					return;
 				}
 				
-				ps.println("  MOONSET: " + dateToString(tMoonset, place.getTimeZone()));
+				ps.println("\n  MOONSET: " + dateToString(tMoonset, place.getTimeZone()));
 				
 				double tBest = (5.0 * tSunset + 4.0 * tMoonset)/9.0;
 				
@@ -296,7 +296,7 @@ public class MoonVisibility {
 
 				int code = getYallopCode(q);
 				
-				ps.println("  BEST TIME: " + dateToString(tBest, place.getTimeZone()));
+				ps.println("\n  BEST TIME: " + dateToString(tBest, place.getTimeZone()));
 				
 				ps.printf("    Yallop's q = %6.3f\n    Visibility code = %s\n", q, yallopCode[code]);
 				
