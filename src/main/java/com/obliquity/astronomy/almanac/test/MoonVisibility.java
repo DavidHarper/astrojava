@@ -280,8 +280,6 @@ public class MoonVisibility {
 					return;
 				}
 				
-				ps.println("\n  MOONSET: " + dateToString(tMoonset, place.getTimeZone()));
-				
 				double tBest = (5.0 * tSunset + 4.0 * tMoonset)/9.0;
 				
 				hcMoon = lv.calculateGeometricAltitudeAndAzimuth(apMoonGeocentric, place, tBest);
@@ -296,6 +294,13 @@ public class MoonVisibility {
 
 				int code = getYallopCode(q);
 				
+				events = lv.findRiseSetEvents(apSunGeocentric, place, jd, RiseSetType.CIVIL_TWILIGHT);
+				
+				double tCivilTwilight = findSettingTime(events);
+				
+				if (!Double.isNaN(tCivilTwilight) && tCivilTwilight <= tBest)
+					ps.println("\n  CIVIL TWILIGHT: " + dateToString(tCivilTwilight, place.getTimeZone()));
+				
 				ps.println("\n  BEST TIME: " + dateToString(tBest, place.getTimeZone()));
 				
 				ps.printf("    Yallop's q = %6.3f\n    Visibility code = %s\n", q, yallopCode[code]);
@@ -308,6 +313,14 @@ public class MoonVisibility {
 					azi += TWOPI;
 				
 				ps.printf("    Moon's altitude = %6.1f degrees\n    Moon's azimuth  = %6.1f degrees\n", toDegrees(hcMoon.altitude), toDegrees(azi));
+
+				if (!Double.isNaN(tCivilTwilight) && tCivilTwilight > tBest && tCivilTwilight < tMoonset)
+					ps.println("\n  CIVIL TWILIGHT: " + dateToString(tCivilTwilight, place.getTimeZone()));
+				
+				ps.println("\n  MOONSET: " + dateToString(tMoonset, place.getTimeZone()));
+
+				if (!Double.isNaN(tCivilTwilight) && tCivilTwilight > tMoonset)
+					ps.println("\n  CIVIL TWILIGHT: " + dateToString(tCivilTwilight, place.getTimeZone()));
 				
 				moonIsVisible = code < 2 || elong > 1.0;
 			} else {
