@@ -300,6 +300,15 @@ public class MoonVisibility {
 				
 				ps.printf("    Yallop's q = %6.3f\n    Visibility code = %s\n", q, yallopCode[code]);
 				
+				hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoonTopocentric, place, tBest);
+				
+				double azi = hcMoon.azimuth;
+				
+				if (azi < 0.0)
+					azi += TWOPI;
+				
+				ps.printf("    Moon's altitude = %6.1f degrees\n    Moon's azimuth  = %6.1f degrees\n", toDegrees(hcMoon.altitude), toDegrees(azi));
+				
 				moonIsVisible = code < 2 || elong > 1.0;
 			} else {
 				ps.println("    MOON IS BELOW THE HORIZON AT SUNSET");
