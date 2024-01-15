@@ -90,6 +90,7 @@ public class MoonVisibility {
 		String enddate = null;
 		String longitude = null;
 		String latitude = null;
+		String timezone = null;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -107,6 +108,8 @@ public class MoonVisibility {
 			if (args[i].equalsIgnoreCase("-longitude"))
 				longitude = args[++i];
 
+			if (args[i].equalsIgnoreCase("-timezone"))
+				timezone = args[++i];
 		}
 
 		if (filename == null || startdate == null ) {
@@ -171,8 +174,10 @@ public class MoonVisibility {
 
 		double lat = Double.parseDouble(latitude) * Math.PI / 180.0;
 		double lon = Double.parseDouble(longitude) * Math.PI / 180.0;
+		
+		double tz = (timezone != null) ? Double.parseDouble(timezone)/24.0 : 0.0;
 
-		Place place = new Place(lat, lon, 0.0, 0.0);
+		Place place = new Place(lat, lon, 0.0, tz);
 		
 		TerrestrialObserver observer = new TerrestrialObserver(ephemeris, erm, place);
 		
@@ -209,6 +214,7 @@ public class MoonVisibility {
 		
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
+		System.err.println("\t-timezone\tTimezone offset from UTC, in hours [DEFAULT: 0]");
 	}
 	
 	private static final String SEPARATOR1 = "================================================================================";
@@ -222,7 +228,7 @@ public class MoonVisibility {
 				
 		while (tNewMoon < jdfinish) {
 			ps.println(SEPARATOR1);
-			ps.println("NEW MOON: " + dateToString(tNewMoon));
+			ps.println("NEW MOON: " + dateToString(tNewMoon, place.getTimeZone()));
 			
 			calculateMoonVisibility(apMoonGeocentric, apSunGeocentric, apMoonTopocentric, place, tNewMoon, ps);
 			
@@ -255,7 +261,7 @@ public class MoonVisibility {
 
 			ps.println("\nEVENING " + evening + " AFTER NEW MOON");
 
-			ps.println("  SUNSET: " + dateToString(tSunset));
+			ps.println("  SUNSET: " + dateToString(tSunset, place.getTimeZone()));
 
 			HorizontalCoordinates hcMoon = lv.calculateApparentAltitudeAndAzimuth(apMoonTopocentric, place, tSunset);
 			
@@ -274,7 +280,7 @@ public class MoonVisibility {
 					return;
 				}
 				
-				ps.println("  MOONSET: " + dateToString(tMoonset));
+				ps.println("  MOONSET: " + dateToString(tMoonset, place.getTimeZone()));
 				
 				double tBest = (5.0 * tSunset + 4.0 * tMoonset)/9.0;
 				
@@ -290,7 +296,7 @@ public class MoonVisibility {
 
 				int code = getYallopCode(q);
 				
-				ps.println("  BEST TIME: " + dateToString(tBest));
+				ps.println("  BEST TIME: " + dateToString(tBest, place.getTimeZone()));
 				
 				ps.printf("    Yallop's q = %6.3f\n    Visibility code = %s\n", q, yallopCode[code]);
 				
@@ -362,8 +368,8 @@ public class MoonVisibility {
 		return Double.NaN;
 	}
 	
-	private String dateToString(double t) {
-		AstronomicalDate ad = new AstronomicalDate(t);
+	private String dateToString(double t, double tz) {
+		AstronomicalDate ad = new AstronomicalDate(t - tz);
 		ad.roundToNearestMinute();
 		return String.format("%04d-%02d-%02d %02d:%02d", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute());
 	}
