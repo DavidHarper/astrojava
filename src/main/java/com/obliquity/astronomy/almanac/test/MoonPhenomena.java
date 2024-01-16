@@ -341,7 +341,7 @@ public class MoonPhenomena {
 		this.apSun = apSun;
 		AU = apMoon.getTarget().getEphemeris().getAU();
 	}
-	
+
 	private double getLunarElongation(double t) throws JPLEphemerisException {
 		apSun.calculateApparentPlace(t);
 		
