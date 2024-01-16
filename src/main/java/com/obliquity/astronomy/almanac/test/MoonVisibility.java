@@ -338,7 +338,7 @@ public class MoonVisibility {
 				if (!Double.isNaN(tCivilTwilight) && tCivilTwilight > tMoonset)
 					ps.println("\n  CIVIL TWILIGHT: " + dateToString(tCivilTwilight, place.getTimeZone()));
 
-				moonIsVisible = code < 2 || elong > 1.0;
+				moonIsVisible = code < 1 || elong > 1.0;
 			} else {
 				ps.println("    MOON IS BELOW THE HORIZON AT SUNSET");
 			}
