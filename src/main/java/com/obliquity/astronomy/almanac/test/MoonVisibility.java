@@ -217,11 +217,27 @@ public class MoonVisibility {
 		System.err.println("\t-timezone\tTimezone offset from UTC, in hours [DEFAULT: 0]");
 	}
 
+	String[] DISCLAIMER = {
+			"***** DISCLAIMER",
+			"*****",
+			"***** This information is provided in the hope that it will be useful",
+			"***** but WITHOUT ANY WARRANTY; without even the implied warranty of",
+			"***** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+			""
+	};
+
+	private void displayDisclaimer(PrintStream ps) {
+		for (String line : DISCLAIMER)
+			ps.println(line);
+	}
+	
 	private static final String SEPARATOR1 = "================================================================================";
 	private static final String SEPARATOR2 = "----------------------------------------";
 
 	private void run(ApparentPlace apMoonGeocentric, ApparentPlace apSunGeocentric, ApparentPlace apMoonTopocentric, Place place,
 			double jdstart, double jdfinish, PrintStream ps) throws JPLEphemerisException {
+		displayDisclaimer(ps);
+
 		MoonPhenomena mp = new MoonPhenomena(apMoonGeocentric, apSunGeocentric);
 
 		double tNewMoon = mp.getDateOfNextPhase(jdstart, MoonPhenomena.NEW_MOON, true);
