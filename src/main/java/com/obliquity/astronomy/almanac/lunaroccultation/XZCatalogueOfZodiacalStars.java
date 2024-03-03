@@ -28,13 +28,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+
+import com.obliquity.astronomy.almanac.Star;
 
 public class XZCatalogueOfZodiacalStars {
-	private int starCount = 0;
+	private Vector<Star> catalogue = new Vector<Star>();
+	private Map<Integer, Star> catalogueByXZNumber = new HashMap<Integer, Star>();
+	private Map<Integer, Star> catalogueByHDNumber = new HashMap<Integer, Star>();
 	
 	public static void main(String[] args) {
+		double limitingMagnitude = args.length > 0 ? Double.parseDouble(args[0]) : 6.5;
+		
 		try {
-			XZCatalogueOfZodiacalStars catalogue = new XZCatalogueOfZodiacalStars();
+			XZCatalogueOfZodiacalStars catalogue = new XZCatalogueOfZodiacalStars(limitingMagnitude);
 			System.out.println("The catalogue contains " + catalogue.size() + " stars");
 		}
 		catch (IOException e) {
@@ -44,25 +53,88 @@ public class XZCatalogueOfZodiacalStars {
 		System.exit(0);
 	}
 	
-	public XZCatalogueOfZodiacalStars() throws IOException {
+	public XZCatalogueOfZodiacalStars(double limitingMagnitude) throws IOException {
 		InputStream is = getClass().getResourceAsStream("/starcatalogues/xz80q.dat");
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		
-		loadCatalogue(br);
+		if (limitingMagnitude > 20.0)
+			limitingMagnitude = 20.0;
+		
+		loadCatalogue(br, limitingMagnitude);
 		
 		is.close();
 	}
 	
-	private void loadCatalogue(BufferedReader br) throws IOException {
+	private void loadCatalogue(BufferedReader br, double limitingMagnitude) throws IOException {		
 		for (String line = br.readLine(); line != null; line = br.readLine()) {
-			starCount++;
+			if (getVisualMagnitude(line) <= limitingMagnitude) {
+				Star star = parseLine(line);
+				
+				catalogue.add(star);
+				
+				int catID = star.getCatalogueNumber();
+				catalogueByXZNumber.put(catID, star);
+				
+				int hdID = star.getHDNumber();
+				if (hdID > 0)
+					catalogueByHDNumber.put(hdID, star);
+			}
 		}
-		
+
 		br.close();
 	}
 	
+	private double getVisualMagnitude(String line) {
+		return getDoubleField(line, 20, 24);
+	}
+	
+	private Star parseLine(String line) {
+		int catnum = getIntegerField(line, 1, 6);
+		
+		double vmag = getDoubleField(line, 20, 24);
+		
+		int rah = getIntegerField(line, 26, 27);
+		int ram = getIntegerField(line, 28, 29);
+		double ras = getDoubleField(line, 30, 36);
+		
+		double ra = ((double)rah + ((double)ram)/60.0 + ras/3600.0) * Math.PI/12.0;
+		
+		double pmRA = getDoubleField(line, 37, 44) * 15.0/100.0;
+		
+		char decSign = line.charAt(44);
+		
+		int decd = getIntegerField(line, 46, 47);
+		int decm = getIntegerField(line, 48, 49);
+		double decs = getDoubleField(line, 50, 55);
+		
+		double dec = ((double)decd + ((double)decm)/60.0 + decs) * Math.PI/180.0;
+		
+		if (decSign == '-')
+			dec = -dec;
+		
+		double pmDec = getDoubleField(line, 56, 63)/100.0;
+		
+		double parallax = (double)getIntegerField(line, 64, 66);
+		
+		double rv = getDoubleField(line, 68, 73);
+		
+		int hdnum = getIntegerField(line, 167, 172);
+		
+		return new Star(catnum, hdnum, ra, dec, pmRA, pmDec, parallax, vmag, rv);
+	}
+	
+	private int getIntegerField(String line, int startpos, int endpos) {
+		String field = line.substring(startpos-1, endpos).trim();
+		return field.length() > 0 ? Integer.parseInt(field) : -1;
+	}
+	
+	private double getDoubleField(String line, int startpos, int endpos) {
+		String field = line.substring(startpos-1, endpos).trim();
+		return field.length() > 0 ? Double.parseDouble(line.substring(startpos-1, endpos)) : 0.0;
+	}
+	
 	public int size() {
-		return starCount;
+		return catalogue.size();
 	}
 }
