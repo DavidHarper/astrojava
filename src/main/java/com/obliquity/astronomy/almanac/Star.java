@@ -79,4 +79,9 @@ public class Star {
 	public double getRadialVelocity() {
 		return radialVelocity;
 	}
+	
+	public String toString() {
+		return String.format("Star[id=%d, HD=%d, RA=%12.10f, Dec=%13.10f, vMag=%5.2f, pmRA=%12.10f, pmDec=%12.10f, plx=%12.10f, rv=%8.2f",
+				catalogueNumber, hdNumber, rightAscension, declination, visualMagnitude, pmRA, pmDec, parallax, radialVelocity);
+	}
 }
