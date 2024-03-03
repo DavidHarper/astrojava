@@ -35,16 +35,33 @@ import java.util.Vector;
 import com.obliquity.astronomy.almanac.Star;
 
 public class XZCatalogueOfZodiacalStars {
+	// XZ Catalogue of Zodiacal Stars
+	// https://cdsarc.cds.unistra.fr/viz-bin/Cat?I/291
+	// https://cdsarc.cds.unistra.fr/ftp/I/291/xz80q.dat
+	
+	public static final double DEFAULT_LIMITING_MAGNITUDE = 6.5;
+	public static final double MAXIMUM_LIMITING_MAGNITUDE = 20.0;
+
 	private Vector<Star> catalogue = new Vector<Star>();
 	private Map<Integer, Star> catalogueByXZNumber = new HashMap<Integer, Star>();
 	private Map<Integer, Star> catalogueByHDNumber = new HashMap<Integer, Star>();
 	
 	public static void main(String[] args) {
-		double limitingMagnitude = args.length > 0 ? Double.parseDouble(args[0]) : 6.5;
+		String lmString = System.getProperty("limitingmagnitude");
+		double limitingMagnitude = lmString != null ? Double.parseDouble(lmString) : DEFAULT_LIMITING_MAGNITUDE;
 		
 		try {
 			XZCatalogueOfZodiacalStars catalogue = new XZCatalogueOfZodiacalStars(limitingMagnitude);
-			System.out.println("The catalogue contains " + catalogue.size() + " stars");
+			System.out.println("The catalogue contains " + catalogue.size() + " stars, of which " + catalogue.sizeWithHDNumber() + " have a HD number");
+			
+			for (String word : args) {
+				int hdid = Integer.decode(word);
+				
+				Star star = catalogue.getStarByHDNumber(hdid);
+				
+				if (star != null)
+					System.out.println(star);
+			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -58,8 +75,8 @@ public class XZCatalogueOfZodiacalStars {
 
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		
-		if (limitingMagnitude > 20.0)
-			limitingMagnitude = 20.0;
+		if (limitingMagnitude > MAXIMUM_LIMITING_MAGNITUDE)
+			limitingMagnitude = MAXIMUM_LIMITING_MAGNITUDE;
 		
 		loadCatalogue(br, limitingMagnitude);
 		
@@ -68,6 +85,11 @@ public class XZCatalogueOfZodiacalStars {
 	
 	private void loadCatalogue(BufferedReader br, double limitingMagnitude) throws IOException {		
 		for (String line = br.readLine(); line != null; line = br.readLine()) {
+			char code = line.charAt(6);
+			
+			if (code == 'L' || code == 'X' || code == 'E')
+				continue;
+			
 			if (getVisualMagnitude(line) <= limitingMagnitude) {
 				Star star = parseLine(line);
 				
@@ -108,7 +130,7 @@ public class XZCatalogueOfZodiacalStars {
 		int decm = getIntegerField(line, 48, 49);
 		double decs = getDoubleField(line, 50, 55);
 		
-		double dec = ((double)decd + ((double)decm)/60.0 + decs) * Math.PI/180.0;
+		double dec = ((double)decd + ((double)decm)/60.0 + decs/3600.0) * Math.PI/180.0;
 		
 		if (decSign == '-')
 			dec = -dec;
@@ -126,7 +148,7 @@ public class XZCatalogueOfZodiacalStars {
 	
 	private int getIntegerField(String line, int startpos, int endpos) {
 		String field = line.substring(startpos-1, endpos).trim();
-		return field.length() > 0 ? Integer.parseInt(field) : -1;
+		return field.length() > 0 ? Integer.parseInt(field) : 0;
 	}
 	
 	private double getDoubleField(String line, int startpos, int endpos) {
@@ -136,5 +158,17 @@ public class XZCatalogueOfZodiacalStars {
 	
 	public int size() {
 		return catalogue.size();
+	}
+	
+	public Star getStarByXZNumber(int xzid) {
+		return catalogueByXZNumber.get(xzid);
+	}
+	
+	public Star getStarByHDNumber(int hdid) {
+		return catalogueByHDNumber.get(hdid);
+	}
+	
+	public int sizeWithHDNumber() {
+		return catalogueByHDNumber.size();
 	}
 }
