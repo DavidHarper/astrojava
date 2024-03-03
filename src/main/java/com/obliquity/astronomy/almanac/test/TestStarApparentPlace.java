@@ -32,6 +32,7 @@ import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.Star;
 import com.obliquity.astronomy.almanac.StarApparentPlace;
 import com.obliquity.astronomy.almanac.Vector;
 
@@ -107,10 +108,12 @@ public class TestStarApparentPlace {
 		
 		double rv = -22.2;
 		
+		Star star = new Star(0, 0, ra, dec, pmRA, pmDec,parallax, 0.0, rv);
+		
 		double fixedEpoch = J2000;
 		double positionEpoch = J2000;
 		
-		Vector p = sap.calculateApparentPlace(ra, dec, parallax, pmRA, pmDec, rv, positionEpoch, fixedEpoch, jd);
+		Vector p = sap.calculateApparentPlace(star, positionEpoch, fixedEpoch, jd);
 		
 		displayEquatorialCoordinates(p);
 	}

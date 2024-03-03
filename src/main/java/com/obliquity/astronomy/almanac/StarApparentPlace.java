@@ -37,7 +37,18 @@ public class StarApparentPlace {
 		this.erm = erm;
 	}
 	
-	public Vector calculateApparentPlace(double ra, double dec, double parallax, double pmRA, double pmDec, double rv,
+	public Vector calculateApparentPlace(Star star, double positionEpoch, double fixedEpoch, double jd) throws JPLEphemerisException {
+		double ra = star.getRightAscension();
+		double dec = star.getDeclination();
+		double parallax = star.getParallax();
+		double pmRA = star.getProperMotionInRightAscension();
+		double pmDec = star.getProperMotionInDeclination();
+		double rv = star.getRadialVelocity();
+		
+		return calculateApparentPlace(ra, dec, parallax, pmRA, pmDec, rv, positionEpoch, fixedEpoch, jd);
+	}
+	
+	private Vector calculateApparentPlace(double ra, double dec, double parallax, double pmRA, double pmDec, double rv,
 			double positionEpoch, double fixedEpoch, double jd) throws JPLEphemerisException {
 		Vector q = new Vector(Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec));
 		

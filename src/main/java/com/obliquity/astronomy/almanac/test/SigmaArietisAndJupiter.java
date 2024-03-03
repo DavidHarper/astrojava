@@ -35,6 +35,7 @@ import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
 import com.obliquity.astronomy.almanac.MovingPoint;
 import com.obliquity.astronomy.almanac.PlanetCentre;
+import com.obliquity.astronomy.almanac.Star;
 import com.obliquity.astronomy.almanac.StarApparentPlace;
 import com.obliquity.astronomy.almanac.Vector;
 
@@ -131,7 +132,9 @@ public class SigmaArietisAndJupiter {
 		
 		double jd = ad.getJulianDate();
 		
-		Vector pStar = sap.calculateApparentPlace(raHip2, decHip2, plxHip2, pmRAHip2, pmDecHip2, rvFK6, epochHip2, J2000, jd);
+		Star sigmaArietis = new Star(0, 0, raHip2, decHip2, pmRAHip2, pmDecHip2, plxHip2, 0.0, rvFK6);
+		
+		Vector pStar = sap.calculateApparentPlace(sigmaArietis, epochHip2, J2000, jd);
 		
 		displayEquatorialCoordinates(pStar);
 		
