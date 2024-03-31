@@ -96,8 +96,8 @@ public class TestPrecession2 {
 			double pmdec, double epmdec, double startYear, double endYear, double stepYear) {
 		ra *= Math.PI / 12.0;
 		dec *= Math.PI / 180.0;
-		pmra *= Math.PI / (180.0 * 3600.0 * 100.0);
-		pmdec *= Math.PI / (180.0 * 3600.0 * 100.0);
+		pmra *= Math.PI / (180.0 * 3600.0 * 1000.0);
+		pmdec *= Math.PI / (180.0 * 3600.0 * 1000.0);
 
 		pmra /= Math.cos(dec);
 
