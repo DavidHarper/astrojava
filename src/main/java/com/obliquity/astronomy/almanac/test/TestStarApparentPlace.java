@@ -27,6 +27,7 @@ package com.obliquity.astronomy.almanac.test;
 import java.io.IOException;
 
 import com.obliquity.astronomy.almanac.EarthCentre;
+import com.obliquity.astronomy.almanac.EarthRotationModel;
 import com.obliquity.astronomy.almanac.IAUEarthRotationModel;
 import com.obliquity.astronomy.almanac.JPLEphemeris;
 import com.obliquity.astronomy.almanac.JPLEphemerisException;
@@ -43,10 +44,26 @@ public class TestStarApparentPlace {
 	public TestStarApparentPlace(StarApparentPlace sap) {
 		this.sap = sap;
 	}
+	
+	private static void checkArgument(String argument, String description, String keyword) {
+		if (argument == null) {
+			System.err.println("You MUST specify the " + description + " with the -" + keyword + " option.");
+			System.exit(1);
+		}
+	}
+	
+	private static double parseRightAscension(String argument) {
+		return Double.parseDouble(argument) * Math.PI/180.0;
+	}
+	
+	private static double parseDeclination(String argument) {
+		return Double.parseDouble(argument) * Math.PI/180.0;
+	}
 
 	public static void main(String[] args) {
 		String filename = null;
-		String strJD = null;
+		String strJD = null, strEpoch = null, strRA = null, strDec = null, strParallax = null, strPMRA = null, strPMDec = null;
+		String strFrame = null;
 		
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i].toLowerCase()) {
@@ -57,21 +74,54 @@ public class TestStarApparentPlace {
 			case "-jd":
 				strJD = args[++i];
 				break;
+				
+			case "-epoch":
+				strEpoch = args[++i];
+				break;
+				
+			case "-ra":
+				strRA = args[++i];
+				break;
+				
+			case "-dec":
+				strDec = args[++i];
+				break;
+				
+			case "-parallax":
+				strParallax = args[++i];
+				break;
+				
+			case "-pmra":
+				strPMRA = args[++i];
+				break;
+				
+			case "-pmdec":
+				strPMDec = args[++i];
+				break;
+				
+			case "-frame":
+				strFrame = args[++i];
+				break;
 			}
 
 		}
 		
-		if (filename == null) {
-			System.err.println("You MUST specify an ephemeris file with the -ephemeris option.");
-			System.exit(1);
-		}
+		checkArgument(filename, "ephemeris file", "ephemeris");
+		checkArgument(strJD, "target date", "jd");
+		checkArgument(strEpoch, "fixed epoch", "epoch");
+		checkArgument(strRA, "right ascension", "ra");
+		checkArgument(strDec, "declination", "dec");
+		checkArgument(strParallax, "parallax in mas", "parallax");
+		checkArgument(strPMRA, "proper motion in RA * cos(declination) in mas/year", "pmra");
+		checkArgument(strPMDec, "proper motion in declination in mas/year", "pmdec");
 		
-		if (strJD == null) {
-			System.err.println("you MUST specify a target date with the -jd option.");
-			System.exit(1);
-		}
-		
-		double jd = Double.parseDouble(strJD);
+		double jdTarget = Double.parseDouble(strJD);
+		double jdEpoch = Double.parseDouble(strEpoch);
+		double ra = parseRightAscension(strRA);
+		double dec = parseDeclination(strDec);
+		double parallax = Double.parseDouble(strParallax);
+		double pmRA = Double.parseDouble(strPMRA);
+		double pmDec = Double.parseDouble(strPMDec);
 		
 		try {
 			JPLEphemeris ephemeris = new JPLEphemeris(filename);
@@ -80,16 +130,29 @@ public class TestStarApparentPlace {
 			
 			MovingPoint sun = new PlanetCentre(ephemeris, JPLEphemeris.SUN);
 			
-			StarApparentPlace sap = new StarApparentPlace(earth, sun, new IAUEarthRotationModel());
+			EarthRotationModel erm = null;
+			
+			if (strFrame != null && strFrame.equalsIgnoreCase("true"))
+				erm = new IAUEarthRotationModel();
+			
+			StarApparentPlace sap = new StarApparentPlace(earth, sun, erm);
 			
 			TestStarApparentPlace runner = new TestStarApparentPlace(sap);
 			
-			runner.run(jd);
+			runner.run(jdEpoch, jdTarget, ra, dec, parallax, pmRA, pmDec);
 
 		} catch (IOException | JPLEphemerisException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+	
+	public void run(double positionEpoch, double targetEpoch, double ra, double dec, double parallax, double pmRA, double pmDec) throws JPLEphemerisException {
+		Star star = new Star(0, 0, ra, dec, pmRA, pmDec, parallax, 0.0, 0.0);
+
+		Vector p = sap.calculateApparentPlace(star, positionEpoch, J2000, targetEpoch);
+		
+		displayEquatorialCoordinates(p);
 	}
 	
 	public void run(double jd) throws JPLEphemerisException {

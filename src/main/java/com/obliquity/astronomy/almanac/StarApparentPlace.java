@@ -68,8 +68,8 @@ public class StarApparentPlace {
 		if (verbose)
 			System.out.printf("pmRA = %11.9f\npmDec = %11.9f\nparallax = %11.9f\n", pmRA, pmDec, parallax);
 				
-		double mx = -pmRA * Math.cos(dec) * Math.sin(ra) - pmDec * Math.sin(dec) * Math.cos(ra) + rv * parallax * q.getX();
-		double my =  pmRA * Math.cos(dec) * Math.cos(ra) - pmDec * Math.sin(dec) * Math.sin(ra) + rv * parallax * q.getY();
+		double mx = -pmRA * Math.sin(ra) - pmDec * Math.sin(dec) * Math.cos(ra) + rv * parallax * q.getX();
+		double my =  pmRA * Math.cos(ra) - pmDec * Math.sin(dec) * Math.sin(ra) + rv * parallax * q.getY();
 		double mz =  pmDec * Math.cos(dec) + rv * parallax * q.getZ();
 		
 		Vector m = new Vector(mx, my, mz);
