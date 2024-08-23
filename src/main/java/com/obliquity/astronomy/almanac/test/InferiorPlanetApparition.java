@@ -83,6 +83,9 @@ public class InferiorPlanetApparition {
 
 			if (args[i].equalsIgnoreCase("-mercury"))
 				kBody = JPLEphemeris.MERCURY;
+			
+			if (args[i].equalsIgnoreCase("-mars"))
+				kBody = JPLEphemeris.MARS;
 
 			if (args[i].equalsIgnoreCase("-civil"))
 				civil = true;
@@ -391,6 +394,7 @@ public class InferiorPlanetApparition {
 
 		System.err.println("\t-venus\tDisplay data for Venus");
 		System.err.println("\t-mercury\tDisplay data for Mercury");
+		System.err.println("\t-mars\tDisplay data for Mars");
 
 		System.err.println();
 
