@@ -34,6 +34,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.AstronomicalDate;
@@ -171,13 +173,21 @@ public class MoonVisibility {
 		ApparentPlace apMoonGeocentric = new ApparentPlace(earth, moon, sun, erm);
 
 		ApparentPlace apSunGeocentric = new ApparentPlace(earth, sun, sun, erm);
+		
+		Place place = null;
 
-		double lat = Double.parseDouble(latitude) * Math.PI / 180.0;
-		double lon = Double.parseDouble(longitude) * Math.PI / 180.0;
+		try {
+			double lat = parseHexagesimalArgument(latitude, true) * Math.PI / 180.0;
+			double lon = parseHexagesimalArgument(longitude, true) * Math.PI / 180.0;
 
-		double tz = (timezone != null) ? Double.parseDouble(timezone)/24.0 : 0.0;
+			double tz = (timezone != null) ? parseHexagesimalArgument(timezone, false)/24.0 : 0.0;
 
-		Place place = new Place(lat, lon, 0.0, tz);
+			place = new Place(lat, lon, 0.0, tz);
+		}
+		catch (ParseException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 
 		TerrestrialObserver observer = new TerrestrialObserver(ephemeris, erm, place);
 
@@ -192,6 +202,31 @@ public class MoonVisibility {
 		}
 	}
 
+	private static final Pattern dmPattern = Pattern.compile("([NSEW])([\\d]+):([\\d]+)");
+	
+	private static double parseHexagesimalArgument(String str, boolean isAngle) throws ParseException {
+		Matcher m = dmPattern.matcher(str);
+		
+		if (! m.matches())
+			throw new ParseException("Argument failed to match regex", 0);
+		
+		char prefix = m.group(1).toUpperCase().charAt(0);
+		String strDegrees = m.group(2);
+		String strMinutes = m.group(3);
+		
+		double value = Double.parseDouble(strDegrees) + Double.parseDouble(strMinutes)/60.0;
+		
+		// Latitude or longitude
+		if (isAngle && (prefix == 'W' || prefix == 'S'))
+			value = -value;
+		
+		// Timezone
+		if ((!isAngle) && prefix == 'E')
+			value = -value;
+		
+		return value;
+	}
+	
 	private static Date parseDate(String str) throws ParseException {
 		if (str != null) {
 			try {
@@ -207,14 +242,14 @@ public class MoonVisibility {
 		System.err.println("MANDATORY PARAMETERS");
 		System.err.println("\t-ephemeris\tName of ephemeris file");
 		System.err.println("\t-startdate\tStart date");
-		System.err.println("\t-longitude\tLongitude, in degrees");
-		System.err.println("\t-latitude\tLatitude, in degrees");
+		System.err.println("\t-longitude\tLongitude (format: [NS]dd:mm)");
+		System.err.println("\t-latitude\tLatitude (format: [EW]ddd:mm");
 
 		System.err.println();
 
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-enddate\tEnd date [DEFAULT: startdate + 1.0]");
-		System.err.println("\t-timezone\tTimezone offset from UTC, in hours [DEFAULT: 0]");
+		System.err.println("\t-timezone\tTimezone offset from UTC (format: [EW]hh:mm) [DEFAULT: 0]");
 	}
 
 	String[] DISCLAIMER = {
