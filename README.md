@@ -99,6 +99,17 @@ you can invoke this class by running the shell script **ringplanecrossing.sh**
 If you run the script with no arguments, or with the **-help** option,
 it will display lists of mandatory and optional arguments.
 
+### Visibility of the New Crescent Moon
+
+The class *com.obliquity.astronomy.almanac.test.MoonVisibility*
+calculates the visibility of the new crescent Moon on successive evenings
+after astronomical New Moon, using Yallop's Moon visibility criterion.
+After building the JAR file for this project, you can invoke this class by
+running the shell script **moonvisibility.sh**
+
+If you run the script with no arguments, or with the **-help** option,
+it will display lists of mandatory and optional arguments.
+
 ## DISCLAIMER
 
 THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
