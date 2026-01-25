@@ -34,7 +34,7 @@ import java.util.TimeZone;
 
 import com.obliquity.astronomy.almanac.*;
 
-public class MoonPhenomena {
+public class MoonAndSunPhenomena {
 	private static final double TWO_PI = 2.0 * PI;
 	
 	private static final double LUNAR_MONTH = 29.53059;
@@ -148,7 +148,7 @@ public class MoonPhenomena {
 			System.exit(1);
 		}
 
-		MoonPhenomena mp = new MoonPhenomena(ephemeris);
+		MoonAndSunPhenomena mp = new MoonAndSunPhenomena(ephemeris);
 		
 		if (phases)
 			try {
@@ -322,7 +322,7 @@ public class MoonPhenomena {
 		System.err.println("\t-dow\t\tDisplay day of week");
 	}
 
-	public MoonPhenomena(JPLEphemeris ephemeris) {
+	public MoonAndSunPhenomena(JPLEphemeris ephemeris) {
 		MovingPoint moon = new MoonCentre(ephemeris);
 		
 		MovingPoint earth = new EarthCentre(ephemeris);
@@ -336,7 +336,7 @@ public class MoonPhenomena {
 		AU = ephemeris.getAU();
 	}
 	
-	public MoonPhenomena(ApparentPlace apMoon, ApparentPlace apSun) {
+	public MoonAndSunPhenomena(ApparentPlace apMoon, ApparentPlace apSun) {
 		this.apMoon = apMoon;
 		this.apSun = apSun;
 		AU = apMoon.getTarget().getEphemeris().getAU();

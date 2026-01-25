@@ -273,9 +273,9 @@ public class MoonVisibility {
 			double jdstart, double jdfinish, PrintStream ps) throws JPLEphemerisException {
 		displayDisclaimer(ps);
 
-		MoonPhenomena mp = new MoonPhenomena(apMoonGeocentric, apSunGeocentric);
+		MoonAndSunPhenomena mp = new MoonAndSunPhenomena(apMoonGeocentric, apSunGeocentric);
 
-		double tNewMoon = mp.getDateOfNextPhase(jdstart, MoonPhenomena.NEW_MOON, true);
+		double tNewMoon = mp.getDateOfNextPhase(jdstart, MoonAndSunPhenomena.NEW_MOON, true);
 
 		while (tNewMoon < jdfinish) {
 			ps.println(SEPARATOR1);
@@ -283,7 +283,7 @@ public class MoonVisibility {
 
 			calculateMoonVisibility(apMoonGeocentric, apSunGeocentric, apMoonTopocentric, place, tNewMoon, ps);
 
-			tNewMoon = mp.getDateOfNextPhase(tNewMoon + 1.0, MoonPhenomena.NEW_MOON, true);
+			tNewMoon = mp.getDateOfNextPhase(tNewMoon + 1.0, MoonAndSunPhenomena.NEW_MOON, true);
 		}
 	}
 
