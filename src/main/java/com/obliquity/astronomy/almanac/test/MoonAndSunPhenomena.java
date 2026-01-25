@@ -43,6 +43,8 @@ public class MoonAndSunPhenomena {
 	
 	private static final double EPSILON = 0.5/86400.0;
 	
+	private static final int MOON = 0, SUN = 1;
+	
 	public static final int NEW_MOON = 0, FIRST_QUARTER = 1, FULL_MOON = 2, LAST_QUARTER = 3;
 	
 	public static final int MARCH_EQUINOX = 0, JUNE_SOLSTICE = 1, SEPTEMBER_EQUINOX = 2, DECEMBER_SOLSTICE = 3;
@@ -200,7 +202,7 @@ public class MoonAndSunPhenomena {
 
 	public static final char phaseCodes[] = { 'N', 'Q', 'F', 'L' };
 	
-	private void displayDateAndTime(double t, char code, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
+	private void displayDateAndTime(double t, char code, boolean showSeconds, boolean showDayOfWeek, int body) throws JPLEphemerisException {
 		AstronomicalDate ad = new AstronomicalDate(t);
 		
 		if (!showSeconds)
@@ -218,11 +220,19 @@ public class MoonAndSunPhenomena {
 			System.out.printf(" %s", dayOfWeek[dow]);
 		}
 
-		apMoon.calculateApparentPlace(t);
-		
-		double distance = apMoon.getGeometricDistance() * AU;
-		
-		System.out.printf(" %6.0f", distance);
+		switch (body) {
+		case MOON:
+			apMoon.calculateApparentPlace(t);
+			double moonDistance = apMoon.getGeometricDistance() * AU;
+			System.out.printf(" %6.0f", moonDistance);
+			break;
+			
+		case SUN:
+			apSun.calculateApparentPlace(t);
+			double sunDistance = apSun.getGeometricDistance() * AU;
+			System.out.printf(" %9.0f", sunDistance);
+			break;
+		}
 	
 		System.out.println();
 	}
@@ -235,7 +245,7 @@ public class MoonAndSunPhenomena {
 		while (t < jdfinish) {
 			t = getDateOfNextPhase(t, nextPhase, useUT);
 			
-			displayDateAndTime(t, phaseCodes[nextPhase], showSeconds, showDayOfWeek);
+			displayDateAndTime(t, phaseCodes[nextPhase], showSeconds, showDayOfWeek, MOON);
 			
 			nextPhase = (1 + nextPhase) % 4;
 			
@@ -259,7 +269,7 @@ public class MoonAndSunPhenomena {
 				if (useUT)
 					tExact -= erm.deltaT(tExact);
 				
-				displayDateAndTime(tExact, beta0 < 0.0 ? '\u2197' : '\u2198', showSeconds, showDayOfWeek);
+				displayDateAndTime(tExact, beta0 < 0.0 ? '\u2197' : '\u2198', showSeconds, showDayOfWeek, MOON);
 			}	
 			
 			t += dt;
@@ -303,7 +313,7 @@ public class MoonAndSunPhenomena {
 				if (useUT)
 					tExact -= erm.deltaT(tExact);
 				
-				displayDateAndTime(tExact, rv0 < 0.0 ? 'P' : 'A', showSeconds, showDayOfWeek);
+				displayDateAndTime(tExact, rv0 < 0.0 ? 'P' : 'A', showSeconds, showDayOfWeek, MOON);
 			}
 	
 			t += dt;
@@ -348,12 +358,11 @@ public class MoonAndSunPhenomena {
 				if (useUT)
 					tExact -= erm.deltaT(tExact);
 				
-				displayDateAndTime(tExact, rv0 < 0.0 ? 'p' : 'a', showSeconds, showDayOfWeek);
+				displayDateAndTime(tExact, rv0 < 0.0 ? 'p' : 'a', showSeconds, showDayOfWeek, SUN);
 			}
 	
 			t += dt;
 		}
-		
 	}
 
 	private double calculateExactTimeOfSunApseEvent(double t0, double rv0, double t1, double rv1) throws JPLEphemerisException {
@@ -524,9 +533,15 @@ public class MoonAndSunPhenomena {
 	}
 	
 	public double getSolarRadialVelocity(double t) throws JPLEphemerisException {
-		apSun.calculateApparentPlace(t);
+		StateVector svEarth = apSun.getObserver().getStateVector(t);
+		StateVector svSun = apSun.getTarget().getStateVector(t);
+
+		svEarth.subtract(svSun);
 		
-		return apSun.getRadialVelocity();
+		double rv = svEarth.getPosition().scalarProduct(svEarth.getVelocity());
+		double r = svEarth.getPosition().magnitude();
+		
+		return rv/r;
 	}
 
 }
