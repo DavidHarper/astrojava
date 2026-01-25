@@ -388,8 +388,82 @@ public class MoonAndSunPhenomena {
 
 	private void showSolarSeasons(double jdstart,
 			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
-		// TODO Auto-generated method stub
+		double t = jdstart;
 		
+		int nextSeason = getNextSeason(t);
+		
+		while (t < jdfinish) {
+			t = getDateOfNextSeason(t, nextSeason, useUT);
+			
+			displayDateAndTime(t, 'B', showSeconds, showDayOfWeek, SUN);
+			
+			nextSeason = (1 + nextSeason) % 4;
+			
+			t += 85.0;
+		}	
+	}
+
+	private int getNextSeason(double t) throws JPLEphemerisException {
+		double x = 4.0 * getSolarLongitude(t) / TWO_PI;
+
+		return (1 + (int)x) % 4;
+	}
+
+	private double getSolarLongitude(double t) throws JPLEphemerisException {
+		apSun.calculateApparentPlace(t);
+		
+		double raSun = apSun.getRightAscensionOfDate();
+		
+		double decSun = apSun.getDeclinationOfDate();
+		
+		double eps = erm.meanObliquity(t);
+		
+		NutationAngles na = erm.nutationAngles(t);
+		
+		eps += na.getDeps();
+
+		double xSun = cos(decSun) * cos(raSun);
+		double ySun = cos(decSun) * sin(raSun) * cos(eps) + sin(decSun) * sin(eps);
+		
+		double lSun = atan2(ySun, xSun);
+		
+		if (lSun < 0.0)
+			lSun += TWO_PI;
+		
+		return lSun;
+	}
+	
+	public double getDateOfNextSeason(double t0, int season, boolean useUT) throws JPLEphemerisException {
+		double d = getSolarLongitude(t0);
+		
+		double dWanted = 0.5 * PI * (double)(season % 4);
+		
+		double dt = dWanted - d;
+				
+		while (dt < 0.0)
+			dt += TWO_PI;
+						
+		dt *= TROPICAL_YEAR/TWO_PI;
+				
+		double t = t0 + dt;
+				
+		while (abs(dt) > EPSILON) {
+			d = getSolarLongitude(t);
+			
+			dt = (dWanted - d) % TWO_PI;
+			if (dt > PI)
+				dt -= TWO_PI;
+			if (dt < -PI)
+				dt += TWO_PI;
+			dt *= TROPICAL_YEAR/TWO_PI;
+			
+			t += dt;
+		}
+		
+		if (useUT)
+			t -= erm.deltaT(t);
+		
+		return t;
 	}
 
 	public static void showUsage() {
