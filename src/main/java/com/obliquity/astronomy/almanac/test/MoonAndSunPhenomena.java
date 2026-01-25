@@ -39,9 +39,13 @@ public class MoonAndSunPhenomena {
 	
 	private static final double LUNAR_MONTH = 29.53059;
 	
+	private static final double TROPICAL_YEAR = 365.24219;
+	
 	private static final double EPSILON = 0.5/86400.0;
 	
 	public static final int NEW_MOON = 0, FIRST_QUARTER = 1, FULL_MOON = 2, LAST_QUARTER = 3;
+	
+	public static final int MARCH_EQUINOX = 0, JUNE_SOLSTICE = 1, SEPTEMBER_EQUINOX = 2, DECEMBER_SOLSTICE = 3;
 	
 	private EarthRotationModel erm = new IAUEarthRotationModel();
 	
@@ -55,7 +59,7 @@ public class MoonAndSunPhenomena {
 		datefmt.setTimeZone(TimeZone.getTimeZone("GMT"));
 		
 		final double UNIX_EPOCH_AS_JD = 2440587.5;
-		 final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
+		final double MILLISECONDS_PER_DAY = 1000.0 * 86400.0;
 	
 		String filename = null;
 		String startdate = null;
@@ -63,8 +67,10 @@ public class MoonAndSunPhenomena {
 		boolean useUT = false;
 		boolean showSeconds = false;
 		boolean phases = false;
-		boolean apsides = false;
+		boolean moonApsides = false;
 		boolean nodes = false;
+		boolean seasons = false;
+		boolean sunApsides = false;
 		boolean dow = false;
 
 		for (int i = 0; i < args.length; i++) {
@@ -90,10 +96,16 @@ public class MoonAndSunPhenomena {
 				phases = true;
 			
 			if (args[i].equalsIgnoreCase("-apsides"))
-				apsides = true;
+				moonApsides = true;
 			
 			if (args[i].equalsIgnoreCase("-nodes"))
 				nodes = true;
+			
+			if (args[i].equalsIgnoreCase("-seasons"))
+				seasons = true;
+			
+			if (args[i].equalsIgnoreCase("-sunapsides"))
+				sunApsides = true;
 			
 			if (args[i].equalsIgnoreCase("-help")) {
 				showUsage();
@@ -106,8 +118,8 @@ public class MoonAndSunPhenomena {
 			System.exit(1);
 		}
 		
-		if (!(phases || apsides || nodes)) {
-			System.err.println("You should specify at least one of -phases or -apsides or -nodes");
+		if (!(phases || moonApsides || nodes || sunApsides || seasons)) {
+			System.err.println("You should specify at least one of -phases or -apsides or -nodes or -sunapsides or -seasons");
 			System.exit(1);
 		}
 		
@@ -157,7 +169,7 @@ public class MoonAndSunPhenomena {
 				e.printStackTrace();
 			}
 		
-		if (apsides)
+		if (moonApsides)
 			try {
 				mp.showMoonApsides(jdstart, jdfinish, useUT, showSeconds, dow);
 			} catch (JPLEphemerisException e) {
@@ -170,8 +182,22 @@ public class MoonAndSunPhenomena {
 			} catch (JPLEphemerisException e) {
 				e.printStackTrace();
 			}
+		
+		if (seasons)
+			try {
+				mp.showSolarSeasons(jdstart, jdfinish, useUT, showSeconds, dow);
+			} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+			}
+		
+		if (sunApsides)
+			try {
+				mp.showSunApsides(jdstart, jdfinish, useUT, showSeconds, dow);
+			} catch (JPLEphemerisException e) {
+				e.printStackTrace();
+			}	
 	}
-	
+
 	public static final char phaseCodes[] = { 'N', 'Q', 'F', 'L' };
 	
 	private void displayDateAndTime(double t, char code, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
@@ -272,7 +298,7 @@ public class MoonAndSunPhenomena {
 			double rv1 = getLunarRadialVelocity(t1);
 			
 			if (signum(rv0) != signum(rv1)) {
-				double tExact = calculateExactTimeOfApseEvent(t0, rv0, t1, rv1);
+				double tExact = calculateExactTimeOfMoonApseEvent(t0, rv0, t1, rv1);
 				
 				if (useUT)
 					tExact -= erm.deltaT(tExact);
@@ -284,7 +310,7 @@ public class MoonAndSunPhenomena {
 		}
 	}
 
-	private double calculateExactTimeOfApseEvent(double t0, double rv0, double t1, double rv1) throws JPLEphemerisException {
+	private double calculateExactTimeOfMoonApseEvent(double t0, double rv0, double t1, double rv1) throws JPLEphemerisException {
 		while (true) {
 			double drv = rv1 - rv0;
 			double dt = t1 - t0;
@@ -304,6 +330,58 @@ public class MoonAndSunPhenomena {
 			}
 		}
 	}
+	
+	private void showSunApsides(double jdstart,
+			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
+		// TODO Auto-generated method stub
+		double t = jdstart;
+		double dt = 1.0;
+						
+		while (t < jdfinish) {
+			double t0 = t, t1 = t + dt;
+			double rv0 = getSolarRadialVelocity(t0);
+			double rv1 = getSolarRadialVelocity(t1);
+			
+			if (signum(rv0) != signum(rv1)) {
+				double tExact = calculateExactTimeOfSunApseEvent(t0, rv0, t1, rv1);
+				
+				if (useUT)
+					tExact -= erm.deltaT(tExact);
+				
+				displayDateAndTime(tExact, rv0 < 0.0 ? 'p' : 'a', showSeconds, showDayOfWeek);
+			}
+	
+			t += dt;
+		}
+		
+	}
+
+	private double calculateExactTimeOfSunApseEvent(double t0, double rv0, double t1, double rv1) throws JPLEphemerisException {
+		while (true) {
+			double drv = rv1 - rv0;
+			double dt = t1 - t0;
+			
+			double t2 = t0 - rv0 * dt/drv;
+			double rv2 = getSolarRadialVelocity(t2);
+			
+			if (abs(rv2) < 0.000001)
+				return t2;
+			
+			if (signum(rv0) == signum(rv2)) {
+				t0 = t2;
+				rv0 = rv2;
+			} else {
+				t1 = t2;
+				rv1 = rv2;
+			}
+		}
+	}
+
+	private void showSolarSeasons(double jdstart,
+			double jdfinish, boolean useUT, boolean showSeconds, boolean showDayOfWeek) throws JPLEphemerisException {
+		// TODO Auto-generated method stub
+		
+	}
 
 	public static void showUsage() {
 		System.err.println("MANDATORY PARAMETERS");
@@ -315,6 +393,9 @@ public class MoonAndSunPhenomena {
 		System.err.println("\t-phases\t\tCalculate the phases of the Moon");
 		System.err.println("\t-apsides\tCalculate the apsides of the Moon");
 		System.err.println("\t-nodes\t\tCalculate the node crossings of the Moon");
+		System.err.println();
+		System.err.println("\t-seasons\tCalculate the solar seasons");
+		System.err.println("\t-sunapsides\tCalculate the apsides of the Sun");
 		System.err.println();
 		System.err.println("OPTIONAL PARAMETERS");
 		System.err.println("\t-ut\t\tDisplay times in UT instead of TT");
@@ -435,12 +516,17 @@ public class MoonAndSunPhenomena {
 
 		return asin(zMoon);
 	}
-
 	
 	public double getLunarRadialVelocity(double t) throws JPLEphemerisException {
 		apMoon.calculateApparentPlace(t);
 		
 		return apMoon.getRadialVelocity();
+	}
+	
+	public double getSolarRadialVelocity(double t) throws JPLEphemerisException {
+		apSun.calculateApparentPlace(t);
+		
+		return apSun.getRadialVelocity();
 	}
 
 }
