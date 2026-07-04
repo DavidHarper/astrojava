@@ -1,0 +1,34 @@
+The first record of each JPL binary ephemeris file is structured as follows:
+
+  OFFSET    LENGTH    TYPE           DESCRIPTION
+ DEC   HEX
+   0     0     252    3*char[84]     File ID, start and end epochs
+ 252    FC    2400    400*char[6]    Names of constants
+2652   A5C      24    3*double       Start epoch, end epoch, data block span
+2676   A74       4    int32          Number of constants (NCON)
+2680   A78       8    double         Value of constant AU
+2688   A80       8    double         Value of constant EMRAT
+2696   A88     144    36*int32       Offsets array for each data block
+2840   B18       4    int32          Value of NUMDE i.e. JPL ephemeris number
+2844   B1C      12    3*int32        Libration offsets in each data block
+
+WHEN NCON <= 400:
+
+2856   B28     12    3*int32        Lunar Euler angle offsets in each data block, if present
+2868   B34     12    3*int32        TT-TDB offsets in each data block, if present
+
+WHEN NCON>400:
+
+2856   B28     6*(NCON-400)         Names of extra constants (type: (NCON-400)*char[6])
+[variable]    12     3*int32        Lunar Euler angle offsets in each data block, if present
+[variable]    12     3*int32        TT-TDB offsets in each data block, if present
+
+The second record contains the values of the NCON constants as double values.
+The record length must be inferred from the JPL ephemeris number:
+
+NUMDE       RECLEN
+102          6184
+200          6608
+202          6608
+406          5824
+All others   8144
