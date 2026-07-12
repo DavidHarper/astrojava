@@ -124,8 +124,6 @@ public class StarAppulse {
 		String longitude = null;
 		String latitude = null;
 
-		int targetEpoch = AlmanacData.TRUE_OF_DATE;
-
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
 				ephemerisFilename = args[++i];
@@ -258,7 +256,7 @@ public class StarAppulse {
 		StarAppulse runner = new StarAppulse();
 
 		try {
-			runner.run(apPlanet, apSun, apStar, star, targetEpoch, jdstart, jdfinish, jdstep);
+			runner.run(apPlanet, apSun, apStar, star, jdstart, jdfinish, jdstep);
 		} catch (JPLEphemerisException e) {
 			e.printStackTrace();
 		}
@@ -291,7 +289,7 @@ public class StarAppulse {
 			System.err.println(line);		
 	}
 
-	private void run(ApparentPlace apPlanet, ApparentPlace apSun, StarApparentPlace apStar, Star star, double jdstart, double jdfinish, double jdstep, double jdstep2)
+	private void run(ApparentPlace apPlanet, ApparentPlace apSun, StarApparentPlace apStar, Star star, double jdstart, double jdfinish, double jdstep)
 			throws JPLEphemerisException {
 		double starEpoch = J2000 + (star.epoch - 2000.0) * 365.25;
 		
