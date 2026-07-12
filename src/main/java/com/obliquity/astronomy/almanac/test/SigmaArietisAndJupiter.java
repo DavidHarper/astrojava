@@ -131,15 +131,16 @@ public class SigmaArietisAndJupiter {
 		
 		double jd = ad.getJulianDate();
 		
-		Vector pStar = sap.calculateApparentPlace(raHip2, decHip2, plxHip2, pmRAHip2, pmDecHip2, rvFK6, epochHip2, J2000, jd);
-		
-		displayEquatorialCoordinates(pStar);
-		
-		double raStar = Math.atan2(pStar.getY(), pStar.getX());
-		
-		double decStar = Math.asin(pStar.getZ());
-		
 		for (int i = 0; i < 144; i++) {
+			Vector pStar = sap.calculateApparentPlace(raHip2, decHip2, plxHip2, pmRAHip2, pmDecHip2, rvFK6, epochHip2, J2000, jd);
+			
+			if (Boolean.getBoolean("debug"))
+				displayEquatorialCoordinates(pStar);
+			
+			double raStar = Math.atan2(pStar.getY(), pStar.getX());
+			
+			double decStar = Math.asin(pStar.getZ());
+			
 			apJupiter.calculateApparentPlace(jd);
 			
 			double raJupiter = useJ2000 ? apJupiter.getRightAscensionJ2000() : apJupiter.getRightAscensionOfDate();
