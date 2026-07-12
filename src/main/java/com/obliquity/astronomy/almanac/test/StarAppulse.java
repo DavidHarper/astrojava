@@ -37,7 +37,6 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.obliquity.astronomy.almanac.AlmanacData;
 import com.obliquity.astronomy.almanac.ApparentPlace;
 import com.obliquity.astronomy.almanac.AstronomicalDate;
 import com.obliquity.astronomy.almanac.EarthCentre;
