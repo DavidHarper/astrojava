@@ -294,7 +294,7 @@ public class StarAppulse {
 		
 		final double ONE_MINUTE = 1.0/1440.0;
 		final String FORMAT1 = "%04d-%02d-%02d  %02d:%02d   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n";
-		final String FORMAT2 = "%04d-%02d-%02d  %02d:%02d:%02.1f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n";
+		final String FORMAT2 = "%04d-%02d-%02d  %02d:%02d:%04.1f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n";
 		
 		for (double jd = jdstart; jd <= jdfinish; jd += jdstep) {
 			Vector pStar = apStar.calculateApparentPlace(star.rightAscension, star.declination, star.parallax, star.pmRA, star.pmDec, star.radialVelocity, starEpoch, J2000, jd);
