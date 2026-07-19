@@ -292,6 +292,10 @@ public class StarAppulse {
 			throws JPLEphemerisException {
 		double starEpoch = J2000 + (star.epoch - 2000.0) * 365.25;
 		
+		final double ONE_MINUTE = 1.0/1440.0;
+		final String FORMAT1 = "%04d-%02d-%02d  %02d:%02d   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n";
+		final String FORMAT2 = "%04d-%02d-%02d  %02d:%02d:%02.1f   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n";
+		
 		for (double jd = jdstart; jd <= jdfinish; jd += jdstep) {
 			Vector pStar = apStar.calculateApparentPlace(star.rightAscension, star.declination, star.parallax, star.pmRA, star.pmDec, star.radialVelocity, starEpoch, J2000, jd);
 						
@@ -317,10 +321,15 @@ public class StarAppulse {
 			
 			AstronomicalDate ad = new AstronomicalDate(jd);
 			
-			ad.roundToNearestMinute();
+			if (jdstep < ONE_MINUTE) {
+				System.out.printf(FORMAT2, ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(), ad.getSecond(),
+						dx, dy, dr, sd, dr-sd);
+			} else {
+				ad.roundToNearestMinute();
 			
-			System.out.printf("%04d-%02d-%02d  %02d:%02d   %8.3f   %8.3f   %8.3f   %8.3f   %8.3f\n", ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
+				System.out.printf(FORMAT1, ad.getYear(), ad.getMonth(), ad.getDay(), ad.getHour(), ad.getMinute(),
 					dx, dy, dr, sd, dr-sd);
+			}
 		}
 	}
 	
