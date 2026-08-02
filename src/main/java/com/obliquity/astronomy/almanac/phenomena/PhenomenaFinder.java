@@ -447,19 +447,19 @@ public class PhenomenaFinder {
 	public static void showUsage() {
 		String[] lines = { "MANDATORY PARAMETERS",
 				"\t-ephemeris\tName of ephemeris file",
-				"\t-body\t\tName of body 1",
+				"\t-body\t\tName of body",
 				"\t-startdate\tStart date",
 				"\t-enddate\tEnd date",
 				"",
 				"OPTIONAL PARAMETERS",
-				"-conjunction\tFind dates of conjunction",
-				"-opposition\tFind dates of opposition",
-				"-quadrature-east\tFind dates of east quadrature",
-				"-quadrature-west\tFind dates of west quadrature",
-				"-greatest-elongation-east\tFind dates of greatest elongation east",
-				"-greatest-elongation-west\tFind dates of greatest elongation west",
-				"-stationary-west\tFind dates of west stationary points in RA",
-				"-stationary-east\tFind dates of east stationary points in RA"
+				"\t-conjunction\t\t\tFind dates of conjunction",
+				"\t-opposition\t\t\tFind dates of opposition",
+				"\t-quadrature-east\t\tFind dates of east quadrature",
+				"\t-quadrature-west\t\tFind dates of west quadrature",
+				"\t-greatest-elongation-east\tFind dates of greatest elongation east",
+				"\t-greatest-elongation-west\tFind dates of greatest elongation west",
+				"\t-stationary-west\t\tFind dates of west stationary points in RA",
+				"\t-stationary-east\t\tFind dates of east stationary points in RA"
 		};
 		
 		for (String line : lines)
