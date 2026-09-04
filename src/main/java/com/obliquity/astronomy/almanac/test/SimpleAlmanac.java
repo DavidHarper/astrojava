@@ -84,6 +84,7 @@ public class SimpleAlmanac {
 	private static final double TWO_PI = 2.0 * Math.PI;
 	
 	private boolean elongationDeltas = false;
+	private boolean showPositionAngleOfBrightLimb = false;
 
 	public SimpleAlmanac(ApparentPlace apTarget, ApparentPlace apSun,
 			int targetEpoch) {
@@ -106,6 +107,10 @@ public class SimpleAlmanac {
 		this.elongationDeltas = elongationDeltas;
 	}
 
+	public void setShowPositionAngleOfBrightLimb(boolean showPositionAngleOfBrightLimb) {
+		this.showPositionAngleOfBrightLimb = showPositionAngleOfBrightLimb;
+	}
+
 	public static void main(String args[]) {
 		datefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
 		datetimefmtIn.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -121,6 +126,7 @@ public class SimpleAlmanac {
 
 		int targetEpoch = AlmanacData.TRUE_OF_DATE;
 		boolean elongationDeltas = false;
+		boolean showPositionAngleOfBrightLimb = false;
 
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equalsIgnoreCase("-ephemeris"))
@@ -155,7 +161,10 @@ public class SimpleAlmanac {
 
 			if (args[i].equalsIgnoreCase("-elongationdeltas"))
 				elongationDeltas = true;
-			
+
+			if (args[i].equalsIgnoreCase("-pabl"))
+				showPositionAngleOfBrightLimb = true;
+
 			if (args[i].equalsIgnoreCase("-saturnpolemodel"))
 				poleModelName = args[++i];
 
@@ -267,6 +276,7 @@ public class SimpleAlmanac {
 		SimpleAlmanac almanac = new SimpleAlmanac(apTarget, apSun, targetEpoch);
 		
 		almanac.setElongationDeltas(elongationDeltas);
+		almanac.setShowPositionAngleOfBrightLimb(showPositionAngleOfBrightLimb);
 		
 		PrintStream ps = Boolean.getBoolean("silent") ? null : System.out;
 
@@ -533,6 +543,9 @@ public class SimpleAlmanac {
 			
 			ps.printf("  %8.4f  %8.4f", data.eclipticLongitude, data.eclipticLatitude);
 			
+			if (showPositionAngleOfBrightLimb)
+				ps.printf("  %6.2f", data.positionAngleOfBrightLimb * 180.0/Math.PI);
+
 			if (data.saturnRingAnglesForEarth != null)
 				ps.printf("  %8.4f", data.saturnRingAnglesForEarth.B);
 			
@@ -593,6 +606,8 @@ public class SimpleAlmanac {
 				"",
 				"\t-elongationdeltas\tDisplay change in elongation between output lines (prefixed with #)",
 				"",
+				"\t-pabl\t\tDisplay position angle of the bright limb",
+				"",
 				"\t-latitude\tThe latitude of the observer, in degrees.",
 				"\t-longitude\tThe longitude of the observer, in degrees.",
 				"",
@@ -627,9 +642,12 @@ public class SimpleAlmanac {
 				"21\tApparent magnitude (zero for Moon)",
 				"22\tEcliptic longitude (in same reference frame as RA and Dec)",
 				"23\tEcliptic latitude (in same reference frame as RA and Dec)",
-				"24\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane",
-				"25\t[Saturn only] Saturnicentric latitude of Sun referred to ring plane",
-				"26\t[Saturn only] Position angle of Saturn's pole as seen from Earth",
+				"24\tPosition angle of bright limb (if -pabl has been specified)",
+				"",
+				"24*\t[Saturn only] Saturnicentric latitude of Earth referred to ring plane",
+				"25*\t[Saturn only] Saturnicentric latitude of Sun referred to ring plane",
+				"26*\t[Saturn only] Position angle of Saturn's pole as seen from Earth",
+				"* Increase column number by 1 if -pabl has been specified",
 				"",
 				"[For Sun]",
 				"17\tEcliptic longitude (in same reference frame as RA and Dec)",
